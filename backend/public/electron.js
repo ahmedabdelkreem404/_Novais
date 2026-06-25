@@ -11,8 +11,9 @@ function createWindow() {
         minHeight: 600,
         icon: path.join(__dirname, isDev ? 'icon.png' : '../icon.png'), // Handle path differences between dev/prod
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false, // For simple apps, this allows easier communication
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload.js'),
             devTools: isDev, // Enable DevTools only in dev mode
         },
         autoHideMenuBar: true, // Hide the default file menu (File, Edit, etc.)
@@ -31,7 +32,9 @@ function createWindow() {
 
     // Open external links in default browser, not inside the app
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        shell.openExternal(url);
+        if (url.startsWith('https://') || url.startsWith('http://')) {
+            shell.openExternal(url);
+        }
         return { action: 'deny' };
     });
 

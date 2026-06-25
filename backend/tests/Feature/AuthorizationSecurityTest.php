@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Course;
+use App\Models\CourseGenerationLog;
 use App\Models\Lesson;
 use App\Models\User;
 use App\Services\DeviceManager;
@@ -79,6 +80,19 @@ class AuthorizationSecurityTest extends TestCase
         $user = User::factory()->create(['sub_status' => 'pro_monthly']);
 
         $this->assertTrue(app(DeviceManager::class)->checkGenerationLimits($user, 'device-1'));
+    }
+
+    public function test_free_user_remains_limited_after_daily_generation(): void
+    {
+        $user = User::factory()->create(['sub_status' => 'free']);
+        CourseGenerationLog::create([
+            'user_id' => $user->id,
+            'course_id' => 'course-1',
+            'device_id' => 'device-1',
+            'ip_address' => '127.0.0.1',
+        ]);
+
+        $this->assertFalse(app(DeviceManager::class)->checkGenerationLimits($user, 'device-1'));
     }
 
     private function actingAsApi(User $user): self

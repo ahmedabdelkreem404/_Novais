@@ -108,6 +108,40 @@ class PaymentSecurityTest extends TestCase
         $this->assertSame(60.0, (float) $user->fresh()->monthly_spent_egp);
     }
 
+    public function test_duplicate_success_webhook_does_not_create_duplicate_subscriptions(): void
+    {
+        Mail::fake();
+        Plan::create([
+            'slug' => 'pro',
+            'name' => 'Pro',
+            'description' => 'Pro plan',
+            'features' => [],
+            'price_egp' => 60,
+            'course_limit' => 3,
+        ]);
+        $user = User::factory()->create(['role' => 'user', 'sub_status' => 'free', 'monthly_spent_egp' => 0]);
+        $payment = Payment::create([
+            'user_id' => $user->id,
+            'transaction_id' => 'ORD-duplicate',
+            'plan_id' => 'pro_monthly',
+            'provider_order_id' => '9003',
+            'amount' => 60,
+            'currency' => 'EGP',
+            'status' => 'pending',
+        ]);
+
+        $this->mock(PaymobService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('verifyWebhookPayload')->twice()->andReturn(true);
+        });
+
+        $payload = $this->successfulPayload($payment);
+        $this->postJson('/api/payment/webhook', $payload)->assertOk();
+        $this->postJson('/api/payment/webhook', $payload)->assertOk();
+
+        $this->assertSame(1, Subscription::where('user_id', $user->id)->count());
+        $this->assertSame(60.0, (float) $user->fresh()->monthly_spent_egp);
+    }
+
     public function test_signed_failed_webhook_marks_payment_failed_without_subscription(): void
     {
         $user = User::factory()->create();
@@ -134,6 +168,28 @@ class PaymentSecurityTest extends TestCase
             'id' => $payment->id,
             'status' => 'failed',
         ]);
+        $this->assertDatabaseCount('subscriptions', 0);
+    }
+
+    public function test_cancel_route_marks_pending_payment_as_cancelled(): void
+    {
+        $user = User::factory()->create();
+        $payment = Payment::create([
+            'user_id' => $user->id,
+            'transaction_id' => 'ORD-cancel',
+            'plan_id' => 'pro_monthly',
+            'amount' => 60,
+            'currency' => 'EGP',
+            'status' => 'pending',
+        ]);
+
+        $this->getJson('/api/payment/cancel?reference=ORD-cancel')
+            ->assertOk()
+            ->assertJson(['message' => 'common.payment_cancelled']);
+
+        $payment->refresh();
+        $this->assertSame('cancelled', $payment->status);
+        $this->assertNotNull($payment->cancelled_at);
         $this->assertDatabaseCount('subscriptions', 0);
     }
 

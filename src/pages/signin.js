@@ -37,11 +37,9 @@ const SignIn = () => {
         const isDesktop = window.location.protocol === 'file:' || /electron/i.test(navigator.userAgent);
         const authUrl = `${serverURL}/auth/google?device_id=${deviceId}&platform=${isDesktop ? 'desktop' : 'web'}`;
 
-        if (isDesktop && window.require) {
-            const { ipcRenderer } = window.require('electron');
-            ipcRenderer.send('google-login', authUrl);
-
-            ipcRenderer.once('google-login-success', (event, token) => {
+        if (isDesktop && window.novaisElectron) {
+            window.novaisElectron.startGoogleLogin(authUrl);
+            window.novaisElectron.onceGoogleLoginSuccess((token) => {
                 if (token) {
                     localStorage.setItem('token', token);
                     localStorage.setItem('auth', true);

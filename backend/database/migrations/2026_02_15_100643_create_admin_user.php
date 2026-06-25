@@ -11,19 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Check if user exists first to avoid duplicate entry errors
-        if (!\App\Models\User::where('email', 'admin@novais.com')->exists()) {
-            \App\Models\User::create([
-                'name' => 'Admin User',
-                'first_name' => 'Admin',
-                'last_name' => 'User',
-                'email' => 'admin@novais.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('21072003'),
-                'role' => 'admin',
-                'sub_status' => 'premium', // Admin should have premium access
-                'email_verified_at' => now(),
-            ]);
-        }
+        // Intentionally no-op. Admin accounts must not be created from migrations.
     }
 
     /**
@@ -31,6 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        \App\Models\User::where('email', 'admin@novais.com')->delete();
+        //
     }
 };

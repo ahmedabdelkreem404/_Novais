@@ -4,22 +4,68 @@ namespace App\Support;
 
 class HtmlSanitizer
 {
-    private const ALLOWED_TAGS = '<p><br><strong><b><em><i><u><s><ul><ol><li><blockquote><h1><h2><h3><h4><h5><h6><a><img><table><thead><tbody><tr><th><td><hr><pre><code>';
-
     public static function clean(?string $html): ?string
     {
         if ($html === null) {
             return null;
         }
 
-        $clean = strip_tags($html, self::ALLOWED_TAGS);
-        $clean = preg_replace('/\s+on[a-z]+\s*=\s*(".*?"|\'.*?\'|[^\s>]+)/i', '', $clean);
-        $clean = preg_replace('/\s+(href|src)\s*=\s*([\'"])\s*javascript:.*?\2/i', '', $clean);
-        $clean = preg_replace('/\s+(href|src)\s*=\s*javascript:[^\s>]+/i', '', $clean);
-        $clean = preg_replace('/<iframe\b[^>]*>.*?<\/iframe>/is', '', $clean);
-        $clean = preg_replace('/<object\b[^>]*>.*?<\/object>/is', '', $clean);
-        $clean = preg_replace('/<embed\b[^>]*>/is', '', $clean);
+        $config = \HTMLPurifier_Config::createDefault();
+        $config->set('Cache.SerializerPath', storage_path('framework/cache/htmlpurifier'));
+        $config->set('HTML.Allowed', implode(',', [
+            'p[style|class]',
+            'br',
+            'strong',
+            'b',
+            'em',
+            'i',
+            'u',
+            's',
+            'ul[class]',
+            'ol[class]',
+            'li[class]',
+            'blockquote[class]',
+            'h1[class]',
+            'h2[class]',
+            'h3[class]',
+            'h4[class]',
+            'h5[class]',
+            'h6[class]',
+            'a[href|title|target|rel|class]',
+            'img[src|alt|title|width|height|class]',
+            'table[class]',
+            'thead[class]',
+            'tbody[class]',
+            'tr[class]',
+            'th[class|colspan|rowspan]',
+            'td[class|colspan|rowspan]',
+            'hr',
+            'pre[class]',
+            'code[class]',
+            'span[class|style]',
+        ]));
+        $config->set('CSS.AllowedProperties', [
+            'text-align',
+            'font-weight',
+            'font-style',
+            'text-decoration',
+            'color',
+            'background-color',
+        ]);
+        $config->set('URI.AllowedSchemes', [
+            'http' => true,
+            'https' => true,
+            'mailto' => true,
+        ]);
+        $config->set('Attr.AllowedFrameTargets', ['_blank']);
+        $config->set('HTML.TargetBlank', true);
+        $config->set('HTML.Nofollow', true);
+        $config->set('AutoFormat.RemoveEmpty', true);
 
-        return $clean;
+        if (!is_dir(storage_path('framework/cache/htmlpurifier'))) {
+            mkdir(storage_path('framework/cache/htmlpurifier'), 0775, true);
+        }
+
+        return (new \HTMLPurifier($config))->purify($html);
     }
 }

@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Carbon\Carbon;
 
 class AdminSeeder extends Seeder
 {
@@ -14,8 +13,13 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
-        // Check if admin exists
-        $adminEmail = 'admin@novais.com';
+        $adminEmail = env('ADMIN_SEED_EMAIL');
+        $adminPassword = env('ADMIN_SEED_PASSWORD');
+
+        if (!$adminEmail || !$adminPassword) {
+            $this->command?->warn('AdminSeeder skipped. Set ADMIN_SEED_EMAIL and ADMIN_SEED_PASSWORD to create an admin intentionally.');
+            return;
+        }
         
         $admin = User::where('email', $adminEmail)->first();
         
@@ -23,12 +27,12 @@ class AdminSeeder extends Seeder
             User::create([
                 'name' => 'Super Admin',
                 'email' => $adminEmail,
-                'password' => Hash::make('21072003'),
+                'password' => Hash::make($adminPassword),
                 'role' => 'admin',
                 'sub_status' => 'premium',
                 'language' => 'en',
                 'country' => 'Global',
-                'email_verified_at' => Carbon::now(),
+                'email_verified_at' => now(),
             ]);
             $this->command->info('Super Admin created successfully.');
         } else {
