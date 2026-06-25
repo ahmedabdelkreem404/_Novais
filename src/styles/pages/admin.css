@@ -1,0 +1,265 @@
+/* Admin Dashboard Glow Utilities */
+.box-glow-right-blue {
+    box-shadow: 1px 0 0 0 rgba(59, 130, 246, 0.1),
+        10px 0 40px -10px rgba(59, 130, 246, 0.05);
+}
+
+.box-glow-left-blue {
+    box-shadow: -1px 0 0 0 rgba(59, 130, 246, 0.1),
+        -10px 0 40px -10px rgba(59, 130, 246, 0.05);
+}
+
+html.dark .box-glow-right-blue {
+    box-shadow: 1px 0 0 0 rgba(59, 130, 246, 0.2),
+        15px 0 60px -20px rgba(59, 130, 246, 0.15);
+}
+
+html.dark .box-glow-left-blue {
+    box-shadow: -1px 0 0 0 rgba(59, 130, 246, 0.2),
+        -15px 0 60px -20px rgba(59, 130, 246, 0.15);
+}
+
+/* Hide DonutChart default inner text to prevent overlap with custom Total display */
+.donutchart-innertext {
+    display: none !important;
+}
+
+.donutchart-innertext-label,
+.donutchart-innertext-value {
+    display: none !important;
+}
+
+/* ReactQuill Toolbar RTL/LTR Improvements */
+.ql-snow .ql-picker-label {
+    padding-right: 24px !important;
+    padding-left: 8px !important;
+    display: flex !important;
+    align-items: center;
+    position: relative;
+    width: auto !important;
+    white-space: nowrap;
+}
+
+/* Only the header/font/size pickers need more width */
+.ql-snow .ql-header.ql-picker .ql-picker-label,
+.ql-snow .ql-font.ql-picker .ql-picker-label,
+.ql-snow .ql-size.ql-picker .ql-picker-label {
+    min-width: 100px;
+}
+
+/* Header/Font pickers need the arrow SVG displaced to the right */
+.ql-snow .ql-header.ql-picker .ql-picker-label svg,
+.ql-snow .ql-font.ql-picker .ql-picker-label svg,
+.ql-snow .ql-size.ql-picker .ql-picker-label svg {
+    position: absolute;
+    right: 4px !important;
+    left: auto !important;
+    width: 14px !important;
+}
+
+[dir="rtl"] .ql-snow .ql-picker-label {
+    padding-left: 24px !important;
+    padding-right: 8px !important;
+    direction: rtl;
+    text-align: right;
+}
+
+/* Header/Font pickers in RTL need arrow on the left */
+[dir="rtl"] .ql-snow .ql-header.ql-picker .ql-picker-label svg,
+[dir="rtl"] .ql-snow .ql-font.ql-picker .ql-picker-label svg,
+[dir="rtl"] .ql-snow .ql-size.ql-picker .ql-picker-label svg {
+    right: auto !important;
+    left: 4px !important;
+}
+
+/* Icon pickers (align, color, background) should be compact and center their content */
+.ql-snow .ql-align.ql-picker .ql-picker-label,
+.ql-snow .ql-color.ql-picker .ql-picker-label,
+.ql-snow .ql-background.ql-picker .ql-picker-label {
+    padding: 0 4px !important;
+    min-width: 32px;
+    justify-content: center;
+}
+
+.ql-snow .ql-align.ql-picker .ql-picker-label svg,
+.ql-snow .ql-color.ql-picker .ql-picker-label svg,
+.ql-snow .ql-background.ql-picker .ql-picker-label svg {
+    position: static;
+    width: 18px !important;
+}
+
+
+[dir="rtl"] .ql-editor {
+    text-align: right;
+    direction: rtl;
+}
+
+/* Fix RTL List Overlap */
+[dir="rtl"] .ql-editor ol,
+[dir="rtl"] .ql-editor ul {
+    padding-right: 1.5em;
+    padding-left: 0;
+}
+
+[dir="rtl"] .ql-editor li {
+    padding-right: 0.5em;
+    padding-left: 0;
+}
+
+[dir="rtl"] .ql-editor li::before {
+    margin-right: -1.5em;
+    margin-left: 0.3em;
+    text-align: left;
+    direction: ltr;
+    /* Keeps numbers like 1, 2, 3 as LTR but aligned to the right-side list */
+}
+
+[dir="ltr"] .ql-editor {
+    text-align: left;
+    direction: ltr;
+}
+
+/* Fix LTR List Alignment */
+[dir="ltr"] .ql-editor ol,
+[dir="ltr"] .ql-editor ul {
+    padding-left: 1.5em;
+    padding-right: 0;
+}
+
+[dir="ltr"] .ql-editor li {
+    padding-left: 0.5em;
+    padding-right: 0;
+}
+
+[dir="ltr"] .ql-editor li::before {
+    margin-left: -1.5em;
+    margin-right: 0.3em;
+    text-align: right;
+}
+
+[dir="rtl"] .ql-snow .ql-picker-options {
+    right: 0;
+    left: auto;
+    text-align: right;
+}
+
+/* Dark Mode Support for ReactQuill */
+html.dark .ql-toolbar {
+    border-color: #374151 !important;
+    background-color: #1f2937;
+}
+
+html.dark .ql-container {
+    border-color: #374151 !important;
+    background-color: #1f2937;
+    color: #e5e7eb;
+}
+
+html.dark .ql-picker-label {
+    color: #e5e7eb !important;
+}
+
+html.dark .ql-stroke {
+    stroke: #e5e7eb !important;
+}
+
+html.dark .ql-fill {
+    fill: #e5e7eb !important;
+}
+
+html.dark .ql-picker-options {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+    color: #e5e7eb !important;
+}
+
+/* ReactQuill Layout Fix (Fill Height) */
+.quill {
+    display: flex;
+    flex-direction: column;
+}
+
+.ql-container {
+    flex: 1;
+    overflow-y: hidden;
+    height: auto !important;
+    /* Force container to fill available space */
+}
+
+.ql-editor {
+    height: 100%;
+    overflow-y: auto;
+    /* Allow scrolling inside editor */
+}
+
+/* Quill Alignment Support */
+.ql-align-center {
+    text-align: center;
+}
+
+.ql-align-right {
+    text-align: right;
+}
+
+.ql-align-justify {
+    text-align: justify;
+}
+
+.ql-align-left {
+    text-align: left;
+}
+
+/* Premium Save Button Style */
+.premium-save-btn {
+    background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 15px -3px rgba(59, 130, 246, 0.4);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.premium-save-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px -5px rgba(59, 130, 246, 0.5);
+    filter: brightness(1.1);
+}
+
+.premium-save-btn:active:not(:disabled) {
+    transform: translateY(0) scale(0.95);
+}
+
+.premium-save-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.premium-save-btn .btn-loader {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spinner 0.6s linear infinite;
+    margin-right: 8px;
+}
+
+[dir="rtl"] .premium-save-btn .btn-loader {
+    margin-right: 0;
+    margin-left: 8px;
+}
+
+@keyframes spinner {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+html.dark .premium-save-btn {
+    box-shadow: 0 4px 20px -5px rgba(99, 102, 241, 0.3);
+}

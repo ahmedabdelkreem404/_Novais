@@ -1,0 +1,83 @@
+name: novais
+description: NOVAIS - AI Course Generator Mobile App
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Navigation
+  go_router: ^14.2.0
+
+  # HTTP & API
+  dio: ^5.4.3
+  pretty_dio_logger: ^1.4.0
+
+  # Auth & Storage
+  flutter_secure_storage: ^9.0.0
+  shared_preferences: ^2.2.3
+  google_sign_in: ^6.2.1
+
+  # UI
+  google_fonts: ^6.2.1
+  cached_network_image: ^3.3.1
+  flutter_svg: ^2.0.10+1
+  shimmer: ^3.0.0
+  lottie: ^3.1.2
+
+  # Markdown & HTML
+  flutter_markdown: ^0.7.3
+  flutter_html: ^3.0.0-beta.2
+
+  # Audio
+  just_audio: ^0.9.40
+  audio_session: ^0.1.21
+  audio_service: ^0.18.15
+
+  # WebView (payments, OAuth)
+  webview_flutter: ^4.8.0
+
+  # File / Export
+  flutter_pdfview: ^1.3.2
+  path_provider: ^2.1.3
+  open_file: ^3.5.8
+  share_plus: ^10.0.0
+
+  # Device & Utils
+  device_info_plus: ^10.1.2
+  package_info_plus: ^8.0.2
+  uuid: ^4.4.2
+  url_launcher: ^6.3.0
+  intl: ^0.20.0
+
+  # Image & Picker
+  image_picker: ^1.1.2
+
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  riverpod_generator: ^2.4.0
+  build_runner: ^2.4.11
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/animations/
+
+

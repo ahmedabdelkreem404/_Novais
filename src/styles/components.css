@@ -1,0 +1,378 @@
+.card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+html.dark body .card {
+    background: var(--panel);
+}
+
+.card-hover {
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: rgba(59, 130, 246, 0.22);
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 12px;
+    /* Changed from pill to modern rounded-xl */
+    border: 1px solid transparent;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-primary:active {
+    background: #1d4ed8;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+}
+
+.btn-secondary {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-elev);
+    border-color: var(--primary-500);
+    color: var(--primary-500);
+}
+
+.btn-ghost {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--muted);
+}
+
+.btn-ghost:hover {
+    background: var(--bg-elev);
+    color: var(--text);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
+}
+
+.btn-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+    pointer-events: none;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+}
+
+.btn-md {
+    padding: 10px 20px;
+    font-size: 14px;
+    border-radius: 12px;
+}
+
+.btn-lg {
+    padding: 14px 28px;
+    font-size: 15px;
+    border-radius: 14px;
+}
+
+.btn-xl {
+    padding: 18px 36px;
+    font-size: 16px;
+    border-radius: 16px;
+}
+
+@keyframes btn-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.btn-loader {
+    animation: btn-spin 0.8s linear infinite;
+    width: 18px;
+    height: 18px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+}
+
+
+.field {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.field-control {
+    position: relative;
+}
+
+.field-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+}
+
+.error-text {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #f43f5e;
+}
+
+.input {
+    width: 100%;
+    border-radius: 12px !important;
+    border: 2px solid var(--border, #cbd5e1) !important;
+    /* Stronger default border (slate-300) */
+    background: var(--panel) !important;
+    color: var(--text) !important;
+    padding: 12px 14px !important;
+    box-shadow: var(--shadow-sm) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html.dark body .input {
+    background: var(--panel) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.input:hover {
+    border-color: #94a3b8 !important;
+    /* slate-400 - darker/clearer on hover */
+    background: #f8fafc !important;
+}
+
+html.dark body .input:hover {
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.input:focus {
+    outline: none !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15) !important;
+    /* Stronger focus ring */
+    background: var(--panel) !important;
+}
+
+/* Base class for icon padding */
+.input-with-icon {
+    /* Default logical padding */
+    padding-inline-start: 46px !important;
+}
+
+/* Explicit RTL Override: Text is Right, Icon is Right */
+/* We need padding on the RIGHT to prevent overlap */
+[dir="rtl"] .input-with-icon {
+    padding-right: 46px !important;
+    padding-left: 14px !important;
+}
+
+/* Explicit LTR Override */
+[dir="ltr"] .input-with-icon {
+    padding-left: 46px !important;
+    padding-right: 14px !important;
+}
+
+.input-icon {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    /* Default logical position */
+    inset-inline-start: 16px;
+    display: flex;
+    align-items: center;
+    color: var(--muted, #64748b);
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Force Icon to Right in RTL */
+[dir="rtl"] .input-icon {
+    right: 16px !important;
+    left: auto !important;
+}
+
+/* Force Icon to Left in LTR */
+[dir="ltr"] .input-icon {
+    left: 16px !important;
+    right: auto !important;
+}
+
+/* Override for specific LTR inputs inside RTL context */
+[dir="rtl"] input[dir="ltr"]~.input-icon {
+    inset-inline-start: auto;
+    /* Reset logical start */
+    left: 16px;
+    right: auto;
+}
+
+/* Special Case: If the input is forced LTR inside an RTL container, 
+   the icon should ideally be on the LEFT to match LTR flow, 
+   OR stay on the RIGHT to match form design. 
+   
+   If we keep icon on RIGHT (RTL flow), but text is LTR (Left align), 
+   then padding should be on RIGHT to avoid overlap if text gets long. 
+   But LTR text starts on LEFT.
+   
+   If we want icon on LEFT for LTR input:
+   - input padding-left: 46px
+   - icon left: 16px
+*/
+
+/* Let's stick to the form language direction for uniformity:
+   RTL Form -> Icon on Right.
+   Email Input -> LTR Text.
+   
+   If Email is LTR, text starts on LEFT. 
+   Icon is on RIGHT.
+   They won't overlap unless text is full width.
+   
+   BUT user screenshot shows text on RIGHT overlapping icon.
+   So specific fix for RTL mode:
+*/
+
+html.dark body .input-icon {
+    color: rgba(148, 163, 184, 0.90);
+}
+
+.h1,
+.h2,
+.h3 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+}
+
+.h1 {
+    font-size: clamp(34px, 4.6vw, 56px);
+    line-height: 1.08;
+    font-weight: 800;
+}
+
+.h2 {
+    font-size: clamp(24px, 3vw, 34px);
+    line-height: 1.16;
+    font-weight: 800;
+}
+
+.h3 {
+    font-size: 18px;
+    line-height: 1.25;
+    font-weight: 700;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+.subtle {
+    color: var(--subtle);
+}
+
+/* Standardized Toast Notifications Styling (Progress Bar Only Colors) */
+.Toastify__toast {
+    border-radius: 5px !important;
+    padding: 16px !important;
+    font-family: inherit !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid var(--border) !important;
+    background: var(--panel) !important;
+    /* Keep original background from theme */
+    color: var(--text) !important;
+}
+
+/* RTL Support for Toast Texts */
+[dir="rtl"] .Toastify__toast-body {
+    text-align: right;
+    direction: rtl;
+}
+
+/* Success Toast - Green Line */
+.Toastify__progress-bar--success {
+    background: #22c55e !important;
+}
+
+/* Info/Modification Toast - Blue Line */
+.Toastify__progress-bar--info,
+.Toastify__progress-bar--default {
+    background: #3b82f6 !important;
+}
+
+/* Error Toast - Red Line */
+.Toastify__progress-bar--error {
+    background: #ef4444 !important;
+}
+
+/* Dark Mode Shadow */
+html.dark .Toastify__toast {
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3) !important;
+}
+
+.Toastify__close-button {
+    color: var(--text) !important;
+    opacity: 0.5;
+}
+
+.Toastify__close-button:hover {
+    opacity: 0.8;
+}

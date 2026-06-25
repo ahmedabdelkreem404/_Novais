@@ -1,0 +1,813 @@
+{
+    "common": {
+        "login": "Login",
+        "signup": "Sign Up",
+        "signin": "Sign In",
+        "logout": "Logout",
+        "dashboard": "Dashboard",
+        "admin_panel": "Admin Panel",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "view": "View",
+        "loading": "Loading...",
+        "search": "Search...",
+        "actions": "Actions",
+        "status": "Status",
+        "success": "Success",
+        "server_error": "Internal server error occurred",
+        "error": "Error",
+        "content_policy_violation": "This topic violates our content policy and cannot be processed.",
+        "unauthorized": "Unauthorized access",
+        "unauthenticated": "Please login to continue",
+        "failed_to_delete": "Failed to delete the item",
+        "failed_to_save": "Failed to save the data",
+        "failed_to_update": "Failed to update the data",
+        "item_not_found": "The requested item was not found",
+        "failed_to_send_email": "Failed to send email",
+        "insufficient_credits": "Insufficient credits. Please upgrade your plan.",
+        "ai_failed": "AI Generation Failed",
+        "subtopic_not_found": "Subtopic not found",
+        "transcripts_not_supported": "Video transcripts are not supported. Please use the theory content.",
+        "payment_init_failed": "Payment initialization failed",
+        "payment_cancelled": "Payment cancelled.",
+        "subscription_cancelled": "Subscription cancelled successfully",
+        "confirm_delete": "Are you sure you want to delete this?",
+        "egp": "EGP",
+        "generate_course": "Generate Course",
+        "back_to_courses": "Back to Courses",
+        "current_image": "Current Image Set",
+        "upload_new": "Upload New Picture",
+        "features": "Features",
+        "process": "Process",
+        "admin": "Admin",
+        "back_to_home": "Back to Home",
+        "processing": "Processing...",
+        "courses_limit": "Creation Limit",
+        "remaining_courses": "Remaining Courses",
+        "all_rights_reserved": "All rights reserved.",
+        "course": "course",
+        "desktop_app": "Desktop App",
+        "toggle_theme": "Toggle Theme",
+        "page_not_found": "Page Not Found",
+        "back_home": "Back to Home",
+        "save_30": "SAVE 30%",
+        "user": "User",
+        "untitled": "Untitled Course",
+        "content_missing": "Course content missing.",
+        "invalid_data": "Invalid course data",
+        "recommended": "Recommended",
+        "free": "Free",
+        "premium": "Premium",
+        "english": "English",
+        "arabic": "Arabic",
+        "course_saved": "Course saved successfully",
+        "course_updated": "Course updated successfully",
+        "course_deleted": "Course deleted successfully",
+        "failed_to_generate_quiz": "Failed to generate quiz",
+        "link_expired": "Link expired or invalid",
+        "deleted": "Deleted successfully",
+        "content_coming_soon": "Content coming soon...",
+        "sign_in_required": "Please sign in to continue",
+        "invalid_payment_details": "Invalid payment details"
+    },
+    "error": {
+        "description": "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.",
+        "code": "NOVAIS Engine Code"
+    },
+    "nav": {
+        "home": "Home",
+        "pricing": "Pricing",
+        "dashboard": "Dashboard",
+        "courses": "Courses",
+        "about": "About",
+        "contact": "Contact",
+        "profile": "Profile",
+        "features": "Features",
+        "blog": "Blog",
+        "audio_courses": "Audio Courses",
+        "admin_panel": "Admin Panel",
+        "create": "Create",
+        "process": "Process"
+    },
+    "blog": {
+        "subtitle": "Updates, product notes, and practical tips on building better courses with AI.",
+        "article_tag": "Article",
+        "read_more": "Read More",
+        "no_articles": "No articles found",
+        "check_back": "Check back later for updates.",
+        "back": "Back to Blog"
+    },
+    "landing": {
+        "badge": "AI-POWERED COURSE CREATION",
+        "title_main": "Transform Text into",
+        "title_accent": " Complete Courses",
+        "subtitle": "Easily create personalized courses tailored to your needs. Interact with NOVAIS (your AI Learning Coach), generate courses in 23+ languages, and master skills through practice. Download courses for offline access and take notes as you go. Experience the future of learning today!",
+        "cta_start": "Start Creating Now",
+        "sections": {
+            "features": {
+                "kicker": "Features",
+                "title": "Everything You Need to Create",
+                "title_accent": "Exceptional Courses"
+            },
+            "process": {
+                "kicker": "Process",
+                "title": "Simple ",
+                "title_accent": "4-Step",
+                "subtitle": "Course Creation"
+            },
+            "reviews": {
+                "kicker": "Reviews",
+                "title": "Trusted by ",
+                "title_accent": "Educators & Learning Professionals"
+            },
+            "pricing": {
+                "kicker": "Pricing",
+                "title": "Simple, ",
+                "title_accent": "Transparent",
+                "subtitle": "Choose the plan that works best for your needs. All plans include our core AI course generation technology."
+            },
+            "cta": {
+                "title": "Transform your content into engaging courses today",
+                "subtitle": "Join thousands of educators, trainers, and content creators who are saving time and creating better learning experiences with NOVAIS."
+            }
+        },
+        "features_list": {
+            "ai": {
+                "title": "AI-Powered Generation",
+                "desc": "Our advanced AI algorithms analyze your inputs to generate comprehensive courses."
+            },
+            "types": {
+                "title": "Course Type Preferences",
+                "desc": "Choose between Image + Theory or Video + Theory formats for a personalized learning journey."
+            },
+            "quizzes": {
+                "title": "Quiz Creation",
+                "desc": "Generate relevant quizzes, assessments, and interactive elements to reinforce learning outcomes."
+            },
+            "languages": {
+                "title": "Multilanguage Courses",
+                "desc": "Generate Ai images, videos, or textual courses in 23+ multiple languages."
+            },
+            "chat": {
+                "title": "Talk to NOVAIS",
+                "desc": "Chat with your AI Learning Coach to get answers and guidance while learning."
+            },
+            "export": {
+                "title": "Expert Course",
+                "desc": "Download your generated course in various formats for offline access."
+            }
+        },
+        "steps": {
+            "topics": {
+                "title": "Enter Topics",
+                "desc": "Begin the course creation journey by entering your desired topics and a list of subtopics."
+            },
+            "preferences": {
+                "title": "Choose Preferences",
+                "desc": "Choose between Image + Theory or Video + Theory formats for a personalized learning journey."
+            },
+            "language": {
+                "title": "Choose Course Language",
+                "desc": "Choose from 23+ languages in which you want to create a course."
+            },
+            "magic": {
+                "title": "AI Magic",
+                "desc": "Watch as our AI processes your inputs to generate a customized course."
+            }
+        },
+        "testimonials": {
+            "sarah": {
+                "quote": "NOVAIS created a complex 40-hours of work on my back course. Allow user to add media real takes minutes, and the quality is real better.",
+                "role": "Content Creator, EdTech"
+            },
+            "david": {
+                "quote": "As a university professor, I was skeptical about AI-generated courses. But NOVAIS perfectly structured my research into a comprehensive course for my students.",
+                "role": "Computer Science Department"
+            },
+            "michael": {
+                "quote": "The learning tool was 10 times to create onboarding content for new employees. We've reduced development time by 80% while improving engagement metrics.",
+                "role": "Head of L&D, TechCorp"
+            },
+            "anna": {
+                "quote": "The quiz generation feature alone is worth the subscription. It creates thoughtful assessments that actually test understanding, not just memorization.",
+                "role": "Lead Instructional Designer"
+            }
+        }
+    },
+    "features_page": {
+        "title": "Powerful ",
+        "title_accent": "Features",
+        "subtitle": "Everything you need to create, learn, and master new skills. All in one intelligent platform.",
+        "list": {
+            "ai": {
+                "title": "AI Generation",
+                "desc": "Create comprehensive courses in seconds with advanced AI."
+            },
+            "lang": {
+                "title": "Multi-Language",
+                "desc": "Generate content in over 20 languages instantly."
+            },
+            "video": {
+                "title": "Video & Text",
+                "desc": "Support for both theory-based and video-enhanced learning."
+            },
+            "quiz": {
+                "title": "Smart Quizzes",
+                "desc": "Auto-generated interactive quizzes to test your knowledge."
+            },
+            "cert": {
+                "title": "Certificates",
+                "desc": "Earn verified certificates upon successful course completion."
+            },
+            "pdf": {
+                "title": "Export to PDF",
+                "desc": "Download your course materials for offline study anytime."
+            }
+        }
+    },
+    "about_page": {
+        "title": "About ",
+        "subtitle": "The cutting-edge NOVAIS Interactive Engine. Revolutionizing education through intelligent automation.",
+        "story": {
+            "title": "Our Story",
+            "p1": "At {{company}}, we believe in the transformative power of education and the endless possibilities that Artificial Intelligence unlocks.",
+            "p2": "That's why we've developed {{name}}, a revolutionary SaaS product designed to make course creation seamless, efficient, and intelligent.",
+            "p3": "We are dismantling the barriers to entry for educators and experts, allowing knowledge to be shared globally at the speed of thought."
+        },
+        "mission": {
+            "title": "Our Mission",
+            "list": {
+                "empower": {
+                    "title": "Empowerment",
+                    "desc": "Empowering educators to create exceptional learning experiences without technical hurdles."
+                },
+                "innovate": {
+                    "title": "Innovation",
+                    "desc": "Leveraging the latest AI technology to simplify and enhance the course development process."
+                },
+                "quality": {
+                    "title": "Quality",
+                    "desc": "Meticulous development ensures reliable, high-quality educational content every time."
+                }
+            }
+        },
+        "join": {
+            "title": "Join Us on the Journey",
+            "text": "Embark on a journey of innovation and educational excellence. Whether you're an educator, a professional, or an organization, we're here to support you."
+        }
+    },
+    "contact_page": {
+        "title": "Get in Touch",
+        "subtitle": "Have questions or feedback? We'd love to hear from you. Fill out the form and we'll get back to you as soon as possible.",
+        "form": {
+            "fname": "First Name",
+            "lname": "Last Name",
+            "email": "Email",
+            "phone": "Phone",
+            "message": "Message",
+            "placeholder_fname": "John",
+            "placeholder_lname": "Doe",
+            "placeholder_email": "john@example.com",
+            "placeholder_phone": "+1 234 567",
+            "placeholder_msg": "How can we help you?",
+            "submit": "Send Message"
+        }
+    },
+    "auth": {
+        "welcome_back": "Welcome back",
+        "signin_subtitle": "Access the NOVAIS Engine to continue",
+        "email_label": "Email",
+        "password_label": "Password",
+        "forgot_password": "Forgot password?",
+        "signin_btn": "Sign in",
+        "google_signin": "Sign in with Google",
+        "login_success": "Login successful",
+        "facebook_signin": "Login with Facebook",
+        "no_account": "Don't have an account?",
+        "signup_link": "Sign up",
+        "create_account": "Create Account",
+        "signup_subtitle": "Join thousands of learners today",
+        "name_label": "Full Name",
+        "first_name": "First Name",
+        "last_name": "Last Name",
+        "signup_btn": "Create Account",
+        "have_account": "Already have an account?",
+        "signin_link": "Sign in",
+        "password_requirements": "Minimum 8 characters",
+        "password_min_length": "Password must be at least 8 characters",
+        "processing": "Creating Account...",
+        "fill_fields": "Please fill all fields",
+        "or": "Or",
+        "email_placeholder": "you@example.com",
+        "name_placeholder": "Full Name",
+        "agree_terms": "I agree to the Terms and Privacy Policy",
+        "agree_toast": "Please agree to the Terms",
+        "set_new_password": "Set New Password",
+        "new_password": "New Password",
+        "confirm_password": "Confirm Password",
+        "reset_password": "Reset Password",
+        "authenticating": "Authenticating...",
+        "verification_sent": "Verification code sent to your email",
+        "verification_required": "Please verify your email address before logging in.",
+        "unauthenticated": "Unauthenticated. Please login to continue.",
+        "no_token_provided": "No token provided",
+        "token_is_valid": "Token is valid",
+        "email_not_registered": "Email address not registered",
+        "incorrect_password": "Incorrect password",
+        "email_already_verified": "Email already verified.",
+        "new_code_sent": "New verification code sent to your email.",
+        "invalid_code": "Invalid or expired verification code.",
+        "registration_success_verify": "Registration successful. Please verify your email.",
+        "device_limit_reached": "Free plan allows only one account per device.",
+        "device_id_required": "Security check failed: Device identity required.",
+        "generation_limit_reached": "Daily generation limit reached. Free accounts are limited to 1 course per 24 hours.",
+        "email_taken": "The email has already been taken.",
+        "enter_code_msg": "We sent a 6-digit code to",
+        "verify_btn": "Verify Email",
+        "resend_btn": "Resend Code",
+        "resend_in": "Resend in",
+        "back_to_signup": "Back to Signup",
+        "enter_valid_code": "Please enter the 6-digit code",
+        "code_resent": "Code resent to your email",
+        "forgot_password_title": "Forgot Password?",
+        "forgot_password_subtitle": "Enter your email and we'll send you a link to reset your password",
+        "send_reset_link": "Send Reset Link",
+        "back_to_login": "Back to Login",
+        "reset_link_sent": "Password reset link sent to your email",
+        "reset_link_failed": "Failed to send reset link",
+        "passwords_do_not_match": "Passwords do not match",
+        "password_reset_success": "Password reset successful. Please login.",
+        "enter_new_password_desc": "Please enter your new password below.",
+        "email_required": "Email is missing from the link. Please request a new password reset link."
+    },
+    "pricing": {
+        "title": "Choose Your NOVAIS Tier",
+        "subtitle": "Invest in your future with the most powerful interactive learning engine",
+        "free_plan": "Free Plan",
+        "monthly_plan": "Monthly Plan",
+        "yearly_plan": "Yearly Plan",
+        "best_seller": "Best Seller",
+        "save_more": "Save over 25% annually",
+        "current_plan": "Current Plan",
+        "subscribe_now": "Subscribe Now ⚡",
+        "get_started": "Get Started",
+        "included_in_admin": "Included in Admin Permissions",
+        "active": "Active",
+        "features": {
+            "subtopics_5": "Generate 5 Sub-Topics",
+            "subtopics_10": "Generate 10 Sub-Topics",
+            "lifetime": "Lifetime access",
+            "theory_image": "Theory & Image Course",
+            "ai_chat": "Chat with NOVAIS",
+            "languages_23": "Course In 23+ Languages",
+            "unlimited": "Create Unlimited Course",
+            "video_theory": "Video & Theory Course",
+            "full_access": "Full Platform Access",
+            "teams": "Team Collaboration",
+            "api_access": "API Access",
+            "dedicated_support": "Dedicated Support",
+            "custom_branding": "Custom Branding",
+            "credits_500": "1 Full Course (Free)",
+            "credits_3k": "3 Full Courses / Month",
+            "credits_40k": "3 Full Courses / Month",
+            "credits_10k": "Unlimited Courses / Month",
+            "credits_150k": "Unlimited Courses / Month"
+        },
+        "flexible_plans": "Flexible Plans",
+        "monthly": "Monthly",
+        "yearly": "Yearly",
+        "pro_plan": "Pro Plan",
+        "elite_plan": "Elite Plan",
+        "get_started_desc": "Explore our core features",
+        "pro_desc": "Perfect for serious learners",
+        "elite_desc": "Full power for power users",
+        "start_free": "Start for Free",
+        "popular": "Popular choice",
+        "per_month": "per month",
+        "per_year": "per year",
+        "contact_sales": "Contact Sales",
+        "faq_title": "Frequently Asked Questions",
+        "faq_1_q": "Can I cancel my subscription anytime?",
+        "faq_1_a": "Yes, you can cancel your subscription at any time from your profile settings.",
+        "faq_2_q": "Do you offer a refund?",
+        "faq_2_a": "We offer a 7-day money-back guarantee if you are not satisfied with our services."
+    },
+    "footer": {
+        "company": "Company",
+        "resources": "Resources",
+        "terms": "Terms & Conditions",
+        "privacy": "Privacy Policy",
+        "cancellation": "Cancellation Policy",
+        "refund": "Refund Policy",
+        "billing": "Billing & Pricing Policy",
+        "collapse_sidebar": "Collapse Sidebar",
+        "expand_sidebar": "Expand Sidebar",
+        "audio": "Audio",
+        "export": "Export",
+        "certificate": "Certificate",
+        "share": "Share",
+        "light": "Light",
+        "dark": "Dark",
+        "exam_btn": "Take Final Exam",
+        "exam_locked": "Complete 100% to unlock quiz.",
+        "cert_locked": "Complete 100% and pass the quiz to unlock certificate.",
+        "share_success": "Link copied to clipboard! (Valid for 30 days)",
+        "share_fail": "Failed to generate share link",
+        "load_fail": "Could not load course.",
+        "magic_title": "NOVAIS Engine Active",
+        "magic_subtitle": "Synthesizing knowledge into a structured course module for:",
+        "intensity": "Total Intensity",
+        "active": "ACTIVE",
+        "gpu_sync": "System Healthy — Latency: 42ms — GPU Cloud Synchronized",
+        "steps": {
+            "analyzing": "Analyzing Topic",
+            "analyzing_desc": "Deconstructing \"{{topic}}\"...",
+            "theory": "Personalizing Theory",
+            "theory_desc": "Creating logical content flow...",
+            "assets": "Generating Assets",
+            "assets_video": "Preparing videos and media...",
+            "assets_image": "Curating images and media...",
+            "finalizing": "Finalizing",
+            "finalizing_detail": "Preparing your curriculum..."
+        },
+        "logs": {
+            "init": "Initializing NOVAIS Core...",
+            "sync": "Syncing with educational neural nodes...",
+            "target": "Target: {{topic}}",
+            "video": "Searching for educational video segments...",
+            "image": "Curating high-quality visual assets...",
+            "analyzing": "Analyzing lesson context...",
+            "constraints": "Applying sub-topic constraints...",
+            "path": "Optimizing learning path...",
+            "outline": "Drafting initial outline...",
+            "theory": "Personalizing theory module...",
+            "examples": "Synthesizing detailed examples...",
+            "schema": "Validating JSON schema...",
+            "finalizing": "Finalizing lesson package...",
+            "success": "Generation successful!",
+            "fail": "Failed to load lesson."
+        }
+    },
+    "create_page": {
+        "title": "Create Your NOVAIS Experience",
+        "subtitle": "Transform any topic into a complete interactive experience. Just enter a topic, customize your preferences, and let the NOVAIS engine do the magic.",
+        "loading_plan": "Loading plan...",
+        "plan_suffix": "Plan",
+        "topic_label": "What do you want to learn?",
+        "topic_placeholder": "e.g. Artificial Intelligence, Python Programming...",
+        "desc_label": "Description (Optional)",
+        "desc_placeholder": "Add specific details...",
+        "desc_placeholder_free": "Upgrade to add details...",
+        "no_desc": "No descriptions added yet.",
+        "lang_label": "Experience Language",
+        "depth_label": "Experience Depth",
+        "depth_unit": "Sub-Topics",
+        "level_label": "Complexity Level",
+        "levels": {
+            "beginner": "Beginner",
+            "intermediate": "Intermediate",
+            "advanced": "Advanced",
+            "professional": "Bootcamp"
+        },
+        "format_label": "Format",
+        "types": {
+            "theory_image": "Theory & Image Course",
+            "video_theory": "Video & Theory Course"
+        },
+        "format_video_desc": "Includes AI-curated videos",
+        "format_theory_desc": "Text-based with AI images",
+        "generate_btn": "Generate Experience Now",
+        "credit_notice": "By generating, you use 1 credit from your {{plan}} Plan.",
+        "premium_modal": {
+            "title": "Go Premium",
+            "subtitle": "Access all features with a Premium upgrade.",
+            "btn_upgrade": "Upgrade Now",
+            "btn_later": "Maybe Later"
+        }
+    },
+    "admin": {
+        "welcome": "Welcome back, {{name}}",
+        "users": "Users",
+        "courses": "Courses",
+        "paid_users": "Paid Users",
+        "admins": "Admins",
+        "contacts": "Messages",
+        "manage_blogs": "Manage Blogs",
+        "plan_updated": "Plan updated successfully",
+        "user_promoted": "User promoted to admin",
+        "admin_demoted": "Admin demoted to user",
+        "cannot_delete_self": "You cannot delete your own account",
+        "user_deleted": "User account deleted successfully",
+        "user_upgraded": "User upgraded to {{plan}}",
+        "create_blog": "Create Blog",
+        "social_links": "Social Links",
+        "plans": "Subscription Plans",
+        "plan_mgmt": {
+            "loading": "Loading Plans...",
+            "fetch_fail": "Failed to fetch plans",
+            "update_success": "Plan updated successfully",
+            "update_fail": "Update failed",
+            "name_label": "Plan Name",
+            "price_label": "Price (EGP)",
+            "limit_label": "Course Limit",
+            "limit_hint": "-1 for unlimited",
+            "desc_label": "Description",
+            "price_stat": "Price",
+            "limit_stat": "Limit",
+            "no_plans": "No plans found."
+        },
+        "legal": "Legal & Terms",
+        "terms": "Terms & Conditions",
+        "privacy": "Privacy Policy",
+        "cancellation": "Cancellation Policy",
+        "refund": "Refund Policy",
+        "billing": "Billing & Pricing",
+        "toggle_theme": "Toggle Theme",
+        "tables": {
+            "user": "User",
+            "contact": "Contact",
+            "role_status": "Role & Status",
+            "actions": "Actions",
+            "no_users": "No users found in the database.",
+            "delete_user": "Delete User",
+            "course_info": "Course Info",
+            "author": "Author",
+            "type": "Type",
+            "status": "Status",
+            "no_courses": "No courses found in the database.",
+            "delete_course": "Delete Course",
+            "view": "View Details",
+            "edit": "Edit",
+            "sender": "Sender",
+            "subject_message": "Subject & Message",
+            "date": "Date",
+            "no_messages": "No contact messages found.",
+            "no_subject": "No Subject",
+            "mark_read": "Mark as Read",
+            "delete_inquiry": "Delete Inquiry",
+            "current_admins": "Current Admins",
+            "promote_users": "Promote Users",
+            "identity": "Identity",
+            "role_info": "Role Info",
+            "no_admins": "No admin accounts found.",
+            "demote": "Demote to User",
+            "no_users_promote": "No regular users available to promote.",
+            "promote": "Promote"
+        },
+        "roles": {
+            "admin": "Admin",
+            "super_admin": "Super Admin",
+            "premium": "Premium",
+            "user": "User",
+            "manual": "Manual",
+            "regular_user": "Regular User",
+            "free": "Free",
+            "pro": "Pro",
+            "elite": "Elite"
+        },
+        "course_types": {
+            "video": "Video & Text",
+            "text": "Image & Text"
+        },
+        "status": {
+            "published": "Published",
+            "draft": "Draft"
+        },
+        "dashboard": {
+            "users": "Users",
+            "courses": "Courses",
+            "monthly_revenue": "Monthly Revenue",
+            "total_revenue": "Total Revenue",
+            "user_base": "User Base",
+            "real_time": "Real-time",
+            "paid": "Paid",
+            "free": "Free",
+            "paid_users": "Paid Users",
+            "free_users": "Free Users",
+            "content_library": "Content Library",
+            "updated": "Updated",
+            "text_audio": "Text/Audio",
+            "video_courses": "Video Courses",
+            "stats": {
+                "vs_last_month": "vs last month",
+                "total_users": "Total Users",
+                "total_courses": "Total Courses"
+            },
+            "charts": {
+                "dist_analysis": "Distribution Analysis",
+                "catalog_stats": "Catalog Statistics",
+                "no_data": "No data available"
+            },
+            "blog": {
+                "control_center": "Control Center",
+                "active_instance": "Active Instance",
+                "desc": "Create and manage your platform's blog content.",
+                "no_blogs": "No blogs found. Start by creating your first post.",
+                "title": "Title",
+                "slug": "Slug",
+                "actions": "Actions",
+                "create_btn": "Create Blog",
+                "confirm_delete": "Are you sure you want to delete this blog?",
+                "post_details": "Post Details",
+                "blog_title": "Blog Title",
+                "title_placeholder": "Enter a compelling title",
+                "url_slug": "URL Slug",
+                "slug_placeholder": "blog-post-slug",
+                "content_label": "Content",
+                "content_placeholder": "Write your blog content here...",
+                "save_post": "Save Blog Post",
+                "update_post": "Update Blog Post",
+                "create_success": "Blog created successfully",
+                "create_fail": "Creation failed"
+            },
+            "policies": {
+                "terms_updated": "Terms updated successfully",
+                "privacy_updated": "Privacy Policy updated successfully",
+                "cancel_updated": "Cancellation Policy updated successfully",
+                "refund_updated": "Refund Policy updated successfully",
+                "billing_updated": "Billing Terms updated successfully",
+                "update_failed": "Failed to update",
+                "terms_placeholder_en": "Write English Terms here...",
+                "terms_placeholder_ar": "Write Arabic Terms here...",
+                "privacy_placeholder_en": "Write English Privacy Policy here...",
+                "privacy_placeholder_ar": "Write Arabic Privacy Policy here...",
+                "cancel_placeholder_en": "Write English Cancellation Policy here...",
+                "cancel_placeholder_ar": "Write Arabic Cancellation Policy here...",
+                "refund_placeholder_en": "Write English Refund Policy here...",
+                "refund_placeholder_ar": "Write Arabic Refund Policy here...",
+                "billing_placeholder_en": "Write English Billing Policy here...",
+                "billing_placeholder_ar": "Write Arabic Billing Policy here..."
+            },
+            "social_links": {
+                "title": "Social Media Links",
+                "subtitle": "Manage icons and links in the public footer",
+                "add": "Add New Link",
+                "is_active": "Active",
+                "platform": "Platform (e.g. Facebook)",
+                "url": "URL",
+                "no_links": "No social links found. Click \"Add New Link\" to start."
+            }
+        }
+    },
+    "home": {
+        "my_courses": "My Courses",
+        "subtitle": "Continue learning where you left off",
+        "generate_new": "Generate New Course"
+    },
+    "dashboard_comp": {
+        "no_courses": "No Courses Yet",
+        "empty_desc": "You haven't generated any AI courses yet. Start your learning journey today!",
+        "create_first": "Create Your First Course",
+        "ai_generated": "AI Generated",
+        "recent": "Recent",
+        "chapters": "Chapters",
+        "continue": "Continue Learning",
+        "completed": "Completed"
+    },
+    "sidebar": {
+        "progress": "Course Progress",
+        "layer": "Level",
+        "ai_core": "AI CORE",
+        "ai_sync": "AI Syncing",
+        "start_prep": "Prepare Final Lesson",
+        "applied_examples": "Applied Practice",
+        "applied_examples_desc": "Visualizing theory through real-world scenarios",
+        "prev_lesson": "Previous Lesson",
+        "next_lesson": "Next Lesson",
+        "save_exam": "Start Final Exam",
+        "notes": "Smart Notes",
+        "course_notes": "Course Notes",
+        "loading_notes": "Loading your notes...",
+        "save_note": "Save Note",
+        "no_notes": "No notes yet. Start taking notes for this course.",
+        "note_update_success": "Note updated successfully",
+        "note_save_success": "Note saved successfully",
+        "note_save_error": "Failed to save note",
+        "ready_title": "Interactive Experience",
+        "ready_desc": "Dive into immersive learning content tailored to your goals."
+    },
+    "profile": {
+        "title": "My Profile",
+        "joined": "Joined {{date}}",
+        "plan_status": "Plan Status",
+        "current_plan": "Current Plan",
+        "billing_cycle": "Billing Cycle",
+        "upgrade_btn": "Upgrade to Pro",
+        "manage_sub": "Manage Subscription",
+        "my_progress": "My Progress",
+        "courses_count": "Courses",
+        "certs_count": "Certificates",
+        "progress_msg": "Keep it up! You're doing great.",
+        "settings_security": "Settings & Security",
+        "acc_info": "Account Information",
+        "acc_info_desc": "Update your name, password and personal details",
+        "full_name": "Full Name",
+        "email_addr": "Email Address",
+        "new_password": "New Password",
+        "password_placeholder": "Leave empty to keep current",
+        "language": "Language",
+        "profile_pic": "Profile Picture",
+        "browse": "Browse",
+        "save_changes": "Save Changes",
+        "payment_methods": "Payment Methods",
+        "payment_desc": "Manage your cards and billing info",
+        "logout_app": "Logout from application",
+        "toast": {
+            "logout_success": "Logged out successfully",
+            "update_success": "Profile updated successfully",
+            "update_fail": "Failed to update profile"
+        }
+    },
+    "audio": {
+        "title": "Audio Courses",
+        "no_courses": "No Audio Courses Yet",
+        "empty_desc": "Create your first AI-generated course to listen to it.",
+        "back_to_courses": "Back to Courses",
+        "select_voice": "Select Voice",
+        "no_content": "No text content available for this lesson currently.",
+        "voices": {
+            "ar_male": "Arabic Male",
+            "ar_female": "Arabic Female",
+            "en_voice": "English Voice"
+        }
+    },
+    "subscription": {
+        "title": "Manage Subscription",
+        "view_details": "View your current plan details and billing history",
+        "current_plan": "Current Plan",
+        "active": "ACTIVE",
+        "per_month": "per month",
+        "start_date": "Start Date",
+        "next_billing": "Next Billing",
+        "payment_method": "Payment Method",
+        "sub_id": "Subscription ID",
+        "cancel_sub": "Cancel Subscription",
+        "upgrade_change": "Upgrade / Change Plan",
+        "help_contact": "Need help with your subscription?",
+        "contact_support": "Contact Support",
+        "confirm_cancel": "Are you sure you want to cancel your subscription? You will lose access to premium features.",
+        "cancel_success": "Subscription cancelled successfully",
+        "cancel_fail": "Failed to cancel subscription",
+        "load_fail": "Failed to load subscription details",
+        "loading_details": "Loading subscription details..."
+    },
+    "topics": {
+        "ai_generator": "AI Course Generator",
+        "review_desc": "Review the curriculum designed for you. Each module is crafted to take you from basics to mastery.",
+        "no_outline": "No outline available.",
+        "lessons": "Lessons",
+        "adjust_topic": "Adjust Topic",
+        "start_journey": "Start Learning Journey"
+    },
+    "media_card": {
+        "restricted": "Media access restricted by source",
+        "view_original": "View Original Source"
+    },
+    "generating": {
+        "title": "<1>NOVAIS Magic</1> in Progress",
+        "subtitle": "Synthesizing knowledge into a structured course module for:",
+        "analyzing": "Analyzing Topic",
+        "analyzing_detail": "Deconstructing \"{{topic}}\"...",
+        "structuring": "Structuring Curriculum",
+        "structuring_detail": "Creating logical modules flow...",
+        "assets": "Generating Assets",
+        "assets_detail": "Preparing images, videos and media...",
+        "finalizing": "Finalizing",
+        "finalizing_detail": "Saving to database...",
+        "intensity": "Total Intensity",
+        "active": "ACTIVE",
+        "system_status": "System Healthy — Latency: 42ms — GPU Cloud Synchronized",
+        "core_ai": "Core_AI",
+        "logs": {
+            "init": "Initializing deep learning models...",
+            "nodes": "Connecting to neural nodes...",
+            "target": "Target: {{topic}}",
+            "semantic": "Fetching semantic mappings...",
+            "constraints": "Applying sub-topic constraints...",
+            "optimizing": "Optimizing learning path...",
+            "drafting": "Drafting initial outline...",
+            "validating": "Validating JSON schema...",
+            "finalizing": "Finalizing structure..."
+        }
+    },
+    "contact": {
+        "message_sent": "Message sent successfully",
+        "reply_sent": "Reply sent successfully",
+        "contact_deleted": "Contact deleted successfully",
+        "contact_read": "Contact marked as read"
+    },
+    "certificate": {
+        "incomplete_requirement": "Incomplete requirement",
+        "quiz_failed_msg": "You must pass the final quiz with at least 60% to get a certificate.",
+        "already_issued": "Certificate already issued",
+        "generated_and_sent": "Certificate generated and sent to email"
+    },
+    "chatbot": {
+        "title": "AI Professor",
+        "placeholder": "Ask about this lesson...",
+        "welcome": "Hi! I'm your AI Professor for \"{{topic}}\". Ask me anything about this lesson or the platform! 🎓",
+        "status": "Active Helper"
+    }
+}

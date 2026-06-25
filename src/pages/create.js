@@ -1,0 +1,525 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import axios from 'axios';
+import { serverURL } from '../constants';
+import { LuPlus, LuWand, LuLayers, LuVideo, LuBookOpen, LuGlobe, LuX, LuGem, LuCheck, LuRocket, LuChevronDown } from "react-icons/lu";
+import { motion, AnimatePresence } from 'framer-motion';
+import Input from '../components/ui/Input';
+
+const languagesList = [
+    { name: "English", isPremium: false },
+    { name: "Arabic", isPremium: true },
+    { name: "Spanish", isPremium: true },
+    { name: "French", isPremium: true },
+    { name: "German", isPremium: true },
+    { name: "Italian", isPremium: true },
+    { name: "Portuguese", isPremium: true },
+    { name: "Russian", isPremium: true },
+    { name: "Japanese", isPremium: true },
+    { name: "Chinese (Simplified)", isPremium: true },
+    { name: "Hindi", isPremium: true },
+    { name: "Bengali", isPremium: true },
+    { name: "Korean", isPremium: true },
+    { name: "Turkish", isPremium: true },
+    { name: "Vietnamese", isPremium: true },
+    { name: "Polish", isPremium: true },
+    { name: "Dutch", isPremium: true },
+    { name: "Indonesian", isPremium: true },
+    { name: "Thai", isPremium: true },
+    { name: "Swedish", isPremium: true },
+    { name: "Greek", isPremium: true },
+    { name: "Czech", isPremium: true },
+    { name: "Romanian", isPremium: true },
+    { name: "Hungarian", isPremium: true },
+    { name: "Ukrainian", isPremium: true }
+];
+
+const CreateCourse = () => {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+    const [showPremiumModal, setShowPremiumModal] = useState(false);
+    const [isLangOpen, setIsLangOpen] = useState(false);
+    const langDropdownRef = useRef(null);
+
+    // Initial check from session storage first to avoid layout shift if possible
+    const [userPlan, setUserPlan] = useState(localStorage.getItem('type') || 'free');
+    const [usage, setUsage] = useState({ used: 0, limit: 1, remaining: 1 });
+    const [loadingPlan, setLoadingPlan] = useState(true);
+
+    const location = useLocation(); // Add this import if missing
+
+    // Initial State (Default or from Navigation State)
+    const [formData, setFormData] = useState({
+        topic: location.state?.topic || '',
+        subTopic: '',
+        subTopics: location.state?.subTopics || [],
+        numModules: location.state?.numModules || 5,
+        type: location.state?.type || 'Theory & Image Course',
+        language: location.state?.language || 'English',
+        level: location.state?.level || 'Beginner'
+    });
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (langDropdownRef.current && !langDropdownRef.current.contains(event.target)) {
+                setIsLangOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Fetch User Plan from DB
+    useEffect(() => {
+        const fetchUserPlan = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+
+                const res = await axios.get(`${serverURL}/auth/user-profile`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: 'application/json'
+                    }
+                });
+
+                if (res.data) {
+                    const user = res.data.user || res.data;
+                    const planUsage = res.data.subscription_usage || { used: 0, limit: 1, remaining: 1 };
+
+                    // Normalize plan name
+                    const rawPlan = user.sub_status || user.type || 'free';
+                    const plan = String(rawPlan).toLowerCase();
+
+                    console.log("Create Page: Usage Fetched:", planUsage); // Debugging
+
+                    setUserPlan(plan);
+                    setUsage(planUsage);
+                    localStorage.setItem('type', plan);
+                }
+            } catch (error) {
+                console.error("Failed to fetch plan:", error);
+            } finally {
+                setLoadingPlan(false);
+            }
+        };
+
+        fetchUserPlan();
+    }, []);
+
+    // Check if plan is NOT free to grant full access
+    const isPremiumUser = (
+        userPlan && (
+            userPlan.toLowerCase().includes('pro') ||
+            userPlan.toLowerCase().includes('elite') ||
+            userPlan.toLowerCase().includes('admin')
+        )
+    ) || localStorage.getItem('role') === 'admin';
+
+    // Premium Check Handler
+    const handleFeatureClick = (feature, value) => {
+        // If user is premium, allow everything immediately
+        if (isPremiumUser) {
+            setFormData({ ...formData, [feature]: value });
+            if (feature === 'language') setIsLangOpen(false);
+            return;
+        }
+
+        // Free Plan Limits Definitions
+        const isPremiumFeature =
+            (feature === 'numModules' && value > 5) ||
+            (feature === 'type' && value.includes('Video')) ||
+            (feature === 'language' && value !== 'English') ||
+            (feature === 'level' && value === 'Professional');
+
+        if (isPremiumFeature) {
+            setShowPremiumModal(true);
+            if (feature === 'language') setIsLangOpen(false);
+        } else {
+            setFormData({ ...formData, [feature]: value });
+            if (feature === 'language') setIsLangOpen(false);
+        }
+    };
+
+    const addSubTopic = () => {
+        if (formData.subTopic.trim()) {
+            setFormData({
+                ...formData,
+                subTopics: [...formData.subTopics, formData.subTopic],
+                subTopic: ''
+            });
+        }
+    };
+
+    const handleGenerate = () => {
+        if (!formData.topic) return;
+
+        // Strict limit check: If no courses remaining and not unlimited (-1)
+        if (usage.remaining === 0 && usage.limit !== -1) {
+            setShowPremiumModal(true);
+            return;
+        }
+
+        navigate('/generating', { state: { ...formData } });
+    };
+
+    const navigateToPricing = () => {
+        navigate('/dashboard/pricing');
+        setShowPremiumModal(false);
+    };
+
+    return (
+        <div className="w-full max-w-5xl mx-auto p-4 md:p-10 font-sans text-gray-900 dark:text-white pb-32 relative">
+
+            {/* Header */}
+            <div className="text-center mb-12">
+                <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 mb-4 animate-in fade-in slide-in-from-bottom-2">
+                    {t('create_page.title')}
+                </h1>
+                <p className="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto text-base">
+                    {t('create_page.subtitle')}
+                </p>
+
+                {/* User Plan Badge (Dynamic) */}
+                <div className="mt-4 flex justify-center">
+                    {loadingPlan ? (
+                        <span className="text-xs text-gray-400 animate-pulse">{t('create_page.loading_plan')}</span>
+                    ) : (
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 
+                            ${isPremiumUser ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}>
+                            {isPremiumUser ? <LuGem size={12} /> : <LuLayers size={12} />}
+                            {userPlan} ({usage.used}/{usage.limit === -1 ? '∞' : usage.limit}) {t('create_page.plan_suffix')}
+                        </span>
+                    )}
+                </div>
+            </div>
+
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-gray-800 p-5 md:p-8 lg:p-10 shadow-lg shadow-gray-100/50 dark:shadow-none animate-in fade-in zoom-in-95 duration-500">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+
+                    {/* Left Column: Topics */}
+                    <div className="space-y-8">
+                        <div>
+                            <label className="text-sm font-bold text-gray-900 dark:text-white mb-2 block uppercase tracking-wide">
+                                {t('create_page.topic_label')}
+                            </label>
+                            <Input
+                                placeholder={t('create_page.topic_placeholder')}
+                                value={formData.topic}
+                                onChange={e => setFormData({ ...formData, topic: e.target.value })}
+                                className="!bg-gray-50 dark:!bg-[#151515] !border-gray-200 dark:!border-gray-700 !py-4 !text-base focus:!ring-blue-500/20"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-bold text-gray-900 dark:text-white mb-2 block uppercase tracking-wide flex items-center gap-2">
+                                {t('create_page.desc_label')}
+                            </label>
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder={t('create_page.desc_placeholder')}
+                                    value={formData.subTopic}
+                                    onChange={e => setFormData({ ...formData, subTopic: e.target.value })}
+                                    onKeyDown={e => e.key === 'Enter' && addSubTopic()}
+                                    className="!bg-gray-50 dark:!bg-[#151515] !border-gray-200 dark:!border-gray-700 focus:!ring-blue-500/20"
+                                />
+                                <button
+                                    onClick={addSubTopic}
+                                    className="bg-gray-900 dark:bg-gray-700 hover:bg-black dark:hover:bg-gray-600 text-white px-5 rounded-xl flex items-center justify-center transition-colors relative group"
+                                >
+                                    <LuPlus size={20} />
+                                </button>
+                            </div>
+
+                            {/* Tags */}
+                            <div className="flex flex-wrap gap-2 mt-4 min-h-[40px]">
+                                {formData.subTopics.length > 0 ? formData.subTopics.map((st, i) => (
+                                    <span key={i} className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 px-3 py-1.5 rounded-lg text-xs font-bold border border-blue-100 dark:border-blue-800 flex items-center gap-2 animate-in fade-in zoom-in">
+                                        {st}
+                                        <button
+                                            onClick={() => setFormData({ ...formData, subTopics: formData.subTopics.filter((_, idx) => idx !== i) })}
+                                            className="hover:text-blue-800 dark:hover:text-white transition-colors"
+                                        >
+                                            ×
+                                        </button>
+                                    </span>
+                                )) : (
+                                    <span className="text-sm text-gray-400 italic">{t('create_page.no_desc')}</span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Custom Language Dropdown */}
+                        <div className="relative" ref={langDropdownRef}>
+                            <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block uppercase tracking-wide flex items-center gap-2">
+                                <LuGlobe className="text-blue-500" /> {t('create_page.lang_label')}
+                            </label>
+
+                            <div
+                                onClick={() => setIsLangOpen(!isLangOpen)}
+                                className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-xl p-3.5 md:p-4 text-sm font-medium flex items-center justify-between cursor-pointer hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
+                            >
+                                <span className="text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                                    {formData.language}
+                                    {/* Show gem if selected language is premium and user is NOT premium */}
+                                    {!isPremiumUser && formData.language !== 'English' && <LuGem className="text-amber-500 text-xs" />}
+                                </span>
+                                <LuChevronDown className={`transition-transform duration-200 ${isLangOpen ? 'rotate-180' : ''}`} />
+                            </div>
+
+                            <AnimatePresence>
+                                {isLangOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="absolute z-50 w-full mt-2 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-gray-800 rounded-xl shadow-xl max-h-60 overflow-y-auto custom-scrollbar"
+                                    >
+                                        {languagesList.map((lang, idx) => {
+                                            // Only show premium badge if language is premium AND user is free
+                                            const showPremiumBadge = !isPremiumUser && lang.isPremium;
+
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    onClick={() => handleFeatureClick('language', lang.name)}
+                                                    className={`p-3 text-sm font-medium cursor-pointer flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors
+                                                        ${formData.language === lang.name ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600' : 'text-gray-700 dark:text-gray-300'}
+                                                    `}
+                                                >
+                                                    <span className="flex items-center gap-2">
+                                                        {lang.name}
+                                                    </span>
+                                                    {showPremiumBadge ? (
+                                                        <span className="flex items-center gap-1 text-[10px] font-bold text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full">
+                                                            <LuGem size={10} /> PREMIUM
+                                                        </span>
+                                                    ) : !lang.isPremium ? (
+                                                        <span className="text-[10px] font-bold text-green-500 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">
+                                                            FREE
+                                                        </span>
+                                                    ) : null}
+                                                </div>
+                                            )
+                                        })}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </div>
+
+                    {/* Right Column: Configuration */}
+                    <div className="space-y-8">
+
+                        {/* Complexity Level */}
+                        <div>
+                            <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block uppercase tracking-wide flex items-center gap-2">
+                                <LuRocket className="text-blue-500" /> {t('create_page.level_label')}
+                            </label>
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 items-stretch">
+                                {['Beginner', 'Intermediate', 'Advanced', 'Professional'].map(val => {
+                                    const isProfessional = val === 'Professional';
+                                    const showLock = !isPremiumUser && isProfessional;
+
+                                    return (
+                                        <div
+                                            key={val}
+                                            onClick={() => handleFeatureClick('level', val)}
+                                            className={`relative flex flex-col items-center justify-center p-1.5 md:p-2 border rounded-xl cursor-pointer transition-all duration-200 gap-1 text-center h-full min-h-[72px] md:min-h-[80px] overflow-hidden
+                                                ${formData.level === val
+                                                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-500 ring-1 ring-blue-500'
+                                                    : 'bg-white dark:bg-[#151515] border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'}
+                                            `}
+                                        >
+                                            <span className={`text-[8.5px] sm:text-[10px] md:text-xs font-bold uppercase break-normal whitespace-normal leading-tight tracking-tighter px-0.5 ${formData.level === val ? 'text-blue-700 dark:text-blue-300' : 'text-gray-500'}`}>
+                                                {t(`create_page.levels.${val.toLowerCase()}`)}
+                                            </span>
+                                            {showLock && (
+                                                <LuGem className="text-amber-500" size={12} />
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Modules Count */}
+                        <div>
+                            <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block uppercase tracking-wide flex items-center gap-2">
+                                <LuLayers className="text-blue-500" /> {t('create_page.depth_label')}
+                            </label>
+                            <div className="grid grid-cols-2 gap-4">
+                                {[5, 10].map(val => (
+                                    <div
+                                        key={val}
+                                        onClick={() => handleFeatureClick('numModules', val)}
+                                        className={`relative group p-3 md:p-4 border rounded-xl cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-2 text-center min-h-[90px] md:min-h-[100px]
+                                            ${formData.numModules === val
+                                                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-500 ring-1 ring-blue-500'
+                                                : 'bg-white dark:bg-[#151515] border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'}
+                                        `}
+                                    >
+                                        <span className={`text-2xl font-black ${formData.numModules === val ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'}`}>
+                                            {val}
+                                        </span>
+                                        <span className={`text-xs font-bold uppercase ${formData.numModules === val ? 'text-blue-700 dark:text-blue-300' : 'text-gray-500'}`}>
+                                            {t('create_page.depth_unit')}
+                                        </span>
+                                        {!isPremiumUser && val > 5 && (
+                                            <div className="absolute top-2 right-2 text-amber-500">
+                                                <LuGem size={16} />
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Course Type */}
+                        <div>
+                            <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block uppercase tracking-wide flex items-center gap-2">
+                                <LuBookOpen className="text-blue-500" /> {t('create_page.format_label')}
+                            </label>
+                            <div className="grid grid-cols-1 gap-3">
+                                {['Theory & Image Course', 'Video & Theory Course'].map(val => {
+                                    const isFeaturePremium = val.includes('Video');
+                                    const showLock = !isPremiumUser && isFeaturePremium;
+
+                                    return (
+                                        <div
+                                            key={val}
+                                            onClick={() => handleFeatureClick('type', val)}
+                                            className={`relative flex items-center p-3 md:p-4 border rounded-xl cursor-pointer transition-all duration-200 gap-4
+                                                ${formData.type === val
+                                                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-500 ring-1 ring-blue-500'
+                                                    : 'bg-white dark:bg-[#151515] border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'}
+                                            `}
+                                        >
+                                            <div className={`p-2 rounded-lg ${formData.type === val ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
+                                                {val.includes('Video') ? <LuVideo size={20} /> : <LuBookOpen size={20} />}
+                                            </div>
+                                            <div>
+                                                <span className={`block text-sm font-bold ${formData.type === val ? 'text-blue-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                                                    {t(`create_page.types.${val.includes('Video') ? 'video_theory' : 'theory_image'}`)}
+                                                </span>
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                    {val.includes('Video') ? t('create_page.format_video_desc') : t('create_page.format_theory_desc')}
+                                                </span>
+                                            </div>
+                                            {formData.type === val && (
+                                                <div className="ml-auto w-4 h-4 rounded-full bg-blue-500 border-2 border-white dark:border-gray-900 shadow-sm"></div>
+                                            )}
+                                            {showLock && (
+                                                <div className="ml-auto flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
+                                                    <LuGem size={10} /> Premium
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                {/* Submit Action */}
+                <div className="mt-12 pt-8 border-t border-gray-100 dark:border-gray-800">
+                    <button
+                        onClick={handleGenerate}
+                        disabled={!formData.topic}
+                        className="w-full relative group overflow-hidden bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl flex items-center justify-center gap-3 font-bold text-lg shadow-xl shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transform hover:-translate-y-1"
+                    >
+                        <span className="relative z-10 flex items-center gap-2">
+                            <LuWand size={24} className={formData.topic ? "animate-pulse" : ""} />
+                            {t('create_page.generate_btn')}
+                        </span>
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[length:200%_auto] animate-gradient"></div>
+                    </button>
+                    <p className="text-center text-xs text-gray-400 mt-4">
+                        {t('create_page.credit_notice', { plan: userPlan.toLowerCase().includes('premium') ? t('common.premium') : t('common.free') })}
+                    </p>
+                </div>
+            </div>
+
+            {/* Premium Upgrade Modal */}
+            <AnimatePresence>
+                {showPremiumModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowPremiumModal(false)}
+                            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                        />
+
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative z-10"
+                        >
+                            {/* Header Gradient */}
+                            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white relative h-32 flex flex-col justify-center">
+                                <button
+                                    onClick={() => setShowPremiumModal(false)}
+                                    className="absolute top-5 end-5 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all z-20"
+                                >
+                                    <LuX size={20} />
+                                </button>
+                                <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-[10px] bg-white/20 w-fit px-3 py-1.5 rounded-full mb-3 backdrop-blur-md border border-white/20 shadow-lg">
+                                    <LuGem size={14} className="text-amber-300" /> Premium
+                                </div>
+                                <h2 className="text-2xl font-bold leading-tight">{t('create_page.premium_modal.title')}</h2>
+                                <p className="text-blue-100/80 text-sm mt-1">{t('create_page.premium_modal.subtitle')}</p>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-6 space-y-4">
+                                <ul className="space-y-3">
+                                    <li className="flex items-center gap-3 text-gray-700 dark:text-gray-200 font-medium">
+                                        <LuCheck className="text-amber-500" size={20} />
+                                        <span>{t('pricing.features.unlimited')}</span>
+                                    </li>
+                                    <li className="flex items-center gap-3 text-gray-700 dark:text-gray-200 font-medium">
+                                        <LuRocket className="text-purple-500" size={20} />
+                                        <span>{t('pricing.features.video_theory')}</span>
+                                    </li>
+                                    <li className="flex items-center gap-3 text-gray-700 dark:text-gray-200 font-medium">
+                                        <LuGlobe className="text-blue-500" size={20} />
+                                        <span>{t('pricing.features.languages_23')}</span>
+                                    </li>
+                                    <li className="flex items-center gap-3 text-gray-700 dark:text-gray-200 font-medium">
+                                        <LuBookOpen className="text-teal-500" size={20} />
+                                        <span>{t('pricing.features.pdf_export')}</span>
+                                    </li>
+                                </ul>
+
+                                <div className="pt-4 flex gap-3">
+                                    <button
+                                        onClick={navigateToPricing}
+                                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-blue-500/30"
+                                    >
+                                        {t('create_page.premium_modal.btn_upgrade')}
+                                    </button>
+                                    <button
+                                        onClick={() => setShowPremiumModal(false)}
+                                        className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white py-3 rounded-xl font-bold transition-all"
+                                    >
+                                        {t('create_page.premium_modal.btn_later')}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+        </div>
+    );
+};
+
+export default CreateCourse;

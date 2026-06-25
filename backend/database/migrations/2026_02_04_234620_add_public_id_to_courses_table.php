@@ -1,0 +1,41 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('courses', function (Blueprint $table) {
+            $table->string('public_id', 32)->nullable()->after('id')->unique();
+        });
+
+        // Populate existing courses
+        $courses = DB::table('courses')->get();
+        foreach ($courses as $course) {
+            DB::table('courses')
+                ->where('id', $course->id)
+                ->update(['public_id' => bin2hex(random_bytes(12))]); // 24 chars
+        }
+        
+        // Make it required after population
+        Schema::table('courses', function (Blueprint $table) {
+            $table->string('public_id', 32)->nullable(false)->change();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('courses', function (Blueprint $table) {
+            $table->dropColumn('public_id');
+        });
+    }
+};

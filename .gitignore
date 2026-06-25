@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+build/
+dist/
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+
+# Large binaries - use GitHub Releases instead
+*.exe
+*.dmg
+*.msi
+*.AppImage
+*.deb
+*.rpm
+public/downloads/
+backend/public/downloads/
+backend/public/AiCourse_Installer.exe
+backend/public/AiCourse_Installer.txt
+
+# Build artifacts
+backend/public/static/
+
+# Misc
+.codex-run-logs/
+novais_production/
+ui/screencapture-*.pdf
