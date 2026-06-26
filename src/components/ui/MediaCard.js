@@ -26,6 +26,16 @@ const MediaCard = ({ media, type = 'image', selectedSubtopic }) => {
     }, [media, type]);
 
     const currentImageUrl = imageUrls[currentImageIndex];
+    const videoUrl = typeof media?.url === 'string' ? media.url : '';
+    const isSupportedVideoUrl = /^https?:\/\//i.test(videoUrl) &&
+        (videoUrl.includes('youtube.com/watch?v=') || videoUrl.includes('youtu.be/') || videoUrl.includes('youtube.com/embed/'));
+    const embedUrl = isSupportedVideoUrl
+        ? (videoUrl.includes('youtube.com/watch?v=')
+            ? videoUrl.replace('watch?v=', 'embed/')
+            : (videoUrl.includes('youtu.be/')
+                ? videoUrl.replace('youtu.be/', 'youtube.com/embed/')
+                : videoUrl))
+        : '';
 
     // Handle image load error - try next fallback
     const handleImageError = () => {
@@ -206,17 +216,23 @@ const MediaCard = ({ media, type = 'image', selectedSubtopic }) => {
             >
                 {/* Video Player */}
                 <div className="aspect-video bg-black relative">
-                    <iframe
-                        src={media.url.includes('youtube.com/watch?v=')
-                            ? media.url.replace('watch?v=', 'embed/')
-                            : (media.url.includes('youtu.be/')
-                                ? media.url.replace('youtu.be/', 'youtube.com/embed/')
-                                : media.url)}
-                        className="w-full h-full"
-                        title={media.title || "Educational Video"}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                    />
+                    {embedUrl ? (
+                        <iframe
+                            src={embedUrl}
+                            className="w-full h-full"
+                            title={media.title || "Educational Video"}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        />
+                    ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center text-white">
+                            <LuYoutube size={36} className="text-white/70" />
+                            <div>
+                                <p className="text-sm font-bold">Video unavailable</p>
+                                <p className="text-xs text-white/70 mt-1">The lesson content is still available below.</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Video Metadata Card */}

@@ -19,7 +19,12 @@ class ExportController extends Controller
             $query->where('user_id', $user->id);
         }
 
-        $course = $query->findOrFail($courseId);
+        $course = $query
+            ->where(function ($courseQuery) use ($courseId) {
+                $courseQuery->where('id', $courseId)
+                    ->orWhere('public_id', $courseId);
+            })
+            ->firstOrFail();
         
         $pdf = Pdf::loadView('exports.course_pdf', compact('course', 'user'));
         return $pdf->download(Str::slug($course->title) . '.pdf');

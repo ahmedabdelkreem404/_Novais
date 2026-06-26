@@ -100,6 +100,10 @@ class CourseService
             throw new \Exception("Failed to generate course course after retries. Please try again.");
         }
 
+        $outline = $this->validator->normalize($outline, [
+            'topic' => $data['topic'] ?? 'Untitled Course',
+        ]);
+
         // Token deduction removed - replaced by course-limit system
 /*
         if (method_exists($this->aiProvider, 'getLastUsage')) {
@@ -123,6 +127,10 @@ class CourseService
     {
         // Use the new generateOutline method
         $outline = $this->generateOutline($data, $userId);
+
+        $outline = $this->validator->normalize($outline, [
+            'topic' => $data['topic'] ?? 'Untitled Course',
+        ]);
 
         $courseTitle = $outline['title'] ?? ($data['topic'] ?? 'Untitled Course');
         $photoUrl = $outline['cover_image'] ?? null;
