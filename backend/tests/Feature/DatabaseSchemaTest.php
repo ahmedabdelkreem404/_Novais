@@ -40,4 +40,15 @@ class DatabaseSchemaTest extends TestCase
         $this->assertContains('payments_user_id_status_index', $paymentIndexes);
         $this->assertContains('subscriptions_user_id_status_index', $subscriptionIndexes);
     }
+
+    public function test_chat_table_exists(): void
+    {
+        $this->assertTrue(Schema::hasTable('chats'));
+        $this->assertTrue(Schema::hasColumns('chats', [
+            'user_id',
+            'course_id',
+            'role',
+            'message',
+        ]));
+    }
 }
