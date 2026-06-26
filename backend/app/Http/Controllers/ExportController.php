@@ -34,7 +34,12 @@ class ExportController extends Controller
             $query->where('user_id', $user->id);
         }
 
-        $course = $query->findOrFail($courseId);
+        $course = $query
+            ->where(function ($courseQuery) use ($courseId) {
+                $courseQuery->where('id', $courseId)
+                    ->orWhere('public_id', $courseId);
+            })
+            ->firstOrFail();
 
         if (!class_exists(\ZipArchive::class)) {
             return response()->json(['message' => 'PPT export requires the PHP zip extension'], 500);
