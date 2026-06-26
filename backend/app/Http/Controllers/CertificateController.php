@@ -14,7 +14,11 @@ class CertificateController extends Controller
     public function generate($courseId)
     {
         $user = Auth::user();
-        $course = Course::with('lessons')->findOrFail($courseId);
+        $course = Course::with('lessons')
+            ->where('id', $courseId)
+            ->orWhere('public_id', $courseId)
+            ->firstOrFail();
+
         if ($course->user_id !== $user->id && $user->role !== 'admin') {
             return response()->json(['error' => 'common.unauthorized'], 403);
         }
