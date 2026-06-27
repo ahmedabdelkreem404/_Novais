@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   // Primary / Accent (Tailwind Blue-600)
@@ -47,26 +46,21 @@ class AppTheme {
     final muted = isDark ? AppColors.darkMuted : AppColors.lightMuted;
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
 
-    final baseTextTheme = GoogleFonts.outfitTextTheme(TextTheme(
+    final baseTextTheme = TextTheme(
       titleLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: text),
       titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: text),
       bodyLarge: TextStyle(fontSize: 16, color: text),
       bodyMedium: TextStyle(fontSize: 14, color: text),
       bodySmall: TextStyle(fontSize: 12, color: muted),
       labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: text),
-    ));
+    );
 
     final textTheme = baseTextTheme.copyWith(
-      displayLarge: GoogleFonts.plusJakartaSans(
-          fontSize: 40, fontWeight: FontWeight.w700, color: text),
-      displayMedium: GoogleFonts.plusJakartaSans(
-          fontSize: 32, fontWeight: FontWeight.w700, color: text),
-      headlineLarge: GoogleFonts.plusJakartaSans(
-          fontSize: 28, fontWeight: FontWeight.w700, color: text),
-      headlineMedium: GoogleFonts.plusJakartaSans(
-          fontSize: 22, fontWeight: FontWeight.w600, color: text),
-      headlineSmall: GoogleFonts.plusJakartaSans(
-          fontSize: 18, fontWeight: FontWeight.w600, color: text),
+      displayLarge: TextStyle(fontSize: 40, fontWeight: FontWeight.w700, color: text),
+      displayMedium: TextStyle(fontSize: 32, fontWeight: FontWeight.w700, color: text),
+      headlineLarge: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: text),
+      headlineMedium: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: text),
+      headlineSmall: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: text),
     );
 
     return ThemeData(
@@ -91,7 +85,7 @@ class AppTheme {
         elevation: 0,
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: GoogleFonts.plusJakartaSans(
+        titleTextStyle: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: text,

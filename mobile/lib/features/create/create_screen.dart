@@ -111,20 +111,22 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
     final isPro = user?.isPro == true;
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
+      backgroundColor: isDark ? const Color(0xFF050816) : const Color(0xFFF8FAFC),
+      body: ListView(
+        padding: EdgeInsets.zero,
+        children: [
           // Header
-          SliverToBoxAdapter(
-             child: Padding(
+          Padding(
                padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
                child: Column(
                  children: [
                     Text(l10n.t('create_page.title'),
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontFamily: 'PlusJakartaSans', 
                             fontWeight: FontWeight.w800,
                             fontSize: 28, // Matches web 3xl/4xl scaling slightly down for mobile
+                            color: isDark ? Colors.white : const Color(0xFF111827),
                             height: 1.2)),
                     const SizedBox(height: 8),
                     ShaderMask(
@@ -160,16 +162,14 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                     ),
                  ],
                ),
-             ),
           ),
           
-          SliverToBoxAdapter(
-            child: Container(
+          Container(
               margin: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF161616) : Colors.white,
+                color: isDark ? const Color(0xFF0F172A) : Colors.white,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: isDark ? Colors.white10 : Colors.grey[200]!),
+                border: Border.all(color: isDark ? Colors.white24 : Colors.grey[200]!),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withAlpha(isDark ? 0 : 10),
@@ -353,7 +353,6 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

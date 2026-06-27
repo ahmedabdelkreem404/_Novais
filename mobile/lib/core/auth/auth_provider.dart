@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -16,6 +17,24 @@ final apiClientProvider = Provider<ApiClient>((ref) {
   final storage = ref.watch(storageProvider);
   return ApiClient(storage: storage);
 });
+
+Future<String?> _safeRead(FlutterSecureStorage storage, String key) async {
+  try {
+    return await storage.read(key: key);
+  } on PlatformException {
+    await storage.deleteAll();
+    return null;
+  }
+}
+
+Future<void> _safeWrite(FlutterSecureStorage storage, String key, String value) async {
+  try {
+    await storage.write(key: key, value: value);
+  } on PlatformException {
+    await storage.deleteAll();
+    await storage.write(key: key, value: value);
+  }
+}
 
 // ─── Theme ───────────────────────────────────────────────────────────────────
 
@@ -64,7 +83,7 @@ class LocaleNotifier extends StateNotifier<Locale> {
     state = Locale(lang);
     await prefs.setString('language', lang);
     const storage = FlutterSecureStorage();
-    await storage.write(key: 'language', value: lang);
+    await _safeWrite(storage, 'language', lang);
   }
 }
 
@@ -112,7 +131,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _checkToken() async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _safeRead(_storage, 'jwt_token');
     if (token == null) {
       state = state.copyWith(status: AuthStatus.unauthenticated);
       return;
@@ -128,10 +147,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<String> _getDeviceId() async {
-    String? deviceId = await _storage.read(key: 'device_id');
+    String? deviceId = await _safeRead(_storage, 'device_id');
     if (deviceId == null) {
       deviceId = const Uuid().v4();
-      await _storage.write(key: 'device_id', value: deviceId);
+      await _safeWrite(_storage, 'device_id', deviceId);
     }
     return deviceId;
   }
@@ -145,7 +164,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         'device_id': deviceId,
       });
       final token = res.data['token'] ?? res.data['access_token'];
-      await _storage.write(key: 'jwt_token', value: token.toString());
+      await _safeWrite(_storage, 'jwt_token', token.toString());
       final user = AppUser.fromJson(res.data['user'] ?? {});
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
       return true;
@@ -164,7 +183,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final res = await _apiClient.dio.post('/auth/register', data: payload);
       final token = res.data['token'] ?? res.data['access_token'];
       if (token != null) {
-        await _storage.write(key: 'jwt_token', value: token.toString());
+        await _safeWrite(_storage, 'jwt_token', token.toString());
         final user = AppUser.fromJson(res.data['user'] ?? {});
         state = state.copyWith(status: AuthStatus.authenticated, user: user);
       } else {

@@ -7,7 +7,10 @@ import 'package:novais/main.dart';
 void main() {
   testWidgets('App starts without crashing', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: NovaisApp()));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
     // App initializes without throwing
     expect(find.byType(MaterialApp), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

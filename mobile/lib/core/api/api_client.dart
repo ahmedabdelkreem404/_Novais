@@ -1,8 +1,27 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
 
 const String _kDeviceIdKey = 'device_id';
+
+Future<String?> _safeRead(FlutterSecureStorage storage, String key) async {
+  try {
+    return await storage.read(key: key);
+  } on PlatformException {
+    await storage.deleteAll();
+    return null;
+  }
+}
+
+Future<void> _safeWrite(FlutterSecureStorage storage, String key, String value) async {
+  try {
+    await storage.write(key: key, value: value);
+  } on PlatformException {
+    await storage.deleteAll();
+    await storage.write(key: key, value: value);
+  }
+}
 
 class ApiClient {
   static const String _baseUrl = String.fromEnvironment(
@@ -38,11 +57,11 @@ class _AuthInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _safeRead(_storage, 'jwt_token');
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
     }
-    final lang = await _storage.read(key: 'language') ?? 'en';
+    final lang = await _safeRead(_storage, 'language') ?? 'en';
     options.headers['Accept-Language'] = lang;
     handler.next(options);
   }
@@ -63,10 +82,10 @@ class _DeviceInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    String? deviceId = await _storage.read(key: _kDeviceIdKey);
+    String? deviceId = await _safeRead(_storage, _kDeviceIdKey);
     if (deviceId == null) {
       deviceId = const Uuid().v4();
-      await _storage.write(key: _kDeviceIdKey, value: deviceId);
+      await _safeWrite(_storage, _kDeviceIdKey, deviceId);
     }
     options.headers['X-Device-ID'] = deviceId;
     handler.next(options);

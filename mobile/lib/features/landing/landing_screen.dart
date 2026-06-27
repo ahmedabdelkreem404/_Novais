@@ -655,7 +655,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
 
         // Plan cards
         _PlanCard(
-          name: free['name'] ?? 'Free Plan',
+          name: _planName(free, 'Free Plan'),
           price: '0',
           currency: 'EGP',
           period: '',
@@ -667,7 +667,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
         ),
         const SizedBox(height: 12),
         _PlanCard(
-          name: pro['name'] ?? 'Pro Plan',
+          name: _planName(pro, 'Pro Plan'),
           price: _billing == 'monthly'
               ? (pro['price_egp'] ?? 149).toString()
               : ((pro['price_egp'] ?? 149) * 10).toString(),
@@ -681,7 +681,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
         ),
         const SizedBox(height: 12),
         _PlanCard(
-          name: elite['name'] ?? 'Elite Plan',
+          name: _planName(elite, 'Elite Plan'),
           price: _billing == 'monthly'
               ? (elite['price_egp'] ?? 80).toString()
               : ((elite['price_egp'] ?? 80) * 10).toString(),
@@ -697,10 +697,24 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
     );
   }
 
+  String _planName(Map<String, dynamic> plan, String fallback) {
+    final rawName = plan['name'];
+    if (rawName is String && rawName.trim().isNotEmpty) {
+      return rawName;
+    }
+    if (rawName is Map) {
+      final translated = rawName['en'] ?? rawName['ar'];
+      if (translated != null && translated.toString().trim().isNotEmpty) {
+        return translated.toString();
+      }
+    }
+    return fallback;
+  }
+
   List<String> _planFeatures(Map<String, dynamic> plan, String slug) {
     final rawFeatures = plan['features'];
     if (rawFeatures is Map && rawFeatures['en'] is List) {
-      return (rawFeatures['en'] as List).cast<String>();
+      return (rawFeatures['en'] as List).map((feature) => feature.toString()).toList();
     }
     final limit = plan['course_limit'];
     if (slug == 'free') {

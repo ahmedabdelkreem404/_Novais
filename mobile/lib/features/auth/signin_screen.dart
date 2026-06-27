@@ -27,6 +27,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       return;
     }
 
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _loading = true);
     try {
       final success = await ref.read(authProvider.notifier).login(
