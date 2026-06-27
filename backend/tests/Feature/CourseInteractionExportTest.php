@@ -87,6 +87,45 @@ class CourseInteractionExportTest extends TestCase
         $this->assertValidPptxResponse($response);
     }
 
+    public function test_pdf_export_works_with_public_id(): void
+    {
+        $user = User::factory()->create();
+        $course = $this->createCourse($user);
+
+        $this->actingAsApi($user)
+            ->get("/api/courses/{$course->public_id}/export/pdf")
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_non_admin_user_cannot_export_another_users_pdf(): void
+    {
+        $owner = User::factory()->create();
+        $attacker = User::factory()->create();
+        $course = $this->createCourse($owner);
+
+        $this->actingAsApi($attacker)
+            ->get("/api/courses/{$course->public_id}/export/pdf")
+            ->assertNotFound();
+    }
+
+    public function test_admin_can_export_another_users_pdf_and_ppt(): void
+    {
+        $owner = User::factory()->create();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $course = $this->createCourse($owner);
+
+        $this->actingAsApi($admin)
+            ->get("/api/courses/{$course->public_id}/export/pdf")
+            ->assertOk();
+
+        $response = $this->actingAsApi($admin)
+            ->get("/api/courses/{$course->public_id}/export/ppt")
+            ->assertOk();
+
+        $this->assertValidPptxResponse($response);
+    }
+
     public function test_ppt_export_works_with_public_id(): void
     {
         $user = User::factory()->create();

@@ -461,8 +461,8 @@ const Course = () => {
         <div dir={layoutDir} className={`h-screen flex flex-col font-sans transition-colors duration-300 overflow-hidden selection:bg-blue-100 dark:selection:bg-blue-900/40 ${showStars ? 'bg-transparent' : 'bg-gray-50 dark:bg-[#0f0f0f]'} text-[#222] dark:text-gray-200`}>
 
             {/* Header */}
-            <header className="h-[72px] flex-none border-b border-gray-200/50 dark:border-gray-800 flex items-center justify-between px-4 md:px-6 bg-white/80 dark:bg-[#0f0f0f]/80 backdrop-blur-xl z-50 sticky top-0 transition-all duration-300">
-                <div className="flex items-center gap-3 md:gap-5">
+            <header className="h-[72px] flex-none border-b border-gray-200/50 dark:border-gray-800 flex items-center justify-between px-2 sm:px-4 md:px-6 bg-white/80 dark:bg-[#0f0f0f]/80 backdrop-blur-xl z-50 sticky top-0 transition-all duration-300">
+                <div className="flex items-center gap-2 md:gap-5">
                     {/* Sidebar Toggle - Always Visible */}
                     <button
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -472,7 +472,7 @@ const Course = () => {
                         {isSidebarOpen ? <LuX size={24} /> : <LuMenu size={24} />}
                     </button>
 
-                    <div className="w-[38px] h-[38px] flex-shrink-0 drop-shadow-sm">
+                    <div className="hidden min-[360px]:block w-[38px] h-[38px] flex-shrink-0 drop-shadow-sm">
                         <CircularProgressbar
                             value={percentage}
                             text={`${percentage}%`}

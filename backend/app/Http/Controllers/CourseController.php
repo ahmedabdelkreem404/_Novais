@@ -9,14 +9,17 @@ use App\Services\CourseService;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\CurriculumValidator;
 
 class CourseController extends Controller
 {
     protected $courseService;
+    protected $curriculumValidator;
 
-    public function __construct(CourseService $courseService)
+    public function __construct(CourseService $courseService, CurriculumValidator $curriculumValidator)
     {
         $this->courseService = $courseService;
+        $this->curriculumValidator = $curriculumValidator;
     }
 
     public function index()
@@ -90,6 +93,12 @@ class CourseController extends Controller
             // But we need to create the Course record and Lessons.
             
             $contentData = json_decode($request->content, true);
+            if (!is_array($contentData)) {
+                $contentData = [];
+            }
+            $contentData = $this->curriculumValidator->normalize($contentData, [
+                'mainTopic' => $request->mainTopic,
+            ]);
             $userId = auth('api')->id(); // Use Auth::id instead of request->user for security
             
             $course = Course::create([
@@ -103,10 +112,7 @@ class CourseController extends Controller
             
             // We should also populate lessons table for better querying/management
             // Iterate topics: check mainTopic key OR standardized keys like 'chapters' or 'topics'
-            $topics = $contentData[$request->mainTopic] ?? 
-                      $contentData[strtolower($request->mainTopic)] ?? 
-                      $contentData[strtoupper($request->mainTopic)] ?? 
-                      ($contentData['chapters'] ?? ($contentData['topics'] ?? null));
+            $topics = $contentData['chapters'] ?? null;
 
             if ($topics && is_array($topics)) {
                  foreach ($topics as $topic) {
