@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Interfaces\AIProviderInterface;
 use App\Services\MediaResolverService;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Auth;
 
 class AIController extends Controller
 {
@@ -190,6 +191,12 @@ class AIController extends Controller
             $course = \App\Models\Course::where('id', $courseId)
                 ->orWhere('public_id', $courseId)
                 ->firstOrFail();
+
+            $user = Auth::user();
+            if ($course->user_id !== $user->id && $user->role !== 'admin') {
+                return response()->json(['error' => 'common.unauthorized'], 403);
+            }
+
             $metadata = $course->metadata;
 
             // 2. Find Subtopic & Update
@@ -532,6 +539,18 @@ class AIController extends Controller
                 // 4. Save to DB
                 $course->metadata = $metadata;
                 $course->save();
+
+                $lesson = \App\Models\Lesson::where('course_id', $course->id)
+                    ->where('topic_title', $chapterTitle)
+                    ->where('title', $subtopicTitle)
+                    ->first();
+
+                if ($lesson) {
+                    $lesson->update([
+                        'content' => $newContent['content'] ?? ($newContent['theory'] ?? $lesson->content),
+                        'metadata' => $newContent['metadata'] ?? ($lesson->metadata ?? []),
+                    ]);
+                }
 
                 return response()->json([
                     'success' => true,

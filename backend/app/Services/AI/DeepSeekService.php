@@ -711,6 +711,22 @@ SYSTEM;
                     $statusCode = $e->getResponse()->getStatusCode();
                 }
 
+                if (
+                    $expectJson
+                    && $attempt < $maxRetries
+                    && (
+                        str_starts_with($e->getMessage(), 'Invalid JSON response:')
+                        || str_starts_with($e->getMessage(), 'Failed to return a JSON object')
+                    )
+                ) {
+                    $attempt++;
+                    $temperature = 0.2;
+                    $prompt .= "\n\nYour previous response was not valid JSON. Return strict JSON only. Do not include markdown fences, comments, or unescaped quotes inside strings.";
+                    Log::warning("AI JSON parse failed. Retrying with stricter JSON instructions. (Attempt $attempt)");
+                    usleep(500000);
+                    continue;
+                }
+
                 // Retry on 503 (Overloaded) and 429 (Rate Limit)
                 if (($statusCode === 503 || $statusCode === 429) && $attempt < $maxRetries) {
                     $attempt++;

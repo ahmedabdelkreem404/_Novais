@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\User;
+use App\Interfaces\AIProviderInterface;
 use App\Services\AI\DeepSeekService;
+use App\Services\MediaResolverService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
@@ -136,6 +138,82 @@ class CourseInteractionExportTest extends TestCase
             ->assertOk();
 
         $this->assertValidPptxResponse($response);
+    }
+
+    public function test_generate_lesson_updates_matching_lesson_row_for_exports(): void
+    {
+        $user = User::factory()->create(['remaining_credits' => 500]);
+        $course = $this->createCourse($user, [
+            'title' => 'Real Content Course',
+            'type' => 'Text & Image Course',
+            'metadata' => [
+                'title' => 'Real Content Course',
+                'chapters' => [[
+                    'title' => 'Chapter One',
+                    'subtopics' => [[
+                        'title' => 'Generated Lesson',
+                    ]],
+                ]],
+            ],
+        ]);
+        $lesson = $course->lessons()->first();
+        $lesson->update([
+            'topic_title' => 'Chapter One',
+            'title' => 'Generated Lesson',
+            'content' => null,
+        ]);
+
+        $this->mock(AIProviderInterface::class, function ($mock) {
+            $mock->shouldReceive('generateLessonContent')->once()->andReturn([
+                'content' => 'This is real generated lesson content with useful educational detail.',
+                'examples' => 'Example one.',
+                'media_queries' => ['images' => []],
+            ]);
+        });
+
+        $this->mock(MediaResolverService::class, function ($mock) {
+            $mock->shouldReceive('resolveImagesMultiple')->zeroOrMoreTimes()->andReturn([]);
+            $mock->shouldReceive('resolveImages')->zeroOrMoreTimes()->andReturn(null);
+        });
+
+        $this->actingAsApi($user)
+            ->postJson('/api/generate-lesson', [
+                'course_id' => $course->public_id,
+                'chapter_title' => 'Chapter One',
+                'subtopic_title' => 'Generated Lesson',
+                'language' => 'English',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.content', 'This is real generated lesson content with useful educational detail.');
+
+        $this->assertDatabaseHas('lessons', [
+            'id' => $lesson->id,
+            'content' => 'This is real generated lesson content with useful educational detail.',
+        ]);
+    }
+
+    public function test_non_admin_user_cannot_generate_lesson_for_another_users_course(): void
+    {
+        $owner = User::factory()->create();
+        $attacker = User::factory()->create();
+        $course = $this->createCourse($owner, [
+            'metadata' => [
+                'title' => 'Private Course',
+                'chapters' => [[
+                    'title' => 'Private Chapter',
+                    'subtopics' => [['title' => 'Private Lesson']],
+                ]],
+            ],
+        ]);
+
+        $this->actingAsApi($attacker)
+            ->postJson('/api/generate-lesson', [
+                'course_id' => $course->public_id,
+                'chapter_title' => 'Private Chapter',
+                'subtopic_title' => 'Private Lesson',
+                'language' => 'English',
+            ])
+            ->assertForbidden();
     }
 
     public function test_non_admin_user_cannot_export_another_users_ppt(): void
