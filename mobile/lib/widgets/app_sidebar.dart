@@ -60,6 +60,7 @@ class AppSidebar extends ConsumerWidget {
                     width: 48,
                     height: 48,
                     child: IconButton(
+                      key: const Key('drawer_close_button'),
                       tooltip: 'Close menu',
                       icon: Icon(Icons.close,
                           color: isDark ? Colors.white70 : Colors.black54),
@@ -107,10 +108,11 @@ class AppSidebar extends ConsumerWidget {
 
                 // Generate Course Button
                 ElevatedButton(
-                  onPressed: () {
+                  key: const Key('drawer_create_button'),
+                  onPressed: () async {
                     final router = GoRouter.of(context);
-                    Navigator.of(context).pop();
-                    Future.microtask(() {
+                    await Navigator.of(context).maybePop();
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
                       router.go('/create');
                     });
                   },

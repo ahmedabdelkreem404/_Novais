@@ -70,6 +70,7 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(width: 12),
               ElevatedButton.icon(
+                key: const Key('dashboard_create_button'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -114,6 +115,7 @@ class HomeScreen extends ConsumerWidget {
                     title: l10n.t('no_courses'),
                     subtitle: l10n.t('start_generating'),
                     action: NvButton(
+                      key: const Key('dashboard_empty_create_button'),
                       label: l10n.t('create_course'),
                       width: 220,
                       onTap: () => _openCreate(context),

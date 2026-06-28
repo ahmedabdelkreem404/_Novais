@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -11,14 +12,14 @@ import '../../models/course.dart';
 import '../../widgets/widgets.dart';
 
 final _courseDetailProvider =
-    FutureProvider.family<Course, int>((ref, id) async {
+    FutureProvider.family<Course, String>((ref, id) async {
   final api = ref.watch(apiClientProvider);
   final res = await api.dio.get(ApiEndpoints.course(id));
   return Course.fromJson(res.data);
 });
 
 class CourseScreen extends ConsumerStatefulWidget {
-  final int courseId;
+  final String courseId;
   const CourseScreen({super.key, required this.courseId});
 
   @override
@@ -30,6 +31,9 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
   late TabController _tabCtrl;
   int _currentLesson = 0;
   bool _drawerOpen = false;
+  final Map<int, Lesson> _loadedLessons = {};
+  final Set<int> _loadingLessonIds = {};
+  final Set<int> _failedLessonIds = {};
 
   @override
   void initState() {
@@ -61,9 +65,24 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
     );
   }
 
-  Widget _buildCourse(BuildContext context, AppLocalizations l10n, Course course) {
+  Widget _buildCourse(
+      BuildContext context, AppLocalizations l10n, Course course) {
     final lessons = course.lessons;
-    final lesson = lessons.isNotEmpty ? lessons[_currentLesson] : null;
+    final baseLesson = lessons.isNotEmpty ? lessons[_currentLesson] : null;
+    final lesson = baseLesson == null
+        ? null
+        : (_loadedLessons[baseLesson.id] ?? baseLesson);
+    final hasLessonContent =
+        lesson?.content != null && lesson!.content!.trim().isNotEmpty;
+
+    if (baseLesson != null &&
+        !hasLessonContent &&
+        !_loadingLessonIds.contains(baseLesson.id) &&
+        !_failedLessonIds.contains(baseLesson.id)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadLessonContent(course, baseLesson);
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -115,30 +134,58 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(lesson.title,
-                                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                        fontFamily: 'PlusJakartaSans',
-                                        fontWeight: FontWeight.w700)),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(
+                                            fontFamily: 'PlusJakartaSans',
+                                            fontWeight: FontWeight.w700)),
                                 const SizedBox(height: 16),
                                 if (lesson.imageUrl != null) ...[
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
                                     child: Image.network(lesson.imageUrl!,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => const SizedBox()),
+                                        errorBuilder: (_, __, ___) =>
+                                            const SizedBox()),
                                   ),
                                   const SizedBox(height: 16),
                                 ],
-                                if (lesson.content != null)
+                                if (hasLessonContent)
                                   MarkdownBody(
                                     data: lesson.content!,
                                     styleSheet: MarkdownStyleSheet(
-                                      p: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.7),
-                                      h2: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                          fontFamily: 'PlusJakartaSans',
-                                          fontWeight: FontWeight.w700),
+                                      p: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(height: 1.7),
+                                      h2: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
+                                              fontFamily: 'PlusJakartaSans',
+                                              fontWeight: FontWeight.w700),
                                       code: TextStyle(
-                                          backgroundColor: AppColors.primary.withAlpha(25),
+                                          backgroundColor:
+                                              AppColors.primary.withAlpha(25),
                                           fontFamily: 'monospace'),
+                                    ),
+                                  ),
+                                if (!hasLessonContent &&
+                                    !_failedLessonIds.contains(lesson.id))
+                                  const Padding(
+                                    padding: EdgeInsets.only(top: 16),
+                                    child: NvLoading(
+                                        message: 'Loading lesson content...'),
+                                  ),
+                                if (!hasLessonContent &&
+                                    _failedLessonIds.contains(lesson.id))
+                                  const Padding(
+                                    padding: EdgeInsets.only(top: 16),
+                                    child: NvEmptyState(
+                                      icon: Icons.error_outline,
+                                      title: 'Failed to load lesson content',
+                                      subtitle: 'Please reopen this lesson.',
                                     ),
                                   ),
                               ],
@@ -152,7 +199,8 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surface,
                         border: Border(
-                          top: BorderSide(color: Theme.of(context).dividerColor),
+                          top:
+                              BorderSide(color: Theme.of(context).dividerColor),
                         ),
                       ),
                       child: Row(children: [
@@ -168,7 +216,8 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           child: Text('${_currentLesson + 1}/${lessons.length}',
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                              style: const TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w600)),
                         ),
                         Expanded(
                           child: ElevatedButton.icon(
@@ -185,17 +234,19 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
               ),
 
               // ── AI Chat ────────────────────────────────────────────
-              _ChatTab(courseId: widget.courseId),
+              _ChatTab(courseId: course.id),
 
               // ── Notes ──────────────────────────────────────────────
-              _NotesTab(courseId: widget.courseId),
+              _NotesTab(courseId: course.id),
             ],
           ),
 
           // ── Lesson Drawer (right side) ─────────────────────────────
           if (_drawerOpen && course.lessons.isNotEmpty)
             Positioned(
-              top: 0, right: 0, bottom: 0,
+              top: 0,
+              right: 0,
+              bottom: 0,
               width: MediaQuery.of(context).size.width * 0.75,
               child: GestureDetector(
                 onTap: () {}, // prevent close on tap inside
@@ -212,7 +263,8 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                                 style: Theme.of(context).textTheme.titleLarge),
                             IconButton(
                               icon: const Icon(Icons.close),
-                              onPressed: () => setState(() => _drawerOpen = false),
+                              onPressed: () =>
+                                  setState(() => _drawerOpen = false),
                             ),
                           ],
                         ),
@@ -226,8 +278,12 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                             final l = course.lessons[i];
                             final isActive = i == _currentLesson;
                             return ListTile(
+                              key: i == 0
+                                  ? const Key('lesson_card')
+                                  : Key('lesson_card_$i'),
                               selected: isActive,
-                              selectedTileColor: AppColors.primary.withAlpha(25),
+                              selectedTileColor:
+                                  AppColors.primary.withAlpha(25),
                               leading: CircleAvatar(
                                 radius: 14,
                                 backgroundColor: isActive
@@ -235,14 +291,19 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                                     : AppColors.primary.withAlpha(25),
                                 child: Text('${i + 1}',
                                     style: TextStyle(
-                                        color: isActive ? Colors.white : AppColors.primary,
-                                        fontSize: 12, fontWeight: FontWeight.w700)),
+                                        color: isActive
+                                            ? Colors.white
+                                            : AppColors.primary,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700)),
                               ),
                               title: Text(l.title,
                                   maxLines: 2,
                                   style: TextStyle(
                                       fontSize: 13,
-                                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w400)),
+                                      fontWeight: isActive
+                                          ? FontWeight.w700
+                                          : FontWeight.w400)),
                               onTap: () {
                                 setState(() {
                                   _currentLesson = i;
@@ -262,6 +323,30 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _loadLessonContent(Course course, Lesson lesson) async {
+    if (!mounted || _loadingLessonIds.contains(lesson.id)) return;
+    setState(() => _loadingLessonIds.add(lesson.id));
+
+    try {
+      final api = ref.read(apiClientProvider);
+      final res = await api.dio.get(
+        ApiEndpoints.lesson(widget.courseId, lesson.id),
+        options: Options(receiveTimeout: const Duration(minutes: 3)),
+      );
+      final loaded = Lesson.fromJson(res.data);
+      if (!mounted) return;
+      setState(() => _loadedLessons[lesson.id] = loaded);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _failedLessonIds.add(lesson.id));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loadingLessonIds.remove(lesson.id));
+      }
+    }
   }
 }
 
@@ -294,7 +379,10 @@ class _ChatTabState extends ConsumerState<_ChatTab> {
       final list = res.data as List? ?? [];
       setState(() {
         _messages = list
-            .map((m) => {'role': m['role'].toString(), 'content': m['content'].toString()})
+            .map((m) => {
+                  'role': m['role'].toString(),
+                  'content': m['content'].toString()
+                })
             .toList();
       });
     } catch (_) {}
@@ -358,13 +446,17 @@ class _ChatTabState extends ConsumerState<_ChatTab> {
                         padding: EdgeInsets.symmetric(vertical: 8),
                         child: Row(children: [
                           CircleAvatar(
-                            radius: 16, backgroundColor: AppColors.primary,
-                            child: Icon(Icons.auto_awesome, size: 14, color: Colors.white),
+                            radius: 16,
+                            backgroundColor: AppColors.primary,
+                            child: Icon(Icons.auto_awesome,
+                                size: 14, color: Colors.white),
                           ),
                           SizedBox(width: 10),
                           SizedBox(
-                            width: 20, height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: AppColors.primary),
                           ),
                         ]),
                       );
@@ -375,19 +467,23 @@ class _ChatTabState extends ConsumerState<_ChatTab> {
                       padding: const EdgeInsets.symmetric(vertical: 6),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment:
-                            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+                        mainAxisAlignment: isUser
+                            ? MainAxisAlignment.end
+                            : MainAxisAlignment.start,
                         children: [
                           if (!isUser) ...[
                             const CircleAvatar(
-                              radius: 16, backgroundColor: AppColors.primary,
-                              child: Icon(Icons.auto_awesome, size: 14, color: Colors.white),
+                              radius: 16,
+                              backgroundColor: AppColors.primary,
+                              child: Icon(Icons.auto_awesome,
+                                  size: 14, color: Colors.white),
                             ),
                             const SizedBox(width: 8),
                           ],
                           Flexible(
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 10),
                               decoration: BoxDecoration(
                                 color: isUser
                                     ? AppColors.primary
@@ -400,12 +496,14 @@ class _ChatTabState extends ConsumerState<_ChatTab> {
                                 ),
                                 border: isUser
                                     ? null
-                                    : Border.all(color: Theme.of(context).dividerColor),
+                                    : Border.all(
+                                        color: Theme.of(context).dividerColor),
                               ),
                               child: Text(m['content'] ?? '',
                                   style: TextStyle(
                                       color: isUser ? Colors.white : null,
-                                      fontSize: 14, height: 1.5)),
+                                      fontSize: 14,
+                                      height: 1.5)),
                             ),
                           ),
                         ],
@@ -418,7 +516,8 @@ class _ChatTabState extends ConsumerState<_ChatTab> {
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
+            border:
+                Border(top: BorderSide(color: Theme.of(context).dividerColor)),
           ),
           child: Row(children: [
             Expanded(
@@ -426,7 +525,8 @@ class _ChatTabState extends ConsumerState<_ChatTab> {
                 controller: _msgCtrl,
                 decoration: InputDecoration(
                   hintText: l10n.t('type_message'),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
                 onSubmitted: (_) => _send(),
                 maxLines: null,
@@ -533,7 +633,10 @@ class _NotesTabState extends ConsumerState<_NotesTab> {
               ),
             ),
             const SizedBox(width: 8),
-            ElevatedButton(onPressed: _save, child: Text(l10n.t('save'))),
+            ElevatedButton(
+                key: const Key('create_save_button'),
+                onPressed: _save,
+                child: Text(l10n.t('save'))),
           ]),
         ),
       ],

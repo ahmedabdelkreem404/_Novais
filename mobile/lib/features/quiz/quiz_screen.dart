@@ -9,7 +9,7 @@ import '../../models/user.dart';
 import '../../widgets/widgets.dart';
 
 class QuizScreen extends ConsumerStatefulWidget {
-  final int courseId;
+  final String courseId;
   const QuizScreen({super.key, required this.courseId});
   @override
   ConsumerState<QuizScreen> createState() => _QuizScreenState();
@@ -80,7 +80,9 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    if (_loading) return const Scaffold(body: NvLoading(message: 'Loading quiz...'));
+    if (_loading) {
+      return const Scaffold(body: NvLoading(message: 'Loading quiz...'));
+    }
 
     if (_questions.isEmpty) {
       return Scaffold(
@@ -106,7 +108,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${l10n.t('question')} ${_current + 1} ${l10n.t('of')} ${_questions.length}'),
+        title: Text(
+            '${l10n.t('question')} ${_current + 1} ${l10n.t('of')} ${_questions.length}'),
         leading: BackButton(onPressed: () => context.pop()),
       ),
       body: Column(
@@ -129,7 +132,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       NvBadge(
-                        label: '${l10n.t('score')}: $_score/${_questions.length}',
+                        label:
+                            '${l10n.t('score')}: $_score/${_questions.length}',
                         color: AppColors.success,
                       ),
                     ],
@@ -140,14 +144,17 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                          colors: [AppColors.gradientStart, AppColors.gradientEnd],
-                          begin: Alignment.topLeft, end: Alignment.bottomRight),
+                      gradient: const LinearGradient(colors: [
+                        AppColors.gradientStart,
+                        AppColors.gradientEnd
+                      ], begin: Alignment.topLeft, end: Alignment.bottomRight),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(q.question,
                         style: const TextStyle(
-                            color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
                             height: 1.5)),
                   ),
                   const SizedBox(height: 24),
@@ -180,23 +187,37 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                           color: bg ?? Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                              color: border ?? Theme.of(context).dividerColor, width: 1.5),
+                              color: border ?? Theme.of(context).dividerColor,
+                              width: 1.5),
                         ),
                         child: Row(children: [
                           CircleAvatar(
                             radius: 14,
-                            backgroundColor: (border ?? Theme.of(context).dividerColor).withAlpha(38),
+                            backgroundColor:
+                                (border ?? Theme.of(context).dividerColor)
+                                    .withAlpha(38),
                             child: Text(String.fromCharCode(65 + idx),
                                 style: TextStyle(
-                                    fontSize: 12, fontWeight: FontWeight.w700,
-                                    color: border ?? Theme.of(context).colorScheme.onSurface)),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: border ??
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .onSurface)),
                           ),
                           const SizedBox(width: 12),
-                          Expanded(child: Text(opt, style: const TextStyle(fontSize: 14, height: 1.4))),
+                          Expanded(
+                              child: Text(opt,
+                                  style: const TextStyle(
+                                      fontSize: 14, height: 1.4))),
                           if (_answered && idx == q.correctIndex)
-                            const Icon(Icons.check_circle, color: AppColors.success, size: 20),
-                          if (_answered && idx == _selected && idx != q.correctIndex)
-                            const Icon(Icons.cancel, color: AppColors.error, size: 20),
+                            const Icon(Icons.check_circle,
+                                color: AppColors.success, size: 20),
+                          if (_answered &&
+                              idx == _selected &&
+                              idx != q.correctIndex)
+                            const Icon(Icons.cancel,
+                                color: AppColors.error, size: 20),
                         ]),
                       ),
                     );
@@ -209,11 +230,17 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                         color: AppColors.primary.withAlpha(15),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Icon(Icons.lightbulb_outlined, color: AppColors.primary, size: 18),
-                        const SizedBox(width: 8),
-                        Expanded(child: Text(q.explanation!, style: const TextStyle(fontSize: 13, height: 1.5))),
-                      ]),
+                      child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.lightbulb_outlined,
+                                color: AppColors.primary, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                                child: Text(q.explanation!,
+                                    style: const TextStyle(
+                                        fontSize: 13, height: 1.5))),
+                          ]),
                     ),
                   ],
                 ],
@@ -224,7 +251,9 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
               child: NvButton(
-                label: _current < _questions.length - 1 ? l10n.t('next') : l10n.t('finish'),
+                label: _current < _questions.length - 1
+                    ? l10n.t('next')
+                    : l10n.t('finish'),
                 onTap: _next,
               ),
             ),
@@ -244,9 +273,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 100, height: 100,
+                width: 100,
+                height: 100,
                 decoration: BoxDecoration(
-                  color: (passed ? AppColors.success : AppColors.error).withAlpha(25),
+                  color: (passed ? AppColors.success : AppColors.error)
+                      .withAlpha(25),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -258,7 +289,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
               const SizedBox(height: 24),
               Text(passed ? '🎉 Well Done!' : 'Keep Practicing',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontFamily: 'PlusJakartaSans', fontWeight: FontWeight.w700)),
+                      fontFamily: 'PlusJakartaSans',
+                      fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
               Text('$_score/${_questions.length} correct ($pct%)',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -267,7 +299,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
               if (passed)
                 NvButton(
                   label: l10n.t('certificate'),
-                  onTap: () => context.pushReplacement('/certificate/${widget.courseId}'),
+                  onTap: () => context
+                      .pushReplacement('/certificate/${widget.courseId}'),
                   icon: const Icon(Icons.workspace_premium, size: 16),
                 ),
               const SizedBox(height: 12),

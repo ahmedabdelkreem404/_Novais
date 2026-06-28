@@ -10,23 +10,25 @@ class ApiEndpoints {
   static const userProfile = '/auth/user-profile';
   static const updateProfile = '/auth/user-profile';
   static const googleAuth = '/auth/google';
-  static String validateResetToken(String token) => '/auth/validate-reset-token/$token';
+  static String validateResetToken(String token) =>
+      '/auth/validate-reset-token/$token';
 
   // Courses
   static const courses = '/courses';
   static const generateCourse = '/generate-course';
-  static String course(int id) => '/courses/$id';
-  static String updateCourse(int id) => '/courses/$id';
-  static String deleteCourse(int id) => '/courses/$id';
-  static String lesson(int courseId, int lessonId) =>
+  static String course(Object id) => '/courses/$id';
+  static String updateCourse(Object id) => '/courses/$id';
+  static String deleteCourse(Object id) => '/courses/$id';
+  static String lesson(Object courseId, int lessonId) =>
       '/courses/$courseId/lessons/$lessonId';
-  static String createQuiz(int id) => '/courses/$id/quiz';
-  static String getQuizzes(int id) => '/courses/$id/quiz';
-  static String certificate(int id) => '/courses/$id/certificate';
-  static String shareLink(int id) => '/courses/$id/share';
-  static String exportPdf(int id) => '/courses/$id/export/pdf';
-  static String exportPpt(int id) => '/courses/$id/export/ppt';
-  static String chatHistory(int courseId) => '/courses/$courseId/chat/history';
+  static String createQuiz(Object id) => '/courses/$id/quiz';
+  static String getQuizzes(Object id) => '/courses/$id/quiz';
+  static String certificate(Object id) => '/courses/$id/certificate';
+  static String shareLink(Object id) => '/courses/$id/share';
+  static String exportPdf(Object id) => '/courses/$id/export/pdf';
+  static String exportPpt(Object id) => '/courses/$id/export/ppt';
+  static String chatHistory(Object courseId) =>
+      '/courses/$courseId/chat/history';
 
   // Chat
   static const chat = '/chat';

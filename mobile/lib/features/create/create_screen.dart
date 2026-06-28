@@ -212,6 +212,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                       label: 'TOPIC', icon: Icons.lightbulb_outline),
                   NvTextField(
                     label: '',
+                    fieldKey: const Key('create_topic_input'),
                     controller: _topicCtrl,
                     hint: 'e.g. Advanced Flutter Patterns',
                     maxLines: 1,
@@ -293,7 +294,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                         child: Row(children: [
                           Text(l),
                           if (isPrem && !isPro) ...[
-                            const Spacer(),
+                            const SizedBox(width: 8),
                             const Icon(Icons.workspace_premium,
                                 size: 14, color: Colors.amber),
                           ]
@@ -392,6 +393,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
+                      key: const Key('create_generate_button'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,

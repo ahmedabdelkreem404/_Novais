@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:convert';
 import '../../core/auth/auth_provider.dart';
 import '../../core/api/endpoints.dart';
 import '../../core/theme/app_theme.dart';
@@ -19,7 +20,7 @@ class _GeneratingScreenState extends ConsumerState<GeneratingScreen>
   late Animation<double> _pulse;
   String _status = 'Initializing AI...';
   int _step = 0;
-  int? _courseId;
+  Object? _courseId;
 
   final _steps = [
     'Analyzing your topic...',
@@ -32,11 +33,11 @@ class _GeneratingScreenState extends ConsumerState<GeneratingScreen>
   @override
   void initState() {
     super.initState();
-    _animCtrl = AnimationController(
-        vsync: this, duration: const Duration(seconds: 2))
-      ..repeat(reverse: true);
-    _pulse = Tween<double>(begin: 0.8, end: 1.0).animate(
-        CurvedAnimation(parent: _animCtrl, curve: Curves.easeInOut));
+    _animCtrl =
+        AnimationController(vsync: this, duration: const Duration(seconds: 2))
+          ..repeat(reverse: true);
+    _pulse = Tween<double>(begin: 0.8, end: 1.0)
+        .animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeInOut));
     _pollOrSave();
   }
 
@@ -47,9 +48,9 @@ class _GeneratingScreenState extends ConsumerState<GeneratingScreen>
   }
 
   Future<void> _pollOrSave() async {
-    // If courseData has an id already (server already generated), go directly
+    // If courseData has an id already (server already generated), go directly.
     if (widget.courseData['id'] != null) {
-      final id = widget.courseData['id'] as int;
+      final id = widget.courseData['id'];
       if (mounted) context.go('/course/$id');
       return;
     }
@@ -57,16 +58,37 @@ class _GeneratingScreenState extends ConsumerState<GeneratingScreen>
     // Animate steps while waiting
     for (int i = 0; i < _steps.length; i++) {
       if (!mounted) return;
-      setState(() { _step = i; _status = _steps[i]; });
+      setState(() {
+        _step = i;
+        _status = _steps[i];
+      });
       await Future.delayed(const Duration(seconds: 2));
     }
 
     // Save the course
     try {
       final api = ref.read(apiClientProvider);
-      // Use generateCourse endpoint to trigger AI generation
-      final res = await api.dio.post(ApiEndpoints.generateCourse, data: widget.courseData);
-      _courseId = res.data['id'];
+      final res = await api.dio
+          .post(ApiEndpoints.generateCourse, data: widget.courseData);
+      final data = res.data is Map ? Map<String, dynamic>.from(res.data) : {};
+
+      _courseId = data['id'] ?? data['courseId'] ?? data['course_id'];
+
+      final outline = data['data'];
+      if (_courseId == null && outline is Map) {
+        final saveRes = await api.dio.post(ApiEndpoints.courses, data: {
+          'mainTopic': outline['title'] ?? widget.courseData['topic'],
+          'type': widget.courseData['type'],
+          'language': widget.courseData['language'],
+          'level': widget.courseData['level'],
+          'content': jsonEncode(outline),
+        });
+        final saved = saveRes.data is Map
+            ? Map<String, dynamic>.from(saveRes.data)
+            : <String, dynamic>{};
+        _courseId = saved['courseId'] ?? saved['id'] ?? saved['course_id'];
+      }
+
       if (mounted && _courseId != null) {
         context.go('/course/$_courseId');
       }
@@ -87,7 +109,8 @@ class _GeneratingScreenState extends ConsumerState<GeneratingScreen>
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFF020617), Color(0xFF0f172a)],
-            begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
         child: SafeArea(
@@ -98,7 +121,8 @@ class _GeneratingScreenState extends ConsumerState<GeneratingScreen>
               ScaleTransition(
                 scale: _pulse,
                 child: Container(
-                  width: 120, height: 120,
+                  width: 120,
+                  height: 120,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(colors: [
@@ -108,38 +132,46 @@ class _GeneratingScreenState extends ConsumerState<GeneratingScreen>
                     boxShadow: [
                       BoxShadow(
                           color: AppColors.primary.withAlpha(25),
-                          blurRadius: 40, spreadRadius: 10),
+                          blurRadius: 40,
+                          spreadRadius: 10),
                     ],
                   ),
-                  child: const Icon(Icons.auto_awesome, color: Colors.white, size: 52),
+                  child: const Icon(Icons.auto_awesome,
+                      color: Colors.white, size: 52),
                 ),
               ),
               const SizedBox(height: 40),
               Text(l10n.t('generating'),
                   style: const TextStyle(
-                      color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
                       fontFamily: 'PlusJakartaSans')),
               const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: Text(_status,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white60, fontSize: 14)),
+                    style:
+                        const TextStyle(color: Colors.white60, fontSize: 14)),
               ),
               const SizedBox(height: 40),
               // Step indicators
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_steps.length, (i) => AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  width: i == _step ? 24 : 8,
-                  height: 8,
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  decoration: BoxDecoration(
-                    color: i <= _step ? AppColors.primary : Colors.white24,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                )),
+                children: List.generate(
+                    _steps.length,
+                    (i) => AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          width: i == _step ? 24 : 8,
+                          height: 8,
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          decoration: BoxDecoration(
+                            color:
+                                i <= _step ? AppColors.primary : Colors.white24,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        )),
               ),
               const SizedBox(height: 32),
               const CircularProgressIndicator(

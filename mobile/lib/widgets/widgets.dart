@@ -34,8 +34,11 @@ class NvButton extends StatelessWidget {
           foregroundColor: primary ? Colors.white : AppColors.primary,
           elevation: primary ? 2 : 0,
           shadowColor: primary ? AppColors.primary.withAlpha(80) : null,
-          side: primary ? null : const BorderSide(color: AppColors.primary, width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          side: primary
+              ? null
+              : const BorderSide(color: AppColors.primary, width: 1.5),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         onPressed: loading ? null : onTap,
         child: loading
@@ -49,10 +52,16 @@ class NvButton extends StatelessWidget {
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: MainAxisSize.max,
                 children: [
                   if (icon != null) ...[icon!, const SizedBox(width: 8)],
-                  Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                  Flexible(
+                    child: Text(label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w600)),
+                  ),
                 ],
               ),
       ),
@@ -65,6 +74,7 @@ class NvButton extends StatelessWidget {
 class NvTextField extends StatelessWidget {
   final String label;
   final String? hint;
+  final Key? fieldKey;
   final TextEditingController? controller;
   final bool obscure;
   final TextInputType? keyboardType;
@@ -81,6 +91,7 @@ class NvTextField extends StatelessWidget {
     super.key,
     required this.label,
     this.hint,
+    this.fieldKey,
     this.controller,
     this.obscure = false,
     this.keyboardType,
@@ -103,6 +114,7 @@ class NvTextField extends StatelessWidget {
             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         TextFormField(
+          key: fieldKey,
           controller: controller,
           obscureText: obscure,
           keyboardType: keyboardType,
@@ -145,151 +157,174 @@ class NvCourseCard extends StatelessWidget {
     final progress = _calculateProgress(course);
     final chapterCount = course.lessons.length;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF161616) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE5E7EB)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(isDark ? 50 : 15),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            )
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image Section
-            Expanded(
-              flex: 4,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: course.imageUrl != null
-                        ? Image.network(course.imageUrl!, fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _placeholder())
-                        : _placeholder(),
-                  ),
-                  // Gradient Overlay
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.black.withAlpha(150)],
-                        stops: const [0.6, 1.0],
+    return Semantics(
+      label: 'course_card',
+      button: true,
+      child: GestureDetector(
+        key: const Key('course_card'),
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF161616) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+                color:
+                    isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE5E7EB)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(isDark ? 50 : 15),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              )
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image Section
+              Expanded(
+                flex: 4,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ClipRRect(
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(16)),
+                      child: course.imageUrl != null
+                          ? Image.network(course.imageUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _placeholder())
+                          : _placeholder(),
+                    ),
+                    // Gradient Overlay
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(16)),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withAlpha(150)
+                          ],
+                          stops: const [0.6, 1.0],
+                        ),
                       ),
                     ),
-                  ),
-                  // Badges
-                  Positioned(
-                    bottom: 10,
-                    left: 10,
-                    right: 10,
-                    child: Row(
-                      children: [
-                        _Badge(
-                          text: (course.type ?? 'Interactive'),
-                          color: const Color(0xFF2563EB), // Blue-600
-                          textColor: Colors.white,
-                        ),
-                        // Level badge could go here if we had it in model
-                      ],
+                    // Badges
+                    Positioned(
+                      bottom: 10,
+                      left: 10,
+                      right: 10,
+                      child: Row(
+                        children: [
+                          _Badge(
+                            text: (course.type ?? 'Interactive'),
+                            color: const Color(0xFF2563EB), // Blue-600
+                            textColor: Colors.white,
+                          ),
+                          // Level badge could go here if we had it in model
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            
-            // Content Section
-            Expanded(
-              flex: 3,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+
+              // Content Section
+              Expanded(
+                flex: 3,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        course.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          height: 1.2,
+                          fontFamily: 'PlusJakartaSans',
+                        ),
+                      ),
+                      Column(
+                        children: [
+                          // Progress Bar
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: progress / 100,
+                              backgroundColor:
+                                  isDark ? Colors.white10 : Colors.grey[200],
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                  AppColors.primary),
+                              minHeight: 6,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Footer Stats
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('$progress% Complete',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[500],
+                                      fontWeight: FontWeight.w500)),
+                              Text('$chapterCount Chapters',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[500],
+                                      fontWeight: FontWeight.w500)),
+                            ],
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              ),
+
+              // Footer Action
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  border: Border(
+                      top: BorderSide(
+                          color: isDark
+                              ? const Color(0xFF2A2A2A)
+                              : const Color(0xFFF3F4F6))),
+                ),
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      course.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        height: 1.2,
-                        fontFamily: 'PlusJakartaSans',
-                      ),
-                    ),
-                    
-                    Column(
-                      children: [
-                        // Progress Bar
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: progress / 100,
-                            backgroundColor: isDark ? Colors.white10 : Colors.grey[200],
-                            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                            minHeight: 6,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        
-                        // Footer Stats
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('$progress% Complete',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: isDark ? Colors.grey[400] : Colors.grey[500],
-                                  fontWeight: FontWeight.w500)),
-                            Text('$chapterCount Chapters',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: isDark ? Colors.grey[400] : Colors.grey[500],
-                                  fontWeight: FontWeight.w500)),
-                          ],
-                        ),
-                      ],
+                    const Text('Continue',
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary)),
+                    CircleAvatar(
+                      radius: 12,
+                      backgroundColor: AppColors.primary.withAlpha(20),
+                      child: const Icon(Icons.play_arrow,
+                          size: 14, color: AppColors.primary),
                     )
                   ],
                 ),
               ),
-            ),
-            
-            // Footer Action
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                border: Border(top: BorderSide(
-                  color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF3F4F6))),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Continue',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary)),
-                  CircleAvatar(
-                    radius: 12,
-                    backgroundColor: AppColors.primary.withAlpha(20),
-                    child: const Icon(Icons.play_arrow, size: 14, color: AppColors.primary),
-                  )
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -299,17 +334,17 @@ class NvCourseCard extends StatelessWidget {
     return Container(
       color: AppColors.primary.withAlpha(20),
       child: const Center(
-        child: Icon(Icons.image_not_supported_outlined, 
-          size: 40, color: Colors.grey),
+        child: Icon(Icons.image_not_supported_outlined,
+            size: 40, color: Colors.grey),
       ),
     );
   }
-  
+
   int _calculateProgress(Course c) {
     if (c.lessons.isEmpty) return 0;
     // Mock calculation since we don't have 'done' status in simple Lesson model yet
     // In real app, iterate lessons and check completion
-    return 0; 
+    return 0;
   }
 }
 
@@ -317,8 +352,9 @@ class _Badge extends StatelessWidget {
   final String text;
   final Color color;
   final Color textColor;
-  
-  const _Badge({required this.text, required this.color, required this.textColor});
+
+  const _Badge(
+      {required this.text, required this.color, required this.textColor});
 
   @override
   Widget build(BuildContext context) {
@@ -333,12 +369,12 @@ class _Badge extends StatelessWidget {
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(text.toUpperCase(),
-            style: TextStyle(
-              color: textColor,
-              fontSize: 9,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0.5,
-            )),
+              style: TextStyle(
+                color: textColor,
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.5,
+              )),
         ),
       ),
     );
@@ -352,7 +388,8 @@ class NvGradientHeader extends StatelessWidget {
   final String? subtitle;
   final Widget? trailing;
 
-  const NvGradientHeader({super.key, required this.title, this.subtitle, this.trailing});
+  const NvGradientHeader(
+      {super.key, required this.title, this.subtitle, this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -360,35 +397,34 @@ class NvGradientHeader extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 60, 20, 32),
       // No background here, just text gradient usually, but preserving container logic
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start, 
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: ShaderMask(
-                  shaderCallback: (bounds) => const LinearGradient(
-                    colors: [AppColors.gradientStart, AppColors.gradientEnd],
-                  ).createShader(bounds),
-                  child: Text(title,
-                      style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white, // Required for shader
-                          fontFamily: 'PlusJakartaSans')),
-                ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  colors: [AppColors.gradientStart, AppColors.gradientEnd],
+                ).createShader(bounds),
+                child: Text(title,
+                    style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white, // Required for shader
+                        fontFamily: 'PlusJakartaSans')),
               ),
-              if (trailing != null) trailing!,
-            ],
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 6),
-            Text(subtitle!,
-                style: TextStyle(
-                  fontSize: 14, 
-                  color: Theme.of(context).colorScheme.onSurface.withAlpha(150))),
+            ),
+            if (trailing != null) trailing!,
           ],
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 6),
+          Text(subtitle!,
+              style: TextStyle(
+                  fontSize: 14,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withAlpha(150))),
+        ],
       ]),
     );
   }
@@ -453,19 +489,24 @@ class NvEmptyState extends StatelessWidget {
               color: AppColors.primary.withAlpha(20),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 40, color: AppColors.primary.withAlpha(180)),
+            child:
+                Icon(icon, size: 40, color: AppColors.primary.withAlpha(180)),
           ),
           const SizedBox(height: 20),
           Text(title,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
           if (subtitle != null) ...[
             const SizedBox(height: 8),
             Text(subtitle!,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontSize: 14,
-                    color: Theme.of(context).colorScheme.onSurface.withAlpha(128))),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withAlpha(128))),
           ],
           if (action != null) ...[const SizedBox(height: 24), action!],
         ]),
@@ -493,7 +534,8 @@ class NvBadge extends StatelessWidget {
         border: Border.all(color: c.withAlpha(80)),
       ),
       child: Text(label,
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: c)),
+          style:
+              TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: c)),
     );
   }
 }
@@ -537,9 +579,12 @@ class NvStatCard extends StatelessWidget {
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(value,
               style: TextStyle(
-                  fontSize: 20, fontWeight: FontWeight.w800, color: color,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: color,
                   fontFamily: 'PlusJakartaSans')),
-          Text(label, style: TextStyle(fontSize: 11, color: color.withAlpha(180))),
+          Text(label,
+              style: TextStyle(fontSize: 11, color: color.withAlpha(180))),
         ]),
       ]),
     );

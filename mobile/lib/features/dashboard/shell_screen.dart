@@ -19,31 +19,36 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Determine title based on route logic or just generic
     // Actually DashboardNavbar just shows logo + generic icons.
     // We can show Logo in center or left.
-    
+
     return Scaffold(
       key: _scaffoldKey,
       drawer: const AppSidebar(),
       appBar: AppBar(
         leading: IconButton(
+          key: const Key('shell_menu_button'),
           icon: const Icon(Icons.menu),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
         title: Row(
           children: [
-             Container(
-               width: 28, height: 28,
-               decoration: BoxDecoration(
-                 color: isDark ? Colors.white.withAlpha(10) : Colors.blue.withAlpha(20),
-                 borderRadius: BorderRadius.circular(6),
-               ),
-               child: const Icon(Icons.auto_awesome, color: AppColors.primary, size: 16),
-             ),
-             const SizedBox(width: 8),
-             // On larger screens, maybe show title? For now just logo like web mobile.
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withAlpha(10)
+                    : Colors.blue.withAlpha(20),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(Icons.auto_awesome,
+                  color: AppColors.primary, size: 16),
+            ),
+            const SizedBox(width: 8),
+            // On larger screens, maybe show title? For now just logo like web mobile.
           ],
         ),
         centerTitle: false,

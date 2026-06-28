@@ -134,18 +134,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/course/:courseId',
-        builder: (_, state) => CourseScreen(
-            courseId: int.parse(state.pathParameters['courseId']!)),
+        builder: (_, state) =>
+            CourseScreen(courseId: state.pathParameters['courseId']!),
       ),
       GoRoute(
         path: '/quiz/:courseId',
         builder: (_, state) =>
-            QuizScreen(courseId: int.parse(state.pathParameters['courseId']!)),
+            QuizScreen(courseId: state.pathParameters['courseId']!),
       ),
       GoRoute(
         path: '/certificate/:courseId',
         builder: (_, state) => CertificateScreen(
-          courseId: int.parse(state.pathParameters['courseId']!),
+          courseId: state.pathParameters['courseId']!,
         ),
       ),
       GoRoute(

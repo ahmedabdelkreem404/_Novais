@@ -31,7 +31,7 @@ class Course {
       type: json['type'] as String?,
       language: json['language'] as String?,
       photo: json['photo'] as String?,
-      metadata: json['metadata'] as Map<String, dynamic>?,
+      metadata: _mapOrNull(json['metadata']),
       completed: json['completed'] == 1 || json['completed'] == true,
       lessons: (json['lessons'] as List<dynamic>?)
               ?.map((e) => Lesson.fromJson(e))
@@ -52,7 +52,8 @@ class Lesson {
   final String? mediaType;
   final Map<String, dynamic>? metadata;
 
-  String? get imageUrl => (mediaType == 'image' || mediaType == 'img') ? mediaUrl : null;
+  String? get imageUrl =>
+      (mediaType == 'image' || mediaType == 'img') ? mediaUrl : null;
   String? get audioUrl => (mediaType == 'audio') ? mediaUrl : null;
   String? get videoUrl => (mediaType == 'video') ? mediaUrl : null;
 
@@ -78,7 +79,13 @@ class Lesson {
       completed: json['completed'] == 1 || json['completed'] == true,
       mediaUrl: json['media_url'] as String?,
       mediaType: json['media_type'] as String?,
-      metadata: json['metadata'] as Map<String, dynamic>?,
+      metadata: _mapOrNull(json['metadata']),
     );
   }
+}
+
+Map<String, dynamic>? _mapOrNull(dynamic value) {
+  if (value is Map<String, dynamic>) return value;
+  if (value is Map) return Map<String, dynamic>.from(value);
+  return null;
 }
