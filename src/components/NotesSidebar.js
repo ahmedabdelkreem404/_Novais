@@ -116,7 +116,7 @@ const NotesSidebar = ({ isOpen, onClose, courseId }) => {
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4">
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -129,26 +129,55 @@ const NotesSidebar = ({ isOpen, onClose, courseId }) => {
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="relative w-full max-w-[700px] bg-white rounded-[16px] shadow-2xl overflow-hidden flex flex-col font-sans"
+                        onClick={(event) => event.stopPropagation()}
+                        className="relative w-full max-w-[700px] max-h-[90vh] bg-white dark:bg-slate-950 rounded-[16px] shadow-2xl overflow-hidden flex flex-col font-sans border border-gray-100 dark:border-white/10"
                     >
-                        <div className="px-8 py-6 flex items-center justify-between">
-                            <h2 className="text-[20px] font-bold text-gray-900">{t('sidebar.course_notes')}</h2>
+                        <style>{`
+                            .novais-notes-editor .ql-toolbar {
+                                border-color: rgb(229 231 235);
+                                background: rgb(248 250 252);
+                                display: flex;
+                                flex-wrap: wrap;
+                                gap: 2px;
+                            }
+                            .dark .novais-notes-editor .ql-toolbar {
+                                border-color: rgba(255,255,255,.1);
+                                background: rgb(15 23 42);
+                            }
+                            .novais-notes-editor .ql-container {
+                                border-color: rgb(229 231 235);
+                                color: rgb(17 24 39);
+                                font-size: 15px;
+                            }
+                            .dark .novais-notes-editor .ql-container {
+                                border-color: rgba(255,255,255,.1);
+                                color: rgb(226 232 240);
+                                background: rgb(2 6 23);
+                            }
+                            .dark .novais-notes-editor .ql-stroke { stroke: rgb(203 213 225); }
+                            .dark .novais-notes-editor .ql-fill { fill: rgb(203 213 225); }
+                            .dark .novais-notes-editor .ql-picker { color: rgb(203 213 225); }
+                            .novais-notes-editor .ql-editor { min-height: 280px; max-height: 52vh; overflow-y: auto; }
+                        `}</style>
+
+                        <div className="px-5 sm:px-8 py-5 sm:py-6 flex items-center justify-between">
+                            <h2 className="text-[20px] font-bold text-gray-900 dark:text-white">{t('sidebar.course_notes')}</h2>
                             <button
                                 onClick={onClose}
-                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                                className="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
                             >
                                 <LuX size={20} />
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-hidden flex flex-col min-h-[400px]">
+                        <div className="flex-1 overflow-hidden flex flex-col min-h-[320px]">
                             {loading ? (
-                                <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                                <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-slate-500">
                                     <LuLoader className="animate-spin mb-4" size={32} />
                                     <span className="text-sm">{t('sidebar.loading_notes')}</span>
                                 </div>
                             ) : (
-                                <div className="flex-1 overflow-hidden" dir={isArabic(newNote) ? 'rtl' : 'ltr'}>
+                                <div className="flex-1 overflow-hidden novais-notes-editor" dir={isArabic(newNote) ? 'rtl' : 'ltr'}>
                                     <ReactQuill
                                         theme="snow"
                                         value={newNote}
@@ -162,7 +191,7 @@ const NotesSidebar = ({ isOpen, onClose, courseId }) => {
                             )}
                         </div>
 
-                        <div className="px-8 py-6 border-t border-gray-50 flex justify-end bg-gray-50/30">
+                        <div className="px-5 sm:px-8 py-5 sm:py-6 border-t border-gray-100 dark:border-white/10 flex justify-end bg-gray-50/80 dark:bg-slate-900/80">
                             <button
                                 onClick={addNote}
                                 disabled={adding || (!newNote.trim() && notes.length === 0)}

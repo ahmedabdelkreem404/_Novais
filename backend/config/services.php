@@ -43,6 +43,7 @@ return [
 
     'deepseek' => [
         'api_key' => env('DEEPSEEK_API_KEY'),
+        'model' => env('DEEPSEEK_MODEL', 'deepseek-v4-flash'),
     ],
 
     'media' => [
@@ -51,4 +52,3 @@ return [
     ],
 
 ];
-

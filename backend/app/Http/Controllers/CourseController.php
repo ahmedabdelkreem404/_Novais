@@ -106,6 +106,7 @@ class CourseController extends Controller
                 'title' => $request->mainTopic,
                 'type' => $request->type,
                 'language' => $request->language ?? 'English',
+                'photo' => $contentData['cover_image'] ?? null,
                 'level' => $request->level ?? 'Beginner', // Save Level
                 'metadata' => $contentData // Save full JSON structure
             ]);

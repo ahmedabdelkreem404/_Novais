@@ -25,8 +25,21 @@ class ExportController extends Controller
                     ->orWhere('public_id', $courseId);
             })
             ->firstOrFail();
-        
-        $pdf = Pdf::loadView('exports.course_pdf', compact('course', 'user'));
+
+        $exportLessons = $course->lessons->map(function ($lesson, $index) {
+            $content = $lesson->content ?: $lesson->topic_title ?: '';
+
+            return [
+                'number' => $index + 1,
+                'title' => $lesson->title ?: 'Lesson',
+                'html' => $this->markdownHtml($content),
+            ];
+        });
+        $isRtl = $this->containsArabic($course->title . ' ' . $course->lessons->pluck('content')->implode(' '));
+
+        $pdf = Pdf::loadView('exports.course_pdf', compact('course', 'user', 'exportLessons', 'isRtl'))
+            ->setPaper('a4')
+            ->setOption('isRemoteEnabled', true);
         return $pdf->download(Str::slug($course->title) . '.pdf');
     }
 
@@ -71,26 +84,100 @@ class ExportController extends Controller
     {
         $slides = [[
             'title' => $course->title ?: 'Course',
-            'body' => $course->description ?: 'NOVAIS course export',
+            'body' => $this->plainText($course->description ?: 'NOVAIS course export'),
         ]];
 
         foreach ($course->lessons as $lesson) {
-            $slides[] = [
-                'title' => $lesson->title ?: 'Lesson',
-                'body' => $this->plainText($lesson->content ?: $lesson->topic_title ?: ''),
-            ];
+            $title = $lesson->title ?: 'Lesson';
+            $content = $this->plainText($lesson->content ?: $lesson->topic_title ?: '');
+            $chunks = $this->slideChunks($content);
+
+            foreach ($chunks as $index => $chunk) {
+                $slides[] = [
+                    'title' => $title . (count($chunks) > 1 ? ' (' . ($index + 1) . '/' . count($chunks) . ')' : ''),
+                    'body' => $chunk,
+                ];
+            }
         }
 
-        return array_slice($slides, 0, 30);
+        return array_slice($slides, 0, 60);
     }
 
     private function plainText(string $value): string
     {
         $value = strip_tags($value);
-        $value = preg_replace('/[#*_>`\[\]\(\)-]+/', ' ', $value) ?? $value;
-        $value = preg_replace('/\s+/', ' ', $value) ?? $value;
+        $value = preg_replace('/!\[[^\]]*]\([^)]+\)/', ' ', $value) ?? $value;
+        $value = preg_replace('/\[([^\]]+)]\([^)]+\)/', '$1', $value) ?? $value;
+        $value = preg_replace('/^\s{0,3}#{1,6}\s*/m', '', $value) ?? $value;
+        $value = preg_replace('/[*_`>]+/', '', $value) ?? $value;
+        $value = preg_replace('/^\s*[-+•]\s+/m', '• ', $value) ?? $value;
+        $value = preg_replace('/\|+/', ' ', $value) ?? $value;
+        $value = preg_replace('/[ \t]+/', ' ', $value) ?? $value;
+        $value = preg_replace("/\n{3,}/", "\n\n", $value) ?? $value;
 
-        return trim(Str::limit($value, 900, '...'));
+        return trim($value);
+    }
+
+    private function slideChunks(string $text): array
+    {
+        $text = trim($text);
+        if ($text === '') {
+            return ['No lesson content available.'];
+        }
+
+        $paragraphs = preg_split("/\n{2,}/", $text) ?: [$text];
+        $chunks = [];
+        $current = '';
+
+        foreach ($paragraphs as $paragraph) {
+            $paragraph = trim($paragraph);
+            if ($paragraph === '') {
+                continue;
+            }
+
+            if (mb_strlen($paragraph) > 700) {
+                foreach (explode("\n", wordwrap($paragraph, 650, "\n", false)) as $piece) {
+                    $piece = trim($piece);
+                    if ($piece !== '') {
+                        $chunks[] = $piece;
+                    }
+                }
+                continue;
+            }
+
+            if (mb_strlen($current . "\n\n" . $paragraph) > 850) {
+                if (trim($current) !== '') {
+                    $chunks[] = trim($current);
+                }
+                $current = $paragraph;
+            } else {
+                $current = trim($current . "\n\n" . $paragraph);
+            }
+        }
+
+        if (trim($current) !== '') {
+            $chunks[] = trim($current);
+        }
+
+        return $chunks ?: ['No lesson content available.'];
+    }
+
+    private function markdownHtml(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '<p class="empty">No lesson content available.</p>';
+        }
+
+        return (string) Str::markdown($value, [
+            'html_input' => 'escape',
+            'allow_unsafe_links' => false,
+        ]);
+    }
+
+    private function containsArabic(string $value): bool
+    {
+        return preg_match('/[\x{0600}-\x{06FF}]/u', $value) === 1;
     }
 
     private function addPptxFiles(\ZipArchive $zip, array $slides): void
@@ -109,7 +196,7 @@ class ExportController extends Controller
 
         foreach ($slides as $index => $slide) {
             $slideNumber = $index + 1;
-            $zip->addFromString("ppt/slides/slide{$slideNumber}.xml", $this->slideXml($slide['title'], $slide['body']));
+            $zip->addFromString("ppt/slides/slide{$slideNumber}.xml", $this->slideXml($slide['title'], $slide['body'], $slideNumber, count($slides)));
             $zip->addFromString("ppt/slides/_rels/slide{$slideNumber}.xml.rels", $this->slideRelsXml());
         }
     }
@@ -180,13 +267,15 @@ class ExportController extends Controller
             . '</Relationships>';
     }
 
-    private function slideXml(string $title, string $body): string
+    private function slideXml(string $title, string $body, int $slideNumber, int $slideCount): string
     {
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             . '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">'
             . '<p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'
-            . $this->textBoxXml(2, 'Title', 685800, 457200, 10820400, 914400, $title, 3600, true)
-            . $this->textBoxXml(3, 'Body', 914400, 1676400, 10363200, 3962400, $body, 1800, false)
+            . '<p:sp><p:nvSpPr><p:cNvPr id="2" name="Accent"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="12192000" cy="228600"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="2563EB"/></a:solidFill><a:ln><a:noFill/></a:ln></p:spPr></p:sp>'
+            . $this->textBoxXml(3, 'Title', 685800, 457200, 10820400, 914400, $title, 3200, true)
+            . $this->textBoxXml(4, 'Body', 914400, 1600200, 10363200, 4114800, $body, 1700, false)
+            . $this->textBoxXml(5, 'Footer', 914400, 6172200, 10363200, 365760, 'NOVAIS • Slide ' . $slideNumber . ' / ' . $slideCount, 900, false)
             . '</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>';
     }
 
@@ -196,8 +285,25 @@ class ExportController extends Controller
 
         return '<p:sp><p:nvSpPr><p:cNvPr id="' . $id . '" name="' . $name . '"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>'
             . '<p:spPr><a:xfrm><a:off x="' . $x . '" y="' . $y . '"/><a:ext cx="' . $cx . '" cy="' . $cy . '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></p:spPr>'
-            . '<p:txBody><a:bodyPr wrap="square"/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US" sz="' . $fontSize . '"' . $boldAttr . '/><a:t>' . $this->xml($text) . '</a:t></a:r></a:p></p:txBody>'
+            . '<p:txBody><a:bodyPr wrap="square"/><a:lstStyle/>' . $this->paragraphsXml($text, $fontSize, $boldAttr) . '</p:txBody>'
             . '</p:sp>';
+    }
+
+    private function paragraphsXml(string $text, int $fontSize, string $boldAttr): string
+    {
+        $paragraphs = preg_split("/\n+/", trim($text)) ?: [$text];
+        $xml = '';
+
+        foreach ($paragraphs as $paragraph) {
+            $paragraph = trim($paragraph);
+            if ($paragraph === '') {
+                continue;
+            }
+
+            $xml .= '<a:p><a:pPr marL="0" indent="0"/><a:r><a:rPr lang="en-US" sz="' . $fontSize . '"' . $boldAttr . '/><a:t>' . $this->xml($paragraph) . '</a:t></a:r></a:p>';
+        }
+
+        return $xml ?: '<a:p><a:r><a:rPr lang="en-US" sz="' . $fontSize . '"' . $boldAttr . '/><a:t></a:t></a:r></a:p>';
     }
 
     private function slideRelsXml(): string

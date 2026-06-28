@@ -10,6 +10,7 @@ use App\Services\AI\DeepSeekService;
 use App\Services\MediaResolverService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use ZipArchive;
@@ -17,6 +18,23 @@ use ZipArchive;
 class CourseInteractionExportTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_chat_table_exists_after_migrations(): void
+    {
+        $this->assertTrue(Schema::hasTable('chats'));
+    }
+
+    public function test_deepseek_service_reads_model_from_config(): void
+    {
+        config(['services.deepseek.model' => 'deepseek-v4-flash']);
+
+        $service = new DeepSeekService();
+        $reflection = new \ReflectionClass($service);
+        $property = $reflection->getProperty('model');
+        $property->setAccessible(true);
+
+        $this->assertSame('deepseek-v4-flash', $property->getValue($service));
+    }
 
     public function test_authenticated_chat_flow_saves_user_and_assistant_messages(): void
     {
@@ -94,10 +112,25 @@ class CourseInteractionExportTest extends TestCase
         $user = User::factory()->create();
         $course = $this->createCourse($user);
 
-        $this->actingAsApi($user)
+        $response = $this->actingAsApi($user)
             ->get("/api/courses/{$course->public_id}/export/pdf")
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
+
+        $this->assertGreaterThan(100, strlen($response->getContent()));
+    }
+
+    public function test_pdf_export_works_with_numeric_id(): void
+    {
+        $user = User::factory()->create();
+        $course = $this->createCourse($user);
+
+        $response = $this->actingAsApi($user)
+            ->get("/api/courses/{$course->id}/export/pdf")
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+
+        $this->assertGreaterThan(100, strlen($response->getContent()));
     }
 
     public function test_non_admin_user_cannot_export_another_users_pdf(): void
@@ -138,6 +171,24 @@ class CourseInteractionExportTest extends TestCase
             ->assertOk();
 
         $this->assertValidPptxResponse($response);
+    }
+
+    public function test_ppt_export_splits_long_lesson_content_into_multiple_slides(): void
+    {
+        $user = User::factory()->create();
+        $course = $this->createCourse($user);
+        $course->lessons()->first()->update([
+            'content' => str_repeat(
+                'A long exported lesson paragraph with practical detail, concise bullet-worthy ideas, and readable structure. ',
+                45
+            ),
+        ]);
+
+        $response = $this->actingAsApi($user)
+            ->get("/api/courses/{$course->public_id}/export/ppt")
+            ->assertOk();
+
+        $this->assertGreaterThan(1, $this->assertValidPptxResponse($response));
     }
 
     public function test_generate_lesson_updates_matching_lesson_row_for_exports(): void
@@ -254,7 +305,7 @@ class CourseInteractionExportTest extends TestCase
         ]);
     }
 
-    private function assertValidPptxResponse($response): void
+    private function assertValidPptxResponse($response): int
     {
         $file = $response->baseResponse->getFile();
         $path = $file->getPathname();
@@ -264,8 +315,19 @@ class CourseInteractionExportTest extends TestCase
         $this->assertNotFalse($zip->locateName('[Content_Types].xml'));
         $this->assertNotFalse($zip->locateName('ppt/presentation.xml'));
         $this->assertNotFalse($zip->locateName('ppt/slides/slide1.xml'));
+
+        $slideCount = 0;
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $name = $zip->getNameIndex($i);
+            if (preg_match('#^ppt/slides/slide\d+\.xml$#', $name)) {
+                $slideCount++;
+            }
+        }
+
         $zip->close();
 
         @unlink($path);
+
+        return $slideCount;
     }
 }

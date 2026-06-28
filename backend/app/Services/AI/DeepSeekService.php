@@ -10,11 +10,13 @@ class DeepSeekService implements AIProviderInterface
 {
     protected $apiKey;
     protected $apiUrl;
+    protected $model;
     protected $lastUsage = [];
 
     public function __construct()
     {
         $this->apiKey = config('services.deepseek.api_key');
+        $this->model = config('services.deepseek.model', 'deepseek-v4-flash');
         $this->apiUrl = 'https://api.deepseek.com/v1/chat/completions';
     }
 
@@ -672,7 +674,7 @@ SYSTEM;
                         'Content-Type' => 'application/json'
                     ],
                     'json' => [
-                        'model' => 'deepseek-chat',
+                        'model' => $this->model,
                         'messages' => [
                             [
                                 'role' => 'system',
@@ -694,6 +696,7 @@ SYSTEM;
                 $this->lastUsage = $data['usage'] ?? [];
 
                 Log::info('AI API Response', [
+                    'model' => $this->model,
                     'system_prompt_preview' => substr($finalSystemPrompt, 0, 100),
                     'temperature' => $temperature,
                     'expect_json' => $expectJson

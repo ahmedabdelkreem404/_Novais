@@ -37,6 +37,47 @@ import { FiCpu, FiFileText, FiImage, FiVideo, FiLoader, FiActivity, FiServer } f
 // import { IoSparkles } from "react-icons/io5"; // Unused
 import { serverURL, logo } from '../constants';
 
+const normalizeObject = (value) => {
+    if (!value || Array.isArray(value) || typeof value !== 'object') return {};
+    return value;
+};
+
+const mergeSavedLessonsIntoMetadata = (metadata, lessons = []) => {
+    const updated = JSON.parse(JSON.stringify(metadata || {}));
+    const lessonByTitle = new Map(
+        lessons
+            .filter(lesson => lesson?.title)
+            .map(lesson => [lesson.title, lesson])
+    );
+
+    for (const key of ['chapters', 'topics', 'content']) {
+        if (!Array.isArray(updated[key])) continue;
+
+        updated[key] = updated[key].map(chapter => {
+            const subtopics = chapter.subtopics || chapter.sections || [];
+            const mergedSubtopics = subtopics.map(subtopic => {
+                const saved = lessonByTitle.get(subtopic.title);
+                if (!saved) return subtopic;
+
+                const savedMetadata = normalizeObject(saved.metadata);
+                return {
+                    ...subtopic,
+                    content: saved.content || subtopic.content,
+                    theory: saved.content || subtopic.theory,
+                    metadata: Object.keys(savedMetadata).length ? savedMetadata : subtopic.metadata,
+                    done: Boolean(saved.content) || subtopic.done,
+                };
+            });
+
+            return chapter.subtopics
+                ? { ...chapter, subtopics: mergedSubtopics }
+                : { ...chapter, sections: mergedSubtopics };
+        });
+    }
+
+    return updated;
+};
+
 const Course = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -378,6 +419,7 @@ const Course = () => {
                     }
 
                     if (meta) {
+          meta = mergeSavedLessonsIntoMetadata(normalizeObject(meta), data.lessons || []);
                         setDbCourseId(data.id);
                         setJsonData(meta);
                         setMainTopic(data.title);
@@ -985,7 +1027,7 @@ const Course = () => {
                 <ExportModal
                     isOpen={isExportModalOpen}
                     onClose={() => setIsExportModalOpen(false)}
-                    jsonData={jsonData}
+                    courseId={courseId}
                     mainTopic={mainTopic}
                 />
             </div>

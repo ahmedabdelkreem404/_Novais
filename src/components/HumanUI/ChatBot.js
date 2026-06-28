@@ -129,12 +129,21 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
         <div className="flex flex-col items-end pointer-events-none">
             <AnimatePresence>
                 {isOpen && (
+                    <>
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setIsOpen(false)}
+                        className="fixed inset-0 z-[120] pointer-events-auto bg-black/20 md:bg-transparent"
+                    />
                     <motion.div
                         initial={{ opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="pointer-events-auto bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl shadow-2xl w-[320px] md:w-[400px] mb-4 flex flex-col overflow-hidden"
-                        style={{ height: '480px' }}
+                        onClick={(event) => event.stopPropagation()}
+                        className="fixed md:static left-3 right-3 bottom-20 md:left-auto md:right-auto md:bottom-auto z-[130] pointer-events-auto bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl shadow-2xl w-auto md:w-[400px] max-w-[calc(100vw-24px)] mb-0 md:mb-4 flex flex-col overflow-hidden"
+                        style={{ height: 'min(560px, calc(100vh - 110px))' }}
                         dir={i18n.dir()}
                     >
                         {/* Header */}
@@ -157,7 +166,7 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
                         </div>
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/50 dark:bg-slate-900/50 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-gray-50/50 dark:bg-slate-900/50 custom-scrollbar">
                             {messages.map((msg, idx) => {
                                 const msgIsArabic = isArabic(msg.content);
                                 const isUser = msg.role === 'user';
@@ -172,7 +181,7 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
                                     <div key={idx} className={`flex ${alignment}`}>
                                         <div
                                             dir={msgIsArabic ? 'rtl' : 'ltr'}
-                                            className={`max-w-[85%] rounded-2xl p-4 text-[13px] font-medium leading-relaxed shadow-sm ${isUser
+                                            className={`max-w-[88%] min-w-0 rounded-2xl p-4 text-[13px] font-medium leading-relaxed shadow-sm break-words overflow-hidden ${isUser
                                                 ? 'bg-blue-600 text-white rounded-tr-none'
                                                 : 'bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-200 rounded-tl-none'
                                                 }`}
@@ -185,6 +194,8 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
                                                     ol: ({ node, ...props }) => <ol className="list-decimal ms-5 mb-2" {...props} />,
                                                     li: ({ node, ...props }) => <li className="mb-1" {...props} />,
                                                     strong: ({ node, ...props }) => <strong className="font-bold text-blue-600 dark:text-blue-400" {...props} />,
+                                                    code: ({ node, ...props }) => <code className="break-words whitespace-pre-wrap bg-black/5 dark:bg-white/10 rounded px-1" {...props} />,
+                                                    pre: ({ node, ...props }) => <pre className="max-w-full overflow-x-auto whitespace-pre-wrap break-words" {...props} />,
                                                 }}
                                             >
                                                 {msg.content}
@@ -206,7 +217,7 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
                         </div>
 
                         {/* Input */}
-                        <form onSubmit={handleSend} className="p-4 bg-white dark:bg-slate-950 border-t border-gray-100 dark:border-slate-800 flex gap-2">
+                        <form onSubmit={handleSend} className="p-3 sm:p-4 bg-white dark:bg-slate-950 border-t border-gray-100 dark:border-slate-800 flex gap-2">
                             <input
                                 type="text"
                                 value={input}
@@ -223,6 +234,7 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
                             </button>
                         </form>
                     </motion.div>
+                    </>
                 )}
             </AnimatePresence>
 

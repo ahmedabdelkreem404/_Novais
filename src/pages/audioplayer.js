@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { LuArrowLeft, LuPlay, LuPause, LuChevronDown, LuCheck } from 'react-icons/lu';
 import { useTranslation } from 'react-i18next';
+import { cleanNarrationText, containsArabic } from '../utils/textCleanup';
 
 // Custom Arabic voices using external TTS
 const ARABIC_VOICES = [
@@ -38,7 +39,7 @@ const AudioPlayer = () => {
             return t('audio.no_content');
         }
 
-        return content;
+        return cleanNarrationText(content);
     }, [t, lessonContent]);
 
     // Split text into words for highlighting
@@ -84,9 +85,13 @@ const AudioPlayer = () => {
 
             setVoices(allVoices);
 
+            const contentIsArabic = containsArabic(textContent);
+            const firstArabic = allVoices.find(v => v.isArabic);
             const davidVoice = allVoices.find(v => v.name.includes('David'));
             const firstEnglish = allVoices.find(v => !v.isArabic);
-            setSelectedVoice(davidVoice || firstEnglish || allVoices[0]);
+            const selected = contentIsArabic ? (firstArabic || allVoices[0]) : (davidVoice || firstEnglish || allVoices[0]);
+            setSelectedVoice(selected);
+            setIsArabicVoice(Boolean(selected?.isArabic || selected?.lang?.startsWith('ar') || contentIsArabic));
         };
 
         loadVoices();
@@ -96,7 +101,7 @@ const AudioPlayer = () => {
             window.speechSynthesis.cancel();
             if (window.responsiveVoice) window.responsiveVoice.cancel();
         };
-    }, []);
+    }, [textContent]);
 
     const speakText = (text) => {
         if (selectedVoice?.isArabic && !selectedVoice?.nativeVoice) {
@@ -207,7 +212,7 @@ const AudioPlayer = () => {
     };
 
     // Determine direction
-    const dir = isArabicVoice ? 'rtl' : 'ltr';
+    const dir = isArabicVoice || containsArabic(textContent) ? 'rtl' : 'ltr';
     const alignClass = isArabicVoice ? 'text-right' : 'text-left';
 
     return (
@@ -363,6 +368,11 @@ const AudioPlayer = () => {
                                             <span className={selectedVoice?.name === voice.name ? '' : 'ml-6'}>{voice.key ? t(voice.key) : voice.name}</span>
                                         </button>
                                     ))}
+                                    {voices.filter(v => v.isArabic).length === 0 && (
+                                        <div className="px-4 py-3 text-xs text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20">
+                                            Arabic voice is not available in this browser. English voices remain available.
+                                        </div>
+                                    )}
                                     {/* English */}
                                     <div className="px-4 py-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 text-left">
                                         <span className="text-xs font-bold text-gray-500 uppercase">{t('profile.language')}: English</span>

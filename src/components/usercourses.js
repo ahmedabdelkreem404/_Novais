@@ -129,6 +129,12 @@ const UserCourses = ({ userId }) => {
                 const progress = calculateProgress(course);
                 const chapterCount = getChapterCount(course);
                 const isRtl = localStorage.getItem('language')?.startsWith('ar');
+                const metadata = typeof course.metadata === 'string'
+                    ? (() => {
+                        try { return JSON.parse(course.metadata); } catch { return {}; }
+                    })()
+                    : (course.metadata || {});
+                const coverImage = course.photo || metadata.cover_image || metadata.photo;
 
                 return (
                     <div
@@ -138,7 +144,7 @@ const UserCourses = ({ userId }) => {
                     >
                         <div className="relative h-32 md:h-40 overflow-hidden">
                             <img
-                                src={course.photo || 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop'}
+                                src={coverImage || 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop'}
                                 alt={course.title}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             />
