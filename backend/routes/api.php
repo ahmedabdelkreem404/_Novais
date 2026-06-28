@@ -87,6 +87,11 @@ Route::middleware('auth:api')->group(function () {
     // Payment Checkout
     Route::post('/payment/checkout', [\App\Http\Controllers\PaymentController::class, 'initCheckout']);
     Route::post('/payment/cancel-subscription', [\App\Http\Controllers\PaymentController::class, 'cancelSubscription']);
+    Route::get('/offline-payments/instructions', [\App\Http\Controllers\OfflinePaymentController::class, 'instructions']);
+    Route::get('/offline-payments', [\App\Http\Controllers\OfflinePaymentController::class, 'index']);
+    Route::post('/offline-payments', [\App\Http\Controllers\OfflinePaymentController::class, 'store'])->middleware('throttle:5,1');
+    Route::get('/offline-payments/{offlinePaymentRequest}', [\App\Http\Controllers\OfflinePaymentController::class, 'show']);
+    Route::post('/offline-payments/{offlinePaymentRequest}/cancel', [\App\Http\Controllers\OfflinePaymentController::class, 'cancel']);
 });
 
 // Public Share Route (via Token)
@@ -180,6 +185,13 @@ Route::middleware(['auth:api', 'is_admin'])->prefix('admin')->group(function () 
     // Plan Management
     Route::get('/plans', [\App\Http\Controllers\AdminController::class, 'getPlans']);
     Route::put('/plans/{id}', [\App\Http\Controllers\AdminController::class, 'updatePlan']);
+
+    // Offline Payment Management
+    Route::get('/offline-payments', [\App\Http\Controllers\OfflinePaymentController::class, 'adminIndex']);
+    Route::get('/offline-payments/{offlinePaymentRequest}', [\App\Http\Controllers\OfflinePaymentController::class, 'adminShow']);
+    Route::get('/offline-payments/{offlinePaymentRequest}/proof', [\App\Http\Controllers\OfflinePaymentController::class, 'proof']);
+    Route::post('/offline-payments/{offlinePaymentRequest}/approve', [\App\Http\Controllers\OfflinePaymentController::class, 'approve']);
+    Route::post('/offline-payments/{offlinePaymentRequest}/reject', [\App\Http\Controllers\OfflinePaymentController::class, 'reject']);
 
     Route::get('/courses', [\App\Http\Controllers\AdminController::class, 'getCourses']);
     Route::put('/courses/{id}', [\App\Http\Controllers\AdminController::class, 'updateCourse']);

@@ -15,7 +15,8 @@ import {
     LuMoon,
     LuLayers,
     LuArrowLeft,
-    LuShare2
+    LuShare2,
+    LuReceipt
 } from "react-icons/lu";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -65,6 +66,7 @@ const AdminLayout = () => {
         { name: t('admin.users'), icon: LuUsers, path: '/admin/users' },
         { name: t('admin.courses'), icon: LuVideo, path: '/admin/courses' },
         { name: t('admin.paid_users'), icon: LuDollarSign, path: '/admin/paid' },
+        { name: t('admin.offline_payments') || 'Offline Payments', icon: LuReceipt, path: '/admin/offline-payments' },
         { name: t('admin.admins'), icon: LuShield, path: '/admin/admins' },
         { name: t('admin.contacts'), icon: LuMessageSquare, path: '/admin/contacts' },
         { name: t('admin.manage_blogs'), icon: LuFileText, path: '/admin/manage-blogs' },

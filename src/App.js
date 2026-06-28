@@ -70,6 +70,7 @@ import CreateBlog from './admin/createblog';
 import EditBlog from './admin/editblog';
 import AdminPlans from './admin/plans';
 import SocialLinks from './admin/sociallinks';
+import OfflinePayments from './admin/offlinepayments';
 
 import Error from './pages/error';
 
@@ -242,6 +243,7 @@ function AnimatedRoutes() {
           <Route path="create-blog" element={<CreateBlog />} />
           <Route path="edit-blog/:slug" element={<EditBlog />} />
           <Route path="plans" element={<AdminPlans />} />
+          <Route path="offline-payments" element={<OfflinePayments />} />
           <Route path="social-links" element={<SocialLinks />} />
         </Route>
 
