@@ -10,6 +10,13 @@ const ARABIC_VOICES = [
     { name: 'Arabic Female', lang: 'ar', gender: 'female', key: 'audio.voices.ar_female' },
 ];
 
+const responsiveVoiceScriptUrl = () => {
+    const key = process.env.REACT_APP_RESPONSIVEVOICE_KEY;
+    const baseUrl = 'https://code.responsivevoice.org/responsivevoice.js';
+
+    return key ? `${baseUrl}?key=${encodeURIComponent(key)}` : baseUrl;
+};
+
 const AudioPlayer = () => {
     const { t } = useTranslation();
     const { state } = useLocation();
@@ -64,7 +71,7 @@ const AudioPlayer = () => {
         // Load ResponsiveVoice script
         if (!window.responsiveVoice) {
             const script = document.createElement('script');
-            script.src = 'https://code.responsivevoice.org/responsivevoice.js?key=free';
+            script.src = responsiveVoiceScriptUrl();
             script.async = true;
             document.body.appendChild(script);
         }
@@ -73,11 +80,11 @@ const AudioPlayer = () => {
             const availableVoices = window.speechSynthesis.getVoices();
             const allVoices = [];
 
-            ARABIC_VOICES.forEach(v => allVoices.push({ ...v, isArabic: true }));
-
             availableVoices.filter(v => v.lang.startsWith('ar')).forEach(v => {
                 allVoices.push({ name: v.name, lang: v.lang, isArabic: true, nativeVoice: v });
             });
+
+            ARABIC_VOICES.forEach(v => allVoices.push({ ...v, isArabic: true }));
 
             availableVoices.filter(v => v.lang.startsWith('en')).forEach(v => {
                 allVoices.push({ name: v.name, lang: v.lang, isArabic: false, nativeVoice: v });
