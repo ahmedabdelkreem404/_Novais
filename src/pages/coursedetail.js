@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { LuArrowLeft, LuPlay } from 'react-icons/lu';
 import { useTranslation } from 'react-i18next';
@@ -19,7 +19,8 @@ const CourseDetail = () => {
         }
     };
 
-    const jsonData = state?.jsonData || getStoredData();
+    const storedJsonData = useMemo(() => getStoredData(), []);
+    const jsonData = state?.jsonData || storedJsonData;
     const mainTopic = state?.mainTopic || (jsonData ? (jsonData.title || jsonData.mainTopic) : null);
     // const type = state?.type || 'text & image course'; // Unused
     const photo = state?.photo; // Photo might be missing in session fallback, implies optional
