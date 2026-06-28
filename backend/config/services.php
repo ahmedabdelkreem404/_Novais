@@ -51,4 +51,9 @@ return [
         'min_relevance_score' => env('MEDIA_MIN_RELEVANCE_SCORE', 0.6),
     ],
 
+    'offline_payments' => [
+        'vodafone_cash_receiver' => env('OFFLINE_PAYMENT_VODAFONE_CASH_RECEIVER'),
+        'instapay_receiver' => env('OFFLINE_PAYMENT_INSTAPAY_RECEIVER'),
+    ],
+
 ];

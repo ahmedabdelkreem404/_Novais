@@ -11,13 +11,20 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class CertificateController extends Controller
 {
+    private function applyCourseIdentifier($query, $courseId)
+    {
+        return $query->where(function ($q) use ($courseId) {
+            $q->where('public_id', $courseId);
+            if (ctype_digit((string) $courseId)) {
+                $q->orWhere('id', (int) $courseId);
+            }
+        });
+    }
+
     public function generate($courseId)
     {
         $user = Auth::user();
-        $course = Course::with('lessons')
-            ->where('id', $courseId)
-            ->orWhere('public_id', $courseId)
-            ->firstOrFail();
+        $course = $this->applyCourseIdentifier(Course::with('lessons'), $courseId)->firstOrFail();
 
         if ($course->user_id !== $user->id && $user->role !== 'admin') {
             return response()->json(['error' => 'common.unauthorized'], 403);

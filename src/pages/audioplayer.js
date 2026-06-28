@@ -10,6 +10,8 @@ const ARABIC_VOICES = [
     { name: 'Arabic Female', lang: 'ar', gender: 'female', key: 'audio.voices.ar_female' },
 ];
 
+const hasResponsiveVoiceKey = Boolean(process.env.REACT_APP_RESPONSIVEVOICE_KEY);
+
 const responsiveVoiceScriptUrl = () => {
     const key = process.env.REACT_APP_RESPONSIVEVOICE_KEY;
     const baseUrl = 'https://code.responsivevoice.org/responsivevoice.js';
@@ -69,7 +71,7 @@ const AudioPlayer = () => {
 
     useEffect(() => {
         // Load ResponsiveVoice script
-        if (!window.responsiveVoice) {
+        if (hasResponsiveVoiceKey && !window.responsiveVoice) {
             const script = document.createElement('script');
             script.src = responsiveVoiceScriptUrl();
             script.async = true;
@@ -84,7 +86,9 @@ const AudioPlayer = () => {
                 allVoices.push({ name: v.name, lang: v.lang, isArabic: true, nativeVoice: v });
             });
 
-            ARABIC_VOICES.forEach(v => allVoices.push({ ...v, isArabic: true }));
+            if (hasResponsiveVoiceKey) {
+                ARABIC_VOICES.forEach(v => allVoices.push({ ...v, isArabic: true }));
+            }
 
             availableVoices.filter(v => v.lang.startsWith('en')).forEach(v => {
                 allVoices.push({ name: v.name, lang: v.lang, isArabic: false, nativeVoice: v });

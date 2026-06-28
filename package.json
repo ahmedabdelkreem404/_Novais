@@ -68,7 +68,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "electron:dev": "concurrently \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:3000 && electron .\"",
-    "electron:build": "npm run build && electron-builder -w -c.extraMetadata.main=build/electron.js"
+    "electron:build": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -w -c.extraMetadata.main=build/electron.js"
   },
   "overrides": {
     "@tootallnate/once": "^2.0.1",
@@ -85,12 +85,12 @@
     "productName": "NOVAIS",
     "artifactName": "${productName}-Setup-${version}.${ext}",
     "files": [
-      "build/**/*",
-      "node_modules/**/*"
+      "build/**/*"
     ],
     "directories": {
       "buildResources": "public"
     },
+    "beforeBuild": "electron-before-build.js",
     "win": {
       "target": "nsis",
       "icon": "public/icon.png"

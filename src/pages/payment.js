@@ -29,6 +29,12 @@ const Payment = () => {
     const [mName, setName] = useState(initialFirstName);
     const [lastName, setLastName] = useState(initialLastName);
     const [processing, setProcessing] = useState(false);
+    const [plans, setPlans] = useState([]);
+    const [offlineInstructions, setOfflineInstructions] = useState({});
+    const [senderPhone, setSenderPhone] = useState('');
+    const [senderName, setSenderName] = useState(storedName);
+    const [transactionReference, setTransactionReference] = useState('');
+    const [proofImage, setProofImage] = useState(null);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -43,6 +49,31 @@ const Payment = () => {
         }
     }, [navigate, plan_id, amount, t]);
 
+    useEffect(() => {
+        const loadOfflinePaymentData = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const [plansRes, instructionsRes] = await Promise.all([
+                    axios.get(`${serverURL}/plans`),
+                    token
+                        ? axios.get(`${serverURL}/offline-payments/instructions`, { headers: { Authorization: `Bearer ${token}` } })
+                        : Promise.resolve({ data: { methods: {} } })
+                ]);
+                setPlans(Array.isArray(plansRes.data) ? plansRes.data : []);
+                setOfflineInstructions(instructionsRes.data?.methods || {});
+            } catch (err) {
+                console.error('Failed to load offline payment data', err);
+            }
+        };
+
+        loadOfflinePaymentData();
+    }, []);
+
+    const selectedPlanSlug = String(plan_id || '').split('_')[0];
+    const selectedBillingCycle = String(plan_id || '').includes('yearly') ? 'yearly' : 'monthly';
+    const selectedPlan = plans.find(plan => plan.slug === selectedPlanSlug);
+    const isOfflinePayment = paymentMethod === 'vodafone_cash' || paymentMethod === 'instapay';
+
     const handlePayment = async () => {
         if (!email || !mName || !lastName) {
             toast.error(isRtl ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill in all required fields');
@@ -54,16 +85,12 @@ const Payment = () => {
             return;
         }
 
+        if (isOfflinePayment && !selectedPlan?.id) {
+            toast.error(isRtl ? 'تعذر تحديد الباقة المختارة' : 'Unable to resolve selected plan');
+            return;
+        }
+
         setProcessing(true);
-        const dataToSend = {
-            plan_id,
-            payment_method: paymentMethod,
-            phone: paymentMethod === 'wallet' ? phoneNumber : null,
-            // Default values for fields hidden from user
-            address: 'Cairo, Egypt',
-            postal_code: '11511',
-            country: 'EG'
-        };
 
         try {
             const token = localStorage.getItem('token');
@@ -73,6 +100,33 @@ const Payment = () => {
             }
 
             const config = { headers: { Authorization: `Bearer ${token}` } };
+
+            if (isOfflinePayment) {
+                const formData = new FormData();
+                formData.append('plan_id', selectedPlan.id);
+                formData.append('billing_cycle', selectedBillingCycle);
+                formData.append('method', paymentMethod);
+                if (senderPhone) formData.append('sender_phone', senderPhone);
+                if (senderName) formData.append('sender_name', senderName);
+                if (transactionReference) formData.append('transaction_reference', transactionReference);
+                if (proofImage) formData.append('proof_image', proofImage);
+
+                await axios.post(`${serverURL}/offline-payments`, formData, config);
+                toast.success(isRtl ? 'تم إرسال طلب الدفع للمراجعة' : 'Offline payment request submitted for review');
+                navigate('/pending');
+                return;
+            }
+
+            const dataToSend = {
+                plan_id,
+                payment_method: paymentMethod,
+                phone: paymentMethod === 'wallet' ? phoneNumber : null,
+                // Default values for fields hidden from user
+                address: 'Cairo, Egypt',
+                postal_code: '11511',
+                country: 'EG'
+            };
+
             const postURL = serverURL + '/payment/checkout';
             const res = await axios.post(postURL, dataToSend, config);
 
@@ -154,7 +208,7 @@ const Payment = () => {
                                 {isRtl ? 'طريقة الدفع' : 'Payment Method'}
                             </label>
 
-                            <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                                 <button
                                     onClick={() => setPaymentMethod('card')}
                                     className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${paymentMethod === 'card' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'border-gray-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-white/20'}`}
@@ -169,6 +223,22 @@ const Payment = () => {
                                 >
                                     <LuSmartphone className="w-6 h-6 mb-2" />
                                     <span className="text-xs font-bold">{isRtl ? 'محفظة إلكترونية' : 'Wallet'}</span>
+                                </button>
+
+                                <button
+                                    onClick={() => setPaymentMethod('vodafone_cash')}
+                                    className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${paymentMethod === 'vodafone_cash' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'border-gray-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-white/20'}`}
+                                >
+                                    <LuSmartphone className="w-6 h-6 mb-2" />
+                                    <span className="text-xs font-bold">{isRtl ? 'فودافون كاش' : 'Vodafone Cash'}</span>
+                                </button>
+
+                                <button
+                                    onClick={() => setPaymentMethod('instapay')}
+                                    className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${paymentMethod === 'instapay' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'border-gray-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-white/20'}`}
+                                >
+                                    <LuCreditCard className="w-6 h-6 mb-2" />
+                                    <span className="text-xs font-bold">{isRtl ? 'إنستا باي' : 'InstaPay'}</span>
                                 </button>
                             </div>
 
@@ -188,6 +258,68 @@ const Payment = () => {
                                     />
                                 </motion.div>
                             )}
+
+                            {isOfflinePayment && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    className="space-y-4"
+                                >
+                                    <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-100">
+                                        <p className="font-black mb-1">
+                                            {paymentMethod === 'vodafone_cash'
+                                                ? (isRtl ? 'تعليمات فودافون كاش' : 'Vodafone Cash instructions')
+                                                : (isRtl ? 'تعليمات إنستا باي' : 'InstaPay instructions')}
+                                        </p>
+                                        <p className="break-words">
+                                            {isRtl ? 'بيانات الاستلام: ' : 'Receiver: '}
+                                            <span className="font-bold">
+                                                {offlineInstructions[paymentMethod]?.receiver || (isRtl ? 'غير مضاف بعد' : 'Not configured yet')}
+                                            </span>
+                                        </p>
+                                        <p className="mt-2 text-xs opacity-80">
+                                            {offlineInstructions[paymentMethod]?.instructions || (isRtl ? 'حوّل المبلغ ثم أرسل بيانات العملية للمراجعة.' : 'Transfer the amount, then submit the receipt details for review.')}
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <Input
+                                            label={isRtl ? 'اسم المرسل' : 'Sender Name'}
+                                            value={senderName}
+                                            onChange={(e) => setSenderName(e.target.value)}
+                                            icon={LuUser}
+                                            placeholder={isRtl ? 'اسم صاحب التحويل' : 'Transfer sender name'}
+                                        />
+                                        <Input
+                                            label={isRtl ? 'رقم المرسل' : 'Sender Phone'}
+                                            value={senderPhone}
+                                            onChange={(e) => setSenderPhone(e.target.value)}
+                                            icon={LuSmartphone}
+                                            placeholder="010xxxxxxxx"
+                                        />
+                                    </div>
+
+                                    <Input
+                                        label={isRtl ? 'رقم العملية' : 'Transaction Reference'}
+                                        value={transactionReference}
+                                        onChange={(e) => setTransactionReference(e.target.value)}
+                                        icon={LuCreditCard}
+                                        placeholder={isRtl ? 'اختياري لكنه يساعد في المراجعة' : 'Optional, but helps verification'}
+                                    />
+
+                                    <label className="block">
+                                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
+                                            {isRtl ? 'صورة إثبات الدفع' : 'Payment Proof Image'}
+                                        </span>
+                                        <input
+                                            type="file"
+                                            accept="image/png,image/jpeg,image/webp"
+                                            onChange={(e) => setProofImage(e.target.files?.[0] || null)}
+                                            className="block w-full text-sm text-gray-500 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-50 file:px-4 file:py-3 file:text-sm file:font-bold file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-950/40 dark:file:text-blue-200"
+                                        />
+                                    </label>
+                                </motion.div>
+                            )}
                         </div>
 
                         <div className="pt-2">
@@ -200,9 +332,11 @@ const Payment = () => {
                                 {paymentMethod === 'card' && <LuCreditCard className="mr-2" />}
                                 {paymentMethod === 'wallet' && <LuSmartphone className="mr-2" />}
 
-                                {isRtl
-                                    ? `دفع بواسطة ${paymentMethod === 'card' ? 'البطاقة' : 'المحفظة'}`
-                                    : `Pay via ${paymentMethod === 'card' ? 'Card' : 'Wallet'}`}
+                                {isOfflinePayment
+                                    ? (isRtl ? 'إرسال طلب الدفع' : 'Submit offline payment')
+                                    : isRtl
+                                        ? `دفع بواسطة ${paymentMethod === 'card' ? 'البطاقة' : 'المحفظة'}`
+                                        : `Pay via ${paymentMethod === 'card' ? 'Card' : 'Wallet'}`}
                             </Button>
                         </div>
                     </Card>

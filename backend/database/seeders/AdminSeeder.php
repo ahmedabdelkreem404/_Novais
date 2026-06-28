@@ -21,22 +21,25 @@ class AdminSeeder extends Seeder
             return;
         }
         
-        $admin = User::where('email', $adminEmail)->first();
-        
-        if (!$admin) {
-            User::create([
+        $admin = User::updateOrCreate(
+            ['email' => $adminEmail],
+            [
                 'name' => 'Super Admin',
-                'email' => $adminEmail,
                 'password' => Hash::make($adminPassword),
                 'role' => 'admin',
                 'sub_status' => 'premium',
                 'language' => 'en',
                 'country' => 'Global',
+                'total_credits' => 999999999,
+                'remaining_credits' => 999999999,
                 'email_verified_at' => now(),
-            ]);
+            ]
+        );
+
+        if ($admin->wasRecentlyCreated) {
             $this->command->info('Super Admin created successfully.');
         } else {
-            $this->command->info('Super Admin already exists.');
+            $this->command->info('Super Admin updated successfully.');
         }
     }
 }

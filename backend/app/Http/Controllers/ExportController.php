@@ -10,6 +10,16 @@ use Illuminate\Support\Str;
 
 class ExportController extends Controller
 {
+    private function applyCourseIdentifier($query, $courseId)
+    {
+        return $query->where(function ($courseQuery) use ($courseId) {
+            $courseQuery->where('public_id', $courseId);
+            if (ctype_digit((string) $courseId)) {
+                $courseQuery->orWhere('id', (int) $courseId);
+            }
+        });
+    }
+
     public function exportPdf($courseId)
     {
         $user = Auth::user();
@@ -19,12 +29,7 @@ class ExportController extends Controller
             $query->where('user_id', $user->id);
         }
 
-        $course = $query
-            ->where(function ($courseQuery) use ($courseId) {
-                $courseQuery->where('id', $courseId)
-                    ->orWhere('public_id', $courseId);
-            })
-            ->firstOrFail();
+        $course = $this->applyCourseIdentifier($query, $courseId)->firstOrFail();
 
         $exportLessons = $course->lessons->map(function ($lesson, $index) {
             $content = $lesson->content ?: $lesson->topic_title ?: '';
@@ -52,12 +57,7 @@ class ExportController extends Controller
             $query->where('user_id', $user->id);
         }
 
-        $course = $query
-            ->where(function ($courseQuery) use ($courseId) {
-                $courseQuery->where('id', $courseId)
-                    ->orWhere('public_id', $courseId);
-            })
-            ->firstOrFail();
+        $course = $this->applyCourseIdentifier($query, $courseId)->firstOrFail();
 
         if (!class_exists(\ZipArchive::class)) {
             return response()->json(['message' => 'PPT export requires the PHP zip extension'], 500);

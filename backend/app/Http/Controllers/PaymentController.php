@@ -260,6 +260,11 @@ class PaymentController extends Controller
     public function cancelSubscription(Request $request)
     {
         $user = Auth::user();
+
+        if ($user->role === 'admin') {
+            return response()->json(['success' => true, 'message' => 'common.subscription_cancelled']);
+        }
+
         // Logic to cancel at Paymob end if recurring, or just local
         $user->update(['sub_status' => 'free', 'role' => 'user']);
         

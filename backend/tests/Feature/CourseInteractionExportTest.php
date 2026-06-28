@@ -72,6 +72,36 @@ class CourseInteractionExportTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_chat_with_zero_remaining_credits(): void
+    {
+        $owner = User::factory()->create();
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'remaining_credits' => 0,
+            'total_credits' => 0,
+        ]);
+        $course = $this->createCourse($owner);
+
+        $this->mock(DeepSeekService::class, function ($mock) {
+            $mock->shouldReceive('chatWithContext')->once()->andReturn('Admin assistant reply.');
+            $mock->shouldReceive('getLastUsage')->once()->andReturn(['total_tokens' => 50]);
+        });
+
+        $this->actingAsApi($admin)
+            ->postJson('/api/chat', [
+                'courseId' => $course->public_id,
+                'message' => 'Admin check.',
+            ])
+            ->assertOk()
+            ->assertJson([
+                'success' => true,
+                'reply' => 'Admin assistant reply.',
+            ]);
+
+        $admin->refresh();
+        $this->assertSame(0, $admin->remaining_credits);
+    }
+
     public function test_certificate_generation_works_with_public_id(): void
     {
         Mail::fake();
@@ -171,6 +201,25 @@ class CourseInteractionExportTest extends TestCase
             ->assertOk();
 
         $this->assertValidPptxResponse($response);
+    }
+
+    public function test_public_id_starting_with_digit_does_not_match_numeric_id(): void
+    {
+        $user = User::factory()->create();
+        $wrongCourse = $this->createCourse($user, ['title' => 'Wrong Numeric Match']);
+        $targetCourse = $this->createCourse($user, ['title' => 'Correct Public Course']);
+        $targetCourse->update(['public_id' => $wrongCourse->id . 'abc-public-id']);
+
+        $this->actingAsApi($user)
+            ->get("/api/courses/{$targetCourse->public_id}")
+            ->assertOk()
+            ->assertJsonPath('id', $targetCourse->id)
+            ->assertJsonPath('title', 'Correct Public Course');
+
+        $this->actingAsApi($user)
+            ->get("/api/courses/{$targetCourse->public_id}/export/pdf")
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
     }
 
     public function test_ppt_export_splits_long_lesson_content_into_multiple_slides(): void

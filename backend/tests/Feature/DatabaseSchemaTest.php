@@ -51,4 +51,33 @@ class DatabaseSchemaTest extends TestCase
             'message',
         ]));
     }
+
+    public function test_offline_payment_requests_schema_exists(): void
+    {
+        $this->assertTrue(Schema::hasTable('offline_payment_requests'));
+        $this->assertTrue(Schema::hasColumns('offline_payment_requests', [
+            'user_id',
+            'plan_id',
+            'billing_cycle',
+            'amount',
+            'currency',
+            'method',
+            'sender_phone',
+            'sender_name',
+            'transaction_reference',
+            'proof_image_path',
+            'status',
+            'admin_id',
+            'admin_note',
+            'approved_at',
+            'rejected_at',
+        ]));
+
+        $indexes = collect(Schema::getIndexes('offline_payment_requests'))->pluck('name')->all();
+
+        $this->assertContains('offline_payment_requests_user_id_status_index', $indexes);
+        $this->assertContains('offline_payment_requests_method_status_index', $indexes);
+        $this->assertContains('offline_payment_requests_plan_id_billing_cycle_index', $indexes);
+        $this->assertContains('offline_payment_requests_transaction_reference_unique', $indexes);
+    }
 }

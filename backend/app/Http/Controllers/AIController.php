@@ -82,6 +82,66 @@ class AIController extends Controller
         return mb_substr($courseTitle, 0, 30);
     }
 
+    private function fallbackMediaImage(string $topic, string $label = 'Course visual'): array
+    {
+        $text = trim($topic) !== '' ? $topic : $label;
+
+        return [
+            'url' => 'https://placehold.co/1200x675/1d4ed8/ffffff.png?text=' . rawurlencode($text),
+            'title' => $text,
+            'description' => 'Safe topic fallback visual',
+            'source' => 'placeholder',
+            'metadata' => [],
+            'verified' => false,
+            'score' => 0.0,
+        ];
+    }
+
+    private function isVideoRelevant(?array $video, string $courseTopic, string $subtopic): bool
+    {
+        if (!$video || empty($video['title'])) {
+            return false;
+        }
+
+        $context = mb_strtolower($courseTopic . ' ' . $subtopic);
+        $title = mb_strtolower($video['title']);
+        $haystack = $title . ' ' . mb_strtolower($video['url'] ?? '');
+
+        $domains = [
+            'chess' => [
+                'context' => '/(chess|شطرنج)/iu',
+                'positive' => '/(chess|شطرنج|checkmate|board|pieces|opening)/iu',
+                'negative' => '/(java|programming|software|kitchendraw|mblock|coding|excel|photoshop)/iu',
+            ],
+            'cooking' => [
+                'context' => '/(cook|cooking|kitchen|recipe|chef|food|طبخ|طهي|مطبخ|وصفة|طعام)/iu',
+                'positive' => '/(cook|cooking|kitchen|recipe|chef|food|knife|pan|طبخ|طهي|مطبخ|وصفة|طعام|شيف)/iu',
+                'negative' => '/(java|programming|software|kitchendraw|mblock|coding|draw|autocad|excel|router|internet|wifi|network|روتر|راوتر|نت|انترنت)/iu',
+            ],
+            'crafts' => [
+                'context' => '/(craft|handmade|diy|hand made|هاند|حرف|يدوي|يدوية)/iu',
+                'positive' => '/(craft|handmade|diy|hand made|حرف|يدوي|يدوية|اشغال|أشغال)/iu',
+                'negative' => '/(java|programming|software|kitchendraw|mblock|coding|gaming)/iu',
+            ],
+        ];
+
+        foreach ($domains as $domain) {
+            if (preg_match($domain['context'], $context)) {
+                return preg_match($domain['positive'], $haystack) === 1
+                    && preg_match($domain['negative'], $haystack) !== 1;
+            }
+        }
+
+        return ($video['score'] ?? 0) >= 0.25;
+    }
+
+    private function findCourseByIdentifier($courseId): \App\Models\Course
+    {
+        return \App\Models\Course::where('public_id', $courseId)
+            ->when(ctype_digit((string) $courseId), fn($query) => $query->orWhere('id', (int) $courseId))
+            ->firstOrFail();
+    }
+
     // /api/generate
     public function generate(Request $request)
     {
@@ -91,7 +151,7 @@ class AIController extends Controller
         
         try {
             $user = auth('api')->user();
-            if ($user->remaining_credits <= 0) {
+            if (!$this->creditService->hasEnoughCredits($user, 1)) {
                 return response()->json([
                     'success' => false, 
                     'message' => 'common.insufficient_credits'
@@ -188,9 +248,7 @@ class AIController extends Controller
 
         try {
             // 1. Fetch Course (Support both numeric ID and public_id)
-            $course = \App\Models\Course::where('id', $courseId)
-                ->orWhere('public_id', $courseId)
-                ->firstOrFail();
+            $course = $this->findCourseByIdentifier($courseId);
 
             $user = Auth::user();
             if ($course->user_id !== $user->id && $user->role !== 'admin') {
@@ -313,6 +371,9 @@ class AIController extends Controller
                                                           ], $fallbacks)
                                                       ];
                                                       \Log::info('Images resolved with fallbacks', ['count' => count($allCandidates)]);
+                                                  } else {
+                                                      $fallbackTopic = trim(($metadata['title'] ?? ($course->title ?? '')) . ' ' . $subtopicTitle);
+                                                      $frontendImages[] = $this->fallbackMediaImage($fallbackTopic, $subtopicTitle);
                                                   }
                                               }
                                          
@@ -347,6 +408,31 @@ class AIController extends Controller
                                                      $bestScore = $video['score'];
                                                  }
                                              }; 
+
+                                             $appendVideo = function($video, bool $verified) use (&$frontendVideos, $coreTopic, $subtopicTitle) {
+                                                 if (!$this->isVideoRelevant($video, $coreTopic, $subtopicTitle)) {
+                                                     if ($video) {
+                                                         \Log::warning('Rejected irrelevant video candidate', [
+                                                             'title' => $video['title'] ?? '',
+                                                             'score' => $video['score'] ?? null,
+                                                             'coreTopic' => $coreTopic,
+                                                             'subtopic' => $subtopicTitle,
+                                                         ]);
+                                                     }
+                                                     return false;
+                                                 }
+
+                                                 $frontendVideos[] = [
+                                                     'url' => $video['url'],
+                                                     'title' => $video['title'],
+                                                     'platform' => $video['source'],
+                                                     'metadata' => $video['metadata'],
+                                                     'verified' => $verified,
+                                                     'score' => $video['score']
+                                                 ];
+
+                                                 return true;
+                                             };
                                              
                                              // === STAGE 1: Search with LESSON TITLE ONLY (no course topic) ===
                                              // This avoids irrelevant videos that match course topic but not lesson
@@ -367,15 +453,7 @@ class AIController extends Controller
                                              ]);
                                              $trackBestVideo($resolvedVideo);
                                              
-                                             if ($resolvedVideo && $resolvedVideo['score'] >= $minScore) {
-                                                 $frontendVideos[] = [
-                                                     'url' => $resolvedVideo['url'],
-                                                     'title' => $resolvedVideo['title'],
-                                                     'platform' => $resolvedVideo['source'],
-                                                     'metadata' => $resolvedVideo['metadata'],
-                                                     'verified' => true,
-                                                     'score' => $resolvedVideo['score']
-                                                 ];
+                                             if ($resolvedVideo && $resolvedVideo['score'] >= $minScore && $appendVideo($resolvedVideo, true)) {
                                                  $videoFound = true;
                                                  \Log::info('Stage 1: Video found (lesson only)', ['query' => $stage1Query, 'score' => $resolvedVideo['score']]);
                                              }
@@ -396,15 +474,7 @@ class AIController extends Controller
                                                  ]);
                                                  $trackBestVideo($resolvedVideo);
                                                  
-                                                 if ($resolvedVideo && $resolvedVideo['score'] >= $minScore) {
-                                                     $frontendVideos[] = [
-                                                         'url' => $resolvedVideo['url'],
-                                                         'title' => $resolvedVideo['title'],
-                                                         'platform' => $resolvedVideo['source'],
-                                                         'metadata' => $resolvedVideo['metadata'],
-                                                         'verified' => true,
-                                                         'score' => $resolvedVideo['score']
-                                                     ];
+                                                 if ($resolvedVideo && $resolvedVideo['score'] >= $minScore && $appendVideo($resolvedVideo, true)) {
                                                      $videoFound = true;
                                                      \Log::info('Stage 2: Video found (with course topic)', ['query' => $stage2Query, 'score' => $resolvedVideo['score']]);
                                                  }
@@ -422,15 +492,7 @@ class AIController extends Controller
                                                  ]);
                                                  $trackBestVideo($resolvedVideo);
                                                  
-                                                 if ($resolvedVideo && $resolvedVideo['score'] >= $minScore) {
-                                                     $frontendVideos[] = [
-                                                         'url' => $resolvedVideo['url'],
-                                                         'title' => $resolvedVideo['title'],
-                                                         'platform' => $resolvedVideo['source'],
-                                                         'metadata' => $resolvedVideo['metadata'],
-                                                         'verified' => true,
-                                                         'score' => $resolvedVideo['score']
-                                                     ];
+                                                 if ($resolvedVideo && $resolvedVideo['score'] >= $minScore && $appendVideo($resolvedVideo, true)) {
                                                      $videoFound = true;
                                                      \Log::info('Stage 3: English video found', ['query' => $stage3Query, 'score' => $resolvedVideo['score']]);
                                                  }
@@ -438,16 +500,8 @@ class AIController extends Controller
                                              
                                              // === STAGE 4: Use best video found across all stages ===
                                              // Only if score is decent (>= 0.05) or if we really need a fallback
-                                             if (!$videoFound && $bestVideo && $bestScore >= 0.05) {
+                                             if (!$videoFound && $bestVideo && $bestScore >= 0.05 && $appendVideo($bestVideo, false)) {
                                                  \Log::info('Using best video found with low score', ['score' => $bestScore, 'title' => $bestVideo['title']]);
-                                                 $frontendVideos[] = [
-                                                     'url' => $bestVideo['url'],
-                                                     'title' => $bestVideo['title'],
-                                                     'platform' => $bestVideo['source'],
-                                                     'metadata' => $bestVideo['metadata'],
-                                                     'verified' => false, // Mark as unverified due to low score
-                                                     'score' => $bestScore
-                                                 ];
                                                  $videoFound = true;
                                              }
                                              
@@ -458,7 +512,7 @@ class AIController extends Controller
                                                  $imageQuery = $coreTopic . ' ' . $shortLesson . ' infographic';
                                                  $resolvedImage = $this->mediaResolver->resolveImages($imageQuery, 'educational', []);
                                                  
-                                                 if ($resolvedImage && $resolvedImage['score'] >= 0.10) {
+                                                 if ($resolvedImage && $resolvedImage['score'] >= 0.20) {
                                                      $frontendImages[] = [
                                                          'url' => $resolvedImage['url'],
                                                          'title' => $resolvedImage['title'],
@@ -495,15 +549,7 @@ class AIController extends Controller
                                              // === STAGE 7: Placeholder (last resort) ===
                                              if (empty($frontendVideos) && empty($frontendImages)) {
                                                  \Log::error('All media stages failed, using placeholder', ['subtopic' => $subtopicTitle]);
-                                                 $frontendImages[] = [
-                                                     'url' => 'https://placehold.co/800x450/1a1a2e/ffffff?text=Lesson+Content',
-                                                     'title' => $subtopicTitle,
-                                                     'description' => 'Placeholder image for ' . $subtopicTitle,
-                                                     'source' => 'placeholder',
-                                                     'metadata' => [],
-                                                     'verified' => false,
-                                                     'score' => 0.0
-                                                 ];
+                                                 $frontendImages[] = $this->fallbackMediaImage($coreTopic . ' ' . $subtopicTitle, $subtopicTitle);
                                              }
                                          }
                                          

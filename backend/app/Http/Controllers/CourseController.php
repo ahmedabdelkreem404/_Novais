@@ -22,6 +22,16 @@ class CourseController extends Controller
         $this->curriculumValidator = $curriculumValidator;
     }
 
+    private function applyCourseIdentifier($query, $id)
+    {
+        return $query->where(function($q) use ($id) {
+            $q->where('public_id', $id);
+            if (ctype_digit((string) $id)) {
+                $q->orWhere('id', (int) $id);
+            }
+        });
+    }
+
     public function index()
     {
         return response()->json(auth('api')->user()->courses);
@@ -152,9 +162,7 @@ class CourseController extends Controller
 
         try {
             $user = auth('api')->user();
-            $query = Course::where(function($q) use ($id) {
-                $q->where('public_id', $id)->orWhere('id', $id);
-            });
+            $query = $this->applyCourseIdentifier(Course::query(), $id);
 
             if ($user->role !== 'admin') {
                 $query->where('user_id', $user->id);
@@ -192,9 +200,7 @@ class CourseController extends Controller
     {
         try {
             $user = auth('api')->user();
-            $query = Course::where(function($q) use ($id) {
-                $q->where('public_id', $id)->orWhere('id', $id);
-            });
+            $query = $this->applyCourseIdentifier(Course::query(), $id);
 
             if ($user->role !== 'admin') {
                 $query->where('user_id', $user->id);
@@ -211,10 +217,7 @@ class CourseController extends Controller
     public function show($id)
     {
         $user = auth('api')->user();
-        $query = Course::with('lessons')
-            ->where(function($q) use ($id) {
-                $q->where('public_id', $id)->orWhere('id', $id);
-            });
+        $query = $this->applyCourseIdentifier(Course::with('lessons'), $id);
 
         if ($user->role !== 'admin') {
             $query->where('user_id', $user->id);
@@ -227,7 +230,7 @@ class CourseController extends Controller
     public function getLesson($courseId, $lessonId)
     {
         $user = auth('api')->user();
-        $course = Course::where('public_id', $courseId)->orWhere('id', $courseId)->firstOrFail();
+        $course = $this->applyCourseIdentifier(Course::query(), $courseId)->firstOrFail();
         
         $lesson = Lesson::where('course_id', $course->id)->findOrFail($lessonId);
         
@@ -242,10 +245,7 @@ class CourseController extends Controller
 
     public function createQuiz($id)
     {
-        $course = Course::where('user_id', auth('api')->id())
-            ->where(function($q) use ($id) {
-                $q->where('public_id', $id)->orWhere('id', $id);
-            })->firstOrFail();
+        $course = $this->applyCourseIdentifier(Course::where('user_id', auth('api')->id()), $id)->firstOrFail();
         
         // Logic inside createQuiz service might depend on ID. pass integer ID.
         $id = $course->id;
@@ -263,10 +263,7 @@ class CourseController extends Controller
 
     public function getQuizzes($id)
     {
-        $course = Course::where('user_id', auth('api')->id())
-            ->where(function($q) use ($id) {
-                $q->where('public_id', $id)->orWhere('id', $id);
-            })->firstOrFail();
+        $course = $this->applyCourseIdentifier(Course::where('user_id', auth('api')->id()), $id)->firstOrFail();
         return response()->json($course->quizzes()->with('questions')->get());
     }
 
@@ -275,10 +272,7 @@ class CourseController extends Controller
     // Generate Share Link
     public function createShareLink($id)
     {
-        $course = Course::where('user_id', auth('api')->id())
-            ->where(function($q) use ($id) {
-                $q->where('public_id', $id)->orWhere('id', $id);
-            })->firstOrFail();
+        $course = $this->applyCourseIdentifier(Course::where('user_id', auth('api')->id()), $id)->firstOrFail();
 
         // Check if there is already an active share link
         $existing = CourseShare::where('course_id', $course->id)

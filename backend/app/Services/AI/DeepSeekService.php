@@ -527,13 +527,16 @@ PROMPT;
             $simpleQuery = $this->simplifyTopicForCover($topic);
             $result = $mediaResolver->resolveImages($simpleQuery, 'educational', []);
             
-            if ($result && isset($result['url']) && ($result['score'] ?? 0) >= 0.35) {
+            if ($result && isset($result['url']) && ($result['score'] ?? 0) >= 0.20) {
                 return $result['url'];
             }
-            return null;
         } catch (\Exception $e) {
-            return null;
+            // Fall through to a safe generated placeholder.
         }
+
+        $fallbackText = trim(str_replace(' creative cover', '', $this->simplifyTopicForCover($topic)));
+
+        return 'https://placehold.co/1200x675/1d4ed8/ffffff.png?text=' . rawurlencode($fallbackText !== '' ? $fallbackText : $topic);
     }
     
     // ... (Keep simplifyTopicForCover)
@@ -549,9 +552,11 @@ PROMPT;
         }
         
         // Clean and slightly expand the query for better variety
-        $clean = preg_replace('/[^A-Za-z0-9\s]/', '', $topic);
+        $clean = preg_replace('/[^\p{L}\p{N}\s]/u', '', $topic);
         $words = explode(' ', $clean);
-        return implode(' ', array_slice($words, 0, min(6, count($words)))) . " creative cover";
+        $shortTopic = trim(implode(' ', array_slice(array_filter($words), 0, min(6, count($words)))));
+
+        return ($shortTopic !== '' ? $shortTopic : $topic) . " creative cover";
     }
 
     public function chatWithContext(string $message, array $history, array $context): string

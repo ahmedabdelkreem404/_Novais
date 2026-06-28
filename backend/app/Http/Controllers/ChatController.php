@@ -19,6 +19,13 @@ class ChatController extends Controller
         $this->creditService = $creditService;
     }
 
+    private function findCourseByIdentifier($courseId): ?Course
+    {
+        return Course::where('public_id', $courseId)
+            ->when(ctype_digit((string) $courseId), fn($query) => $query->orWhere('id', (int) $courseId))
+            ->first();
+    }
+
     public function sendMessage(Request $request)
     {
         // 1. Validate Input
@@ -36,7 +43,7 @@ class ChatController extends Controller
         $courseId = null;
         if ($request->has('courseId')) {
             $inputCourseId = $request->input('courseId');
-            $course = Course::where('id', $inputCourseId)->orWhere('public_id', $inputCourseId)->first();
+            $course = $this->findCourseByIdentifier($inputCourseId);
             if ($course && ($course->user_id === $user->id || $user->role === 'admin')) {
                 $courseId = $course->id;
             } elseif ($course) {
@@ -68,7 +75,7 @@ class ChatController extends Controller
         }
         
         // 5. Check Credits
-        if ($user && $user->remaining_credits <= 0) {
+        if ($user && !$this->creditService->hasEnoughCredits($user, 1)) {
             return response()->json(['reply' => 'common.insufficient_credits'], 403);
         }
 
@@ -117,7 +124,8 @@ class ChatController extends Controller
     public function getHistory(Request $request, $courseId)
     {
         $user = Auth::user();
-        $course = Course::where('id', $courseId)->orWhere('public_id', $courseId)->firstOrFail();
+        $course = $this->findCourseByIdentifier($courseId);
+        abort_if(!$course, 404);
         if ($course->user_id !== $user->id && $user->role !== 'admin') {
             return response()->json(['error' => 'common.unauthorized'], 403);
         }
@@ -179,7 +187,7 @@ class ChatController extends Controller
         // Add current course context if available
         if ($request->has('courseId')) {
             $courseId = $request->input('courseId');
-            $course = Course::where('id', $courseId)->orWhere('public_id', $courseId)->first();
+            $course = $this->findCourseByIdentifier($courseId);
             if ($course && ($course->user_id === $user->id || $user->role === 'admin')) {
                 $context['current_course'] = [
                     'title' => $course->title,
