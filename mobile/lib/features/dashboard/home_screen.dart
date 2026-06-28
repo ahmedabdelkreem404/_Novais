@@ -24,192 +24,122 @@ class HomeScreen extends ConsumerWidget {
     final coursesAsync = ref.watch(_coursesProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      body: RefreshIndicator(
-        color: AppColors.primary,
-        onRefresh: () => ref.refresh(_coursesProvider.future),
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            // ── Header ──────────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Material(
+      color: isDark ? const Color(0xFF050816) : const Color(0xFFF8FAFC),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 60, 20, 100),
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ShaderMask(
-                          shaderCallback: (bounds) => const LinearGradient(
-                            colors: [AppColors.gradientStart, AppColors.gradientEnd],
-                          ).createShader(bounds),
-                          child: Text(l10n.t('my_courses'), // "My Courses"
-                              style: const TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                  fontFamily: 'PlusJakartaSans')),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(l10n.t('manage_subscription'), // Using as subtitle placeholder
-                            style: TextStyle(
-                              fontSize: 14, 
-                              color: Theme.of(context).colorScheme.onSurface.withAlpha(150))),
-                      ],
-                    ),
-                    
-                    // Generate New Button
-                    Container(
-                      decoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withAlpha(80),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          )
+                    ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [
+                          AppColors.gradientStart,
+                          AppColors.gradientEnd
                         ],
+                      ).createShader(bounds),
+                      child: Text(
+                        l10n.t('my_courses'),
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          fontFamily: 'PlusJakartaSans',
+                        ),
                       ),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          elevation: 0,
-                        ),
-                        onPressed: () => context.go('/create'),
-                        child: Row(
-                          children: [
-                             const Icon(Icons.auto_awesome, size: 18),
-                             const SizedBox(width: 8),
-                             Text(l10n.t('create_course'), 
-                               style: const TextStyle(fontWeight: FontWeight.bold)),
-                          ],
-                        ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      l10n.t('manage_subscription'),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withAlpha(150),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-
-            // ── Usage Stats (Mobile View) ──────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF161616) : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE5E7EB)),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withAlpha(30),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(Icons.bar_chart, size: 18, color: AppColors.primary),
-                            ),
-                            const SizedBox(width: 10),
-                            const Text('COURSES LIMIT', 
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                          ]),
-                          // Mock usage data for now - match mock 1/5 or similar
-                          Text('2 / 5', 
-                             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).disabledColor)),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: const LinearProgressIndicator(
-                          value: 0.4, // 2/5
-                          minHeight: 8,
-                          backgroundColor: Colors.transparent, 
-                          // In a real stats card we'd use a container bg, but here letting theme handle it
-                          valueColor: AlwaysStoppedAnimation(AppColors.primary),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text('Remaining courses: 3', 
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Theme.of(context).disabledColor)),
-                      ),
-                    ],
-                  ),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                onPressed: () => context.push('/create'),
+                icon: const Icon(Icons.auto_awesome, size: 18),
+                label: Text(l10n.t('create_course'),
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 26),
+          _UsageCard(isDark: isDark),
+          const SizedBox(height: 32),
+          coursesAsync.when(
+            loading: () => const SizedBox(
+                height: 360, child: NvLoading(message: 'Loading courses...')),
+            error: (e, _) => SizedBox(
+              height: 420,
+              child: NvEmptyState(
+                icon: Icons.error_outline,
+                title: 'Failed to load courses',
+                subtitle: e.toString(),
+                action: NvButton(
+                  label: 'Retry',
+                  width: 140,
+                  onTap: () => ref.refresh(_coursesProvider.future),
                 ),
               ),
             ),
-
-            // ── Courses Grid ─────────────────────────────────────────────
-            coursesAsync.when(
-              loading: () => const SliverFillRemaining(
-                child: NvLoading(message: 'Loading courses...'),
-              ),
-              error: (e, _) => SliverFillRemaining(
-                child: NvEmptyState(
-                  icon: Icons.error_outline,
-                  title: 'Failed to load courses',
-                  subtitle: e.toString(),
-                  action: NvButton(
-                    label: 'Retry',
-                    width: 140,
-                    onTap: () => ref.refresh(_coursesProvider.future),
-                  ),
-                ),
-              ),
-              data: (courses) {
-                if (courses.isEmpty) {
-                  return SliverFillRemaining(
-                    child: NvEmptyState(
-                      icon: Icons.school_outlined,
-                      title: l10n.t('no_courses'),
-                      subtitle: l10n.t('start_generating'),
-                      action: NvButton(
-                        label: l10n.t('create_course'),
-                        width: 200,
-                        onTap: () => context.go('/create'),
-                      ),
-                    ),
-                  );
-                }
-                return SliverPadding(
-                  padding: const EdgeInsets.all(20),
-                  sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 1, // Single column on small screens looks better with detailed cards
-                      mainAxisSpacing: 20,
-                      childAspectRatio: 1.1, // Taller cards
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (_, i) {
-                        final c = courses[i];
-                        return NvCourseCard(
-                          course: c,
-                          onTap: () => context.push('/course/${c.id}'),
-                          onDelete: () => _deleteCourse(context, ref, c.id),
-                        );
-                      },
-                      childCount: courses.length,
+            data: (courses) {
+              if (courses.isEmpty) {
+                return SizedBox(
+                  height: 520,
+                  child: NvEmptyState(
+                    icon: Icons.school_outlined,
+                    title: l10n.t('no_courses'),
+                    subtitle: l10n.t('start_generating'),
+                    action: NvButton(
+                      label: l10n.t('create_course'),
+                      width: 220,
+                      onTap: () => context.push('/create'),
                     ),
                   ),
                 );
-              },
-            ),
-             const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
-          ],
-        ),
+              }
+
+              return Column(
+                children: courses.map((course) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: AspectRatio(
+                      aspectRatio: 1.1,
+                      child: NvCourseCard(
+                        course: course,
+                        onTap: () => context.push('/course/${course.id}'),
+                        onDelete: () => _deleteCourse(context, ref, course.id),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -221,10 +151,14 @@ class HomeScreen extends ConsumerWidget {
         title: const Text('Delete course?'),
         content: const Text('This action cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx, false), child: const Text('Cancel')),
           TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, true),
-              child: const Text('Delete', style: TextStyle(color: AppColors.error))),
+              onPressed: () => Navigator.pop(dialogCtx, false),
+              child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            child:
+                const Text('Delete', style: TextStyle(color: AppColors.error)),
+          ),
         ],
       ),
     );
@@ -233,9 +167,84 @@ class HomeScreen extends ConsumerWidget {
         final api = ref.read(apiClientProvider);
         await api.dio.delete(ApiEndpoints.deleteCourse(id));
         ref.invalidate(_coursesProvider);
-      } catch (e) {
+      } catch (_) {
         if (ctx.mounted) showSnack(ctx, 'Failed to delete', error: true);
       }
     }
+  }
+}
+
+class _UsageCard extends StatelessWidget {
+  final bool isDark;
+
+  const _UsageCard({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color: isDark ? Colors.white24 : const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withAlpha(30),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.bar_chart,
+                      size: 18, color: AppColors.primary),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  'COURSES LIMIT',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5),
+                ),
+              ]),
+              Text(
+                '2 / 5',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).disabledColor),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: const LinearProgressIndicator(
+              value: 0.4,
+              minHeight: 8,
+              backgroundColor: Colors.transparent,
+              valueColor: AlwaysStoppedAnimation(AppColors.primary),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Remaining courses: 3',
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).disabledColor),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

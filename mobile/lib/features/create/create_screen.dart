@@ -16,7 +16,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
   final _formKey = GlobalKey<FormState>();
   final _topicCtrl = TextEditingController();
   final _subTopicCtrl = TextEditingController();
-  
+
   // Selection state
   String _type = 'Theory & Image Course';
   String _language = 'English';
@@ -25,9 +25,21 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
   final List<String> _subTopics = [];
 
   final _languages = [
-    'English', 'Arabic', 'French', 'Spanish', 'German',
-    'Italian', 'Portuguese', 'Russian', 'Japanese', 'Chinese',
-    'Korean', 'Hindi', 'Turkish', 'Polish', 'Dutch',
+    'English',
+    'Arabic',
+    'French',
+    'Spanish',
+    'German',
+    'Italian',
+    'Portuguese',
+    'Russian',
+    'Japanese',
+    'Chinese',
+    'Korean',
+    'Hindi',
+    'Turkish',
+    'Polish',
+    'Dutch',
   ];
 
   void _onFeatureSelect(String feature, dynamic value) {
@@ -37,7 +49,9 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
     // Premium checks
     bool isPremiumFeature = false;
     if (feature == 'modules' && value > 5) isPremiumFeature = true;
-    if (feature == 'type' && value.toString().contains('Video')) isPremiumFeature = true;
+    if (feature == 'type' && value.toString().contains('Video')) {
+      isPremiumFeature = true;
+    }
     if (feature == 'level' && value == 'Professional') isPremiumFeature = true;
     if (feature == 'language' && value != 'English') isPremiumFeature = true;
 
@@ -65,12 +79,12 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
 
   Future<void> _generate() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (mounted) {
       context.push('/generating', extra: {
         'topic': _topicCtrl.text.trim(),
         'subTopics': _subTopics,
-        'type': _type, 
+        'type': _type,
         'language': _language,
         'level': _level,
         'numModules': _modules,
@@ -90,11 +104,13 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
         ]),
         content: const Text('Upgrade to Pro to access this feature!'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Later')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Later')),
           ElevatedButton(
             onPressed: () {
-               Navigator.pop(context);
-               context.push('/pricing'); // Updated route
+              Navigator.pop(context);
+              context.push('/pricing'); // Updated route
             },
             child: const Text('Upgrade'),
           ),
@@ -110,249 +126,298 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
     final user = ref.watch(authProvider).user;
     final isPro = user?.isPro == true;
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF050816) : const Color(0xFFF8FAFC),
-      body: ListView(
+    return Material(
+      color: isDark ? const Color(0xFF050816) : const Color(0xFFF8FAFC),
+      child: ListView(
         padding: EdgeInsets.zero,
         children: [
           // Header
           Padding(
-               padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-               child: Column(
-                 children: [
-                    Text(l10n.t('create_page.title'),
-                        textAlign: TextAlign.center,
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+            child: Column(
+              children: [
+                Text(l10n.t('create_page.title'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontFamily: 'PlusJakartaSans',
+                        fontWeight: FontWeight.w800,
+                        fontSize:
+                            28, // Matches web 3xl/4xl scaling slightly down for mobile
+                        color: isDark ? Colors.white : const Color(0xFF111827),
+                        height: 1.2)),
+                const SizedBox(height: 8),
+                ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [AppColors.gradientStart, AppColors.gradientEnd],
+                  ).createShader(bounds),
+                  child: Text(l10n.t('create_page.subtitle'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500)),
+                ),
+                const SizedBox(height: 16),
+                // Plan Badge
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isPro
+                        ? Colors.amber.withAlpha(30)
+                        : Colors.grey.withAlpha(30),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: isPro
+                            ? Colors.amber.withAlpha(100)
+                            : Colors.grey.withAlpha(100)),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(isPro ? Icons.workspace_premium : Icons.layers,
+                        size: 14, color: isPro ? Colors.amber : Colors.grey),
+                    const SizedBox(width: 6),
+                    Text('${user?.subscriptionType ?? 'FREE'} PLAN',
                         style: TextStyle(
-                            fontFamily: 'PlusJakartaSans', 
-                            fontWeight: FontWeight.w800,
-                            fontSize: 28, // Matches web 3xl/4xl scaling slightly down for mobile
-                            color: isDark ? Colors.white : const Color(0xFF111827),
-                            height: 1.2)),
-                    const SizedBox(height: 8),
-                    ShaderMask(
-                      shaderCallback: (bounds) => const LinearGradient(
-                        colors: [AppColors.gradientStart, AppColors.gradientEnd],
-                      ).createShader(bounds),
-                      child: Text(l10n.t('create_page.subtitle'),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.white, 
-                              fontWeight: FontWeight.w500)),
-                    ),
-                    const SizedBox(height: 16),
-                    // Plan Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isPro ? Colors.amber.withAlpha(30) : Colors.grey.withAlpha(30),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: isPro ? Colors.amber.withAlpha(100) : Colors.grey.withAlpha(100)),
-                      ),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(isPro ? Icons.workspace_premium : Icons.layers, 
-                           size: 14, color: isPro ? Colors.amber : Colors.grey),
-                        const SizedBox(width: 6),
-                        Text('${user?.subscriptionType ?? 'FREE'} PLAN',
-                            style: TextStyle(
-                                fontSize: 10, 
-                                fontWeight: FontWeight.bold,
-                                color: isPro ? Colors.amber : Colors.grey)),
-                      ]),
-                    ),
-                 ],
-               ),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isPro ? Colors.amber : Colors.grey)),
+                  ]),
+                ),
+              ],
+            ),
           ),
-          
+
           Container(
-              margin: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
+            margin: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF0F172A) : Colors.white,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: isDark ? Colors.white24 : Colors.grey[200]!),
+                border: Border.all(
+                    color: isDark ? Colors.white24 : Colors.grey[200]!),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withAlpha(isDark ? 0 : 10),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   )
-                ]
-              ),
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Topic
-                    const _SectionHeader(label: 'TOPIC', icon: Icons.lightbulb_outline),
-                    NvTextField(
-                      label: '',
-                      controller: _topicCtrl,
-                      hint: 'e.g. Advanced Flutter Patterns',
-                      maxLines: 1,
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
-                    ),
-                    const SizedBox(height: 24),
+                ]),
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Topic
+                  const _SectionHeader(
+                      label: 'TOPIC', icon: Icons.lightbulb_outline),
+                  NvTextField(
+                    label: '',
+                    controller: _topicCtrl,
+                    hint: 'e.g. Advanced Flutter Patterns',
+                    maxLines: 1,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 24),
 
-                    // Subtopics
-                    const _SectionHeader(label: 'SUB-TOPICS (OPTIONAL)', icon: Icons.list),
-                    Row(children: [
-                      Expanded(
-                        child: NvTextField(
-                          label: '',
-                          controller: _subTopicCtrl,
-                          hint: 'Add specific focus areas...',
-                          onFieldSubmitted: (_) => _addSubTopic(),
-                        ),
+                  // Subtopics
+                  const _SectionHeader(
+                      label: 'SUB-TOPICS (OPTIONAL)', icon: Icons.list),
+                  Row(children: [
+                    Expanded(
+                      child: NvTextField(
+                        label: '',
+                        controller: _subTopicCtrl,
+                        hint: 'Add specific focus areas...',
+                        onFieldSubmitted: (_) => _addSubTopic(),
                       ),
-                      const SizedBox(width: 10),
-                      IconButton.filled(
-                        style: IconButton.styleFrom(backgroundColor: isDark ? Colors.white10 : Colors.black),
-                        icon: const Icon(Icons.add, color: Colors.white),
-                        onPressed: _addSubTopic,
-                      ),
-                    ]),
-                    if (_subTopics.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _subTopics.map((t) => Chip(
-                          label: Text(t, style: const TextStyle(fontSize: 12, color: AppColors.primary)),
-                          deleteIcon: const Icon(Icons.close, size: 14, color: AppColors.primary),
-                          onDeleted: () => setState(() => _subTopics.remove(t)),
-                          backgroundColor: AppColors.primary.withAlpha(20),
-                          side: BorderSide(color: AppColors.primary.withAlpha(50)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        )).toList(),
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-
-                    // Language
-                    const _SectionHeader(label: 'LANGUAGE', icon: Icons.language),
-                    DropdownButtonFormField<String>(
-                      value: _language,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: isDark ? const Color(0xFF1F1F1F) : const Color(0xFFF9FAFB),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      ),
-                      icon: const Icon(Icons.keyboard_arrow_down),
-                      dropdownColor: isDark ? const Color(0xFF1F1F1F) : Colors.white,
-                      items: _languages.map((l) {
-                        final isPrem = l != 'English';
-                        return DropdownMenuItem(
-                          value: l,
-                          child: Row(children: [
-                            Text(l),
-                            if (isPrem && !isPro) ...[
-                              const Spacer(),
-                              const Icon(Icons.workspace_premium, size: 14, color: Colors.amber),
-                            ]
-                          ]),
-                        );
-                      }).toList(),
-                      onChanged: (v) => _onFeatureSelect('language', v),
                     ),
-                    const SizedBox(height: 24),
-
-                    // Complexity (Grid)
-                    const _SectionHeader(label: 'COMPLEXITY LEVEL', icon: Icons.rocket_launch_outlined),
-                    GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      childAspectRatio: 2.2,
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      children: ['Beginner', 'Intermediate', 'Advanced', 'Professional'].map((level) {
-                        final isPrem = level == 'Professional';
-                        return _ComplexityCard(
-                          label: level,
-                          isSelected: _level == level,
-                          isPremium: isPrem,
-                          isLocked: isPrem && !isPro,
-                          onTap: () => _onFeatureSelect('level', level),
-                        );
-                      }).toList(),
+                    const SizedBox(width: 10),
+                    IconButton.filled(
+                      style: IconButton.styleFrom(
+                          backgroundColor:
+                              isDark ? Colors.white10 : Colors.black),
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      onPressed: _addSubTopic,
                     ),
-                    const SizedBox(height: 24),
-
-                    // Depth (Modules)
-                    const _SectionHeader(label: 'DEPTH', icon: Icons.layers_outlined),
-                    Row(
-                      children: [5, 10].map((m) {
-                        final isPrem = m > 5;
-                         return Expanded(
-                           child: Padding(
-                             padding: EdgeInsets.only(right: m == 5 ? 10 : 0), // Spacing
-                             child: _DepthCard(
-                                value: m,
-                                label: 'Modules',
-                                isSelected: _modules == m,
-                                isPremium: isPrem,
-                                isLocked: isPrem && !isPro,
-                                onTap: () => _onFeatureSelect('modules', m),
-                             ),
-                           ),
-                         );
-                      }).toList(),
+                  ]),
+                  if (_subTopics.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _subTopics
+                          .map((t) => Chip(
+                                label: Text(t,
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.primary)),
+                                deleteIcon: const Icon(Icons.close,
+                                    size: 14, color: AppColors.primary),
+                                onDeleted: () =>
+                                    setState(() => _subTopics.remove(t)),
+                                backgroundColor:
+                                    AppColors.primary.withAlpha(20),
+                                side: BorderSide(
+                                    color: AppColors.primary.withAlpha(50)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8)),
+                              ))
+                          .toList(),
                     ),
-                    const SizedBox(height: 24),
+                  ],
+                  const SizedBox(height: 24),
 
-                    // Format (Type)
-                    const _SectionHeader(label: 'FORMAT', icon: Icons.auto_stories_outlined),
-                    Column(
-                      children: ['Theory & Image Course', 'Video & Theory Course'].map((t) {
-                        final isPrem = t.contains('Video');
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _TypeCard(
-                            label: t.contains('Video') ? 'Video & Theory' : 'Theory & Image',
-                            desc: t.contains('Video') ? 'Detailed video explanations' : 'Comprehensive text & images',
-                            icon: t.contains('Video') ? Icons.videocam : Icons.menu_book,
-                            isSelected: _type == t,
+                  // Language
+                  const _SectionHeader(label: 'LANGUAGE', icon: Icons.language),
+                  DropdownButtonFormField<String>(
+                    value: _language,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: isDark
+                          ? const Color(0xFF1F1F1F)
+                          : const Color(0xFFF9FAFB),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                    ),
+                    icon: const Icon(Icons.keyboard_arrow_down),
+                    dropdownColor:
+                        isDark ? const Color(0xFF1F1F1F) : Colors.white,
+                    items: _languages.map((l) {
+                      final isPrem = l != 'English';
+                      return DropdownMenuItem(
+                        value: l,
+                        child: Row(children: [
+                          Text(l),
+                          if (isPrem && !isPro) ...[
+                            const Spacer(),
+                            const Icon(Icons.workspace_premium,
+                                size: 14, color: Colors.amber),
+                          ]
+                        ]),
+                      );
+                    }).toList(),
+                    onChanged: (v) => _onFeatureSelect('language', v),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Complexity (Grid)
+                  const _SectionHeader(
+                      label: 'COMPLEXITY LEVEL',
+                      icon: Icons.rocket_launch_outlined),
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    childAspectRatio: 2.2,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    children: [
+                      'Beginner',
+                      'Intermediate',
+                      'Advanced',
+                      'Professional'
+                    ].map((level) {
+                      final isPrem = level == 'Professional';
+                      return _ComplexityCard(
+                        label: level,
+                        isSelected: _level == level,
+                        isPremium: isPrem,
+                        isLocked: isPrem && !isPro,
+                        onTap: () => _onFeatureSelect('level', level),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Depth (Modules)
+                  const _SectionHeader(
+                      label: 'DEPTH', icon: Icons.layers_outlined),
+                  Row(
+                    children: [5, 10].map((m) {
+                      final isPrem = m > 5;
+                      return Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                              right: m == 5 ? 10 : 0), // Spacing
+                          child: _DepthCard(
+                            value: m,
+                            label: 'Modules',
+                            isSelected: _modules == m,
                             isPremium: isPrem,
                             isLocked: isPrem && !isPro,
-                            onTap: () => _onFeatureSelect('type', t),
+                            onTap: () => _onFeatureSelect('modules', m),
                           ),
-                        );
-                      }).toList(),
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // Submit
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: 4,
-                          shadowColor: AppColors.primary.withAlpha(80),
                         ),
-                        onPressed: _generate,
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.auto_awesome, size: 20),
-                            SizedBox(width: 8),
-                            Text('Generate Course', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                          ],
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Format (Type)
+                  const _SectionHeader(
+                      label: 'FORMAT', icon: Icons.auto_stories_outlined),
+                  Column(
+                    children: ['Theory & Image Course', 'Video & Theory Course']
+                        .map((t) {
+                      final isPrem = t.contains('Video');
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _TypeCard(
+                          label: t.contains('Video')
+                              ? 'Video & Theory'
+                              : 'Theory & Image',
+                          desc: t.contains('Video')
+                              ? 'Detailed video explanations'
+                              : 'Comprehensive text & images',
+                          icon: t.contains('Video')
+                              ? Icons.videocam
+                              : Icons.menu_book,
+                          isSelected: _type == t,
+                          isPremium: isPrem,
+                          isLocked: isPrem && !isPro,
+                          onTap: () => _onFeatureSelect('type', t),
                         ),
+                      );
+                    }).toList(),
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  // Submit
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                        elevation: 4,
+                        shadowColor: AppColors.primary.withAlpha(80),
+                      ),
+                      onPressed: _generate,
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.auto_awesome, size: 20),
+                          SizedBox(width: 8),
+                          Text('Generate Course',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
+          ),
         ],
       ),
     );
@@ -371,7 +436,9 @@ class _SectionHeader extends StatelessWidget {
       child: Row(children: [
         Icon(icon, size: 16, color: AppColors.primary),
         const SizedBox(width: 8),
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
       ]),
     );
   }
@@ -395,18 +462,20 @@ class _ComplexityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: isSelected 
+          color: isSelected
               ? AppColors.primary.withAlpha(20)
               : (isDark ? const Color(0xFF1F1F1F) : Colors.white),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : (isDark ? Colors.white10 : Colors.grey[300]!),
+            color: isSelected
+                ? AppColors.primary
+                : (isDark ? Colors.white10 : Colors.grey[300]!),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -422,15 +491,20 @@ class _ComplexityCard extends StatelessWidget {
                       fontSize: 11, // Match web text-[10px] scale
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.5,
-                      color: isSelected ? AppColors.primary : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isDark ? Colors.grey[400] : Colors.grey[600]),
                     )),
               ],
             ),
             if (isPremium)
               Positioned(
-                top: 6, right: 6,
-                child: Icon(isLocked ? Icons.lock_outline : Icons.workspace_premium, 
-                   size: 12, color: Colors.amber),
+                top: 6,
+                right: 6,
+                child: Icon(
+                    isLocked ? Icons.lock_outline : Icons.workspace_premium,
+                    size: 12,
+                    color: Colors.amber),
               )
           ],
         ),
@@ -466,12 +540,14 @@ class _DepthCard extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected 
+          color: isSelected
               ? AppColors.primary.withAlpha(20)
               : (isDark ? const Color(0xFF1F1F1F) : Colors.white),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : (isDark ? Colors.white10 : Colors.grey[300]!),
+            color: isSelected
+                ? AppColors.primary
+                : (isDark ? Colors.white10 : Colors.grey[300]!),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -484,7 +560,9 @@ class _DepthCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 24, // Web text-2xl
                       fontWeight: FontWeight.w900,
-                      color: isSelected ? AppColors.primary : (isDark ? Colors.white : Colors.black),
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isDark ? Colors.white : Colors.black),
                     )),
                 const SizedBox(height: 2),
                 Text(label.toUpperCase(),
@@ -495,11 +573,14 @@ class _DepthCard extends StatelessWidget {
                     )),
               ],
             ),
-             if (isPremium)
+            if (isPremium)
               Positioned(
-                top: 0, right: 8,
-                child: Icon(isLocked ? Icons.lock_outline : Icons.workspace_premium, 
-                   size: 14, color: Colors.amber),
+                top: 0,
+                right: 8,
+                child: Icon(
+                    isLocked ? Icons.lock_outline : Icons.workspace_premium,
+                    size: 14,
+                    color: Colors.amber),
               )
           ],
         ),
@@ -537,12 +618,14 @@ class _TypeCard extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected 
+          color: isSelected
               ? AppColors.primary.withAlpha(20)
               : (isDark ? const Color(0xFF1F1F1F) : Colors.white),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : (isDark ? Colors.white10 : Colors.grey[300]!),
+            color: isSelected
+                ? AppColors.primary
+                : (isDark ? Colors.white10 : Colors.grey[300]!),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -551,42 +634,50 @@ class _TypeCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary.withAlpha(30) : (isDark ? Colors.white10 : Colors.grey[100]),
+                color: isSelected
+                    ? AppColors.primary.withAlpha(30)
+                    : (isDark ? Colors.white10 : Colors.grey[100]),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, color: isSelected ? AppColors.primary : Colors.grey, size: 24),
+              child: Icon(icon,
+                  color: isSelected ? AppColors.primary : Colors.grey,
+                  size: 24),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: TextStyle(
-                    fontSize: 14, 
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black
-                  )),
-                  Text(desc, style: TextStyle(
-                    fontSize: 12, 
-                    color: isDark ? Colors.grey[400] : Colors.grey[600]
-                  )),
+                  Text(label,
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black)),
+                  Text(desc,
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600])),
                 ],
               ),
             ),
             if (isPremium)
-               Container(
-                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                 decoration: BoxDecoration(
-                   color: Colors.amber.withAlpha(40),
-                   borderRadius: BorderRadius.circular(4),
-                 ),
-                 child: Row(children: [
-                   Icon(isLocked ? Icons.lock_outline : Icons.workspace_premium, 
-                     size: 10, color: Colors.amber),
-                   const SizedBox(width: 4),
-                   const Text('PREMIUM', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.amber))
-                 ]),
-               ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withAlpha(40),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(children: [
+                  Icon(isLocked ? Icons.lock_outline : Icons.workspace_premium,
+                      size: 10, color: Colors.amber),
+                  const SizedBox(width: 4),
+                  const Text('PREMIUM',
+                      style: TextStyle(
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber))
+                ]),
+              ),
           ],
         ),
       ),

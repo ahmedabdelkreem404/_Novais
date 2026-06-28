@@ -21,7 +21,8 @@ class AppSidebar extends ConsumerWidget {
         children: [
           // Logo Area
           Container(
-            height: 64, // h-14 * 4 = 56, adjusted for status bar padding if needed
+            height:
+                64, // h-14 * 4 = 56, adjusted for status bar padding if needed
             decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: border)),
             ),
@@ -31,83 +32,104 @@ class AppSidebar extends ConsumerWidget {
               bottom: false,
               child: Row(
                 children: [
-                   Container(
-                     width: 32, height: 32,
-                     decoration: BoxDecoration(
-                       color: isDark ? Colors.white.withAlpha(10) : Colors.blue.withAlpha(20),
-                       borderRadius: BorderRadius.circular(8),
-                     ),
-                     child: const Icon(Icons.auto_awesome, color: AppColors.primary, size: 20),
-                   ),
-                   const SizedBox(width: 10),
-                   Text(
-                     'NOVAIS',
-                     style: TextStyle(
-                       fontFamily: 'PlusJakartaSans',
-                       fontSize: 16,
-                       fontWeight: FontWeight.w700,
-                       color: isDark ? Colors.white : Colors.black,
-                       letterSpacing: -0.5,
-                     ),
-                   ),
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withAlpha(10)
+                          : Colors.blue.withAlpha(20),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.auto_awesome,
+                        color: AppColors.primary, size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'NOVAIS',
+                    style: TextStyle(
+                      fontFamily: 'PlusJakartaSans',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : Colors.black,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: IconButton(
+                      tooltip: 'Close menu',
+                      icon: Icon(Icons.close,
+                          color: isDark ? Colors.white70 : Colors.black54),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
 
-          // Scale for mobile drawer width usually 304, but web sidebar is 255. 
+          // Scale for mobile drawer width usually 304, but web sidebar is 255.
           // Drawer fills width. We let it fill.
-          
+
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
               children: [
                 const _NavItem(
-                  icon: Icons.home_outlined, 
-                  label: 'Home', 
+                  icon: Icons.home_outlined,
+                  label: 'Home',
                   path: '/dashboard',
                   selectedIcon: Icons.home,
                 ),
                 const _NavItem(
-                  icon: Icons.headphones_outlined, 
-                  label: 'Audio Courses', 
+                  icon: Icons.headphones_outlined,
+                  label: 'Audio Courses',
                   path: '/audio',
                   selectedIcon: Icons.headphones,
                 ),
                 const _NavItem(
-                  icon: Icons.person_outline, 
-                  label: 'Profile', 
+                  icon: Icons.person_outline,
+                  label: 'Profile',
                   path: '/profile',
                   selectedIcon: Icons.person,
                 ),
                 const _NavItem(
-                  icon: Icons.monetization_on_outlined, 
-                  label: 'Pricing', 
+                  icon: Icons.monetization_on_outlined,
+                  label: 'Pricing',
                   path: '/pricing',
                   selectedIcon: Icons.monetization_on,
                 ),
 
                 const SizedBox(height: 16),
-                
+
                 // Generate Course Button
                 ElevatedButton(
                   onPressed: () {
-                    Scaffold.of(context).closeDrawer();
-                    context.push('/create');
+                    final router = GoRouter.of(context);
+                    Navigator.of(context).pop();
+                    Future.microtask(() {
+                      router.go('/create');
+                    });
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
                   ),
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.auto_awesome, size: 16),
                       SizedBox(width: 8),
-                      Text('Generate Course', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      Text('Generate Course',
+                          style: TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
@@ -129,35 +151,42 @@ class AppSidebar extends ConsumerWidget {
                         children: [
                           Icon(Icons.bolt, size: 14, color: AppColors.primary),
                           SizedBox(width: 6),
-                          Text('COURSES LIMIT', 
-                            style: TextStyle(
-                              color: AppColors.primary, 
-                              fontSize: 10, 
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.5)),
+                          Text('COURSES LIMIT',
+                              style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5)),
                         ],
                       ),
                       const SizedBox(height: 6),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('1', style: TextStyle(
-                            fontSize: 18, 
-                            fontWeight: FontWeight.w800, 
-                            color: isDark ? Colors.white : Colors.black,
-                            height: 1,
-                          )),
-                          Text(' / ∞', style: TextStyle(
-                            fontSize: 14, 
-                            color: isDark ? Colors.grey[500] : Colors.grey[400],
-                            fontWeight: FontWeight.w500,
-                          )), // Mock data for now
+                          Text('1',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? Colors.white : Colors.black,
+                                height: 1,
+                              )),
+                          Text(' / ∞',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark
+                                    ? Colors.grey[500]
+                                    : Colors.grey[400],
+                                fontWeight: FontWeight.w500,
+                              )), // Mock data for now
                           const Spacer(),
-                          Text('COURSE', style: TextStyle(
-                            fontSize: 9, 
-                            fontWeight: FontWeight.bold, 
-                            color: isDark ? Colors.grey[500] : Colors.grey[500],
-                          )),
+                          Text('COURSE',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: isDark
+                                    ? Colors.grey[500]
+                                    : Colors.grey[500],
+                              )),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -186,17 +215,28 @@ class AppSidebar extends ConsumerWidget {
             ),
             child: Column(
               children: [
-                 // Logout
-                 ListTile(
-                   dense: true,
-                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                   leading: const Icon(Icons.logout, size: 20),
-                   title: const Text('Logout', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                   onTap: () {
-                     ref.read(authProvider.notifier).logout();
-                     context.go('/auth'); 
-                   },
-                 ),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    style: TextButton.styleFrom(
+                      alignment: Alignment.centerLeft,
+                      foregroundColor: isDark ? Colors.white70 : Colors.black87,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    icon: const Icon(Icons.logout, size: 20),
+                    label: const Text('Logout',
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w500)),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      ref.read(authProvider.notifier).logout();
+                      context.go('/signin');
+                    },
+                  ),
+                ),
               ],
             ),
           ),
@@ -223,7 +263,8 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     // Current path check for selection
     final currentPath = GoRouterState.of(context).uri.path;
-    final isSelected = currentPath == path || (path != '/dashboard' && currentPath.startsWith(path));
+    final isSelected = currentPath == path ||
+        (path != '/dashboard' && currentPath.startsWith(path));
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -231,29 +272,32 @@ class _NavItem extends StatelessWidget {
       child: ListTile(
         dense: true,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        tileColor: isSelected 
-          ? (isDark ? Colors.white.withAlpha(25) : Colors.grey[100]) 
-          : null,
+        tileColor: isSelected
+            ? (isDark ? Colors.white.withAlpha(25) : Colors.grey[100])
+            : null,
         leading: Icon(
-          isSelected ? selectedIcon : icon, 
+          isSelected ? selectedIcon : icon,
           size: 20,
-          color: isSelected 
-            ? (isDark ? Colors.white : Colors.black) 
-            : (isDark ? Colors.grey[400] : Colors.grey[600]),
+          color: isSelected
+              ? (isDark ? Colors.white : Colors.black)
+              : (isDark ? Colors.grey[400] : Colors.grey[600]),
         ),
         title: Text(
           label,
           style: TextStyle(
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected 
-              ? (isDark ? Colors.white : Colors.black) 
-              : (isDark ? Colors.grey[400] : Colors.grey[600]),
+            color: isSelected
+                ? (isDark ? Colors.white : Colors.black)
+                : (isDark ? Colors.grey[400] : Colors.grey[600]),
           ),
         ),
         onTap: () {
-          Scaffold.of(context).closeDrawer();
-          context.go(path);
+          final router = GoRouter.of(context);
+          Navigator.of(context).pop();
+          Future.microtask(() {
+            router.go(path);
+          });
         },
       ),
     );
