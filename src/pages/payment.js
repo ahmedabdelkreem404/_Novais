@@ -73,6 +73,7 @@ const Payment = () => {
     const selectedBillingCycle = String(plan_id || '').includes('yearly') ? 'yearly' : 'monthly';
     const selectedPlan = plans.find(plan => plan.slug === selectedPlanSlug);
     const isOfflinePayment = paymentMethod === 'vodafone_cash' || paymentMethod === 'instapay';
+    const selectedOfflineMethodConfig = isOfflinePayment ? offlineInstructions[paymentMethod] : null;
 
     const handlePayment = async () => {
         if (!email || !mName || !lastName) {
@@ -87,6 +88,11 @@ const Payment = () => {
 
         if (isOfflinePayment && !selectedPlan?.id) {
             toast.error(isRtl ? 'تعذر تحديد الباقة المختارة' : 'Unable to resolve selected plan');
+            return;
+        }
+
+        if (isOfflinePayment && selectedOfflineMethodConfig?.configured === false) {
+            toast.error(isRtl ? 'طريقة الدفع اليدوي غير مفعلة حالياً' : 'This offline payment method is not configured yet');
             return;
         }
 
@@ -274,11 +280,11 @@ const Payment = () => {
                                         <p className="break-words">
                                             {isRtl ? 'بيانات الاستلام: ' : 'Receiver: '}
                                             <span className="font-bold">
-                                                {offlineInstructions[paymentMethod]?.receiver || (isRtl ? 'غير مضاف بعد' : 'Not configured yet')}
+                                                {selectedOfflineMethodConfig?.receiver || (isRtl ? 'غير مضاف بعد' : 'Not configured yet')}
                                             </span>
                                         </p>
                                         <p className="mt-2 text-xs opacity-80">
-                                            {offlineInstructions[paymentMethod]?.instructions || (isRtl ? 'حوّل المبلغ ثم أرسل بيانات العملية للمراجعة.' : 'Transfer the amount, then submit the receipt details for review.')}
+                                            {selectedOfflineMethodConfig?.instructions || (isRtl ? 'طريقة الدفع هذه غير مفعلة حالياً.' : 'This payment method is not configured yet.')}
                                         </p>
                                     </div>
 
