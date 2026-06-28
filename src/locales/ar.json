@@ -494,6 +494,7 @@
         "users": "المستخدمين",
         "courses": "الدورات",
         "paid_users": "المشتركين",
+        "offline_payments": "الدفع اليدوي",
         "admins": "المدراء",
         "plan_updated": "تم تحديث الخطة بنجاح",
         "user_promoted": "تمت ترقية المستخدم إلى مدير",

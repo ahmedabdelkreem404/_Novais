@@ -43,6 +43,7 @@ return [
 
     'deepseek' => [
         'api_key' => env('DEEPSEEK_API_KEY'),
+        'model' => env('DEEPSEEK_MODEL', 'deepseek-v4-flash'),
     ],
 
     'media' => [
@@ -50,5 +51,9 @@ return [
         'min_relevance_score' => env('MEDIA_MIN_RELEVANCE_SCORE', 0.6),
     ],
 
-];
+    'offline_payments' => [
+        'vodafone_cash_receiver' => env('OFFLINE_PAYMENT_VODAFONE_CASH_RECEIVER'),
+        'instapay_receiver' => env('OFFLINE_PAYMENT_INSTAPAY_RECEIVER'),
+    ],
 
+];

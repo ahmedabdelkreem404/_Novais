@@ -492,6 +492,7 @@
         "users": "Users",
         "courses": "Courses",
         "paid_users": "Paid Users",
+        "offline_payments": "Offline Payments",
         "admins": "Admins",
         "contacts": "Messages",
         "manage_blogs": "Manage Blogs",
