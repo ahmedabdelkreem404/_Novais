@@ -27,7 +27,8 @@ Future<String?> _safeRead(FlutterSecureStorage storage, String key) async {
   }
 }
 
-Future<void> _safeWrite(FlutterSecureStorage storage, String key, String value) async {
+Future<void> _safeWrite(
+    FlutterSecureStorage storage, String key, String value) async {
   try {
     await storage.write(key: key, value: value);
   } on PlatformException {
@@ -123,7 +124,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final FlutterSecureStorage _storage;
   final ApiClient _apiClient;
 
-  AuthNotifier({required FlutterSecureStorage storage, required ApiClient apiClient})
+  AuthNotifier(
+      {required FlutterSecureStorage storage, required ApiClient apiClient})
       : _storage = storage,
         _apiClient = apiClient,
         super(const AuthState()) {
@@ -165,8 +167,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
       });
       final token = res.data['token'] ?? res.data['access_token'];
       await _safeWrite(_storage, 'jwt_token', token.toString());
-      final user = AppUser.fromJson(res.data['user'] ?? {});
-      state = state.copyWith(status: AuthStatus.authenticated, user: user);
+      final userData = res.data['user'];
+      if (userData is Map<String, dynamic> && userData.isNotEmpty) {
+        final user = AppUser.fromJson(userData);
+        state = state.copyWith(status: AuthStatus.authenticated, user: user);
+      }
+      await refreshUser();
+      if (state.user == null) {
+        state = state.copyWith(status: AuthStatus.authenticated);
+      }
       return true;
     } on Exception catch (e) {
       state = state.copyWith(error: e.toString());
@@ -179,7 +188,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final deviceId = await _getDeviceId();
       final payload = Map<String, dynamic>.from(data);
       payload['device_id'] = deviceId;
-      
+
       final res = await _apiClient.dio.post('/auth/register', data: payload);
       final token = res.data['token'] ?? res.data['access_token'];
       if (token != null) {
@@ -198,11 +207,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> loginWithGoogle() async {
-    // Placeholder for Google Sign-In. 
+    // Placeholder for Google Sign-In.
     // In a real app, use google_sign_in package to get token, then backend.
     // For now, we just simulate a delay or throw.
     await Future.delayed(const Duration(seconds: 1));
-    throw UnimplementedError('Google Sign-In not configured yet'); 
+    throw UnimplementedError('Google Sign-In not configured yet');
   }
 
   Future<void> logout() async {
@@ -217,7 +226,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final res = await _apiClient.dio.get('/auth/user-profile');
       final user = AppUser.fromJson(res.data['user'] ?? res.data);
-      state = state.copyWith(user: user);
+      state = state.copyWith(status: AuthStatus.authenticated, user: user);
     } catch (_) {}
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
@@ -39,7 +40,11 @@ import '../../features/profile/profile_screen.dart';
 
 // ── Payment
 import '../../features/payment/pricing_screen.dart'
-    show PricingScreen, PaymentScreen, PaymentResultScreen, ManageSubscriptionScreen;
+    show
+        PricingScreen,
+        PaymentScreen,
+        PaymentResultScreen,
+        ManageSubscriptionScreen;
 
 // ── Notes
 import '../../features/notes/notes_screen.dart';
@@ -50,42 +55,22 @@ import '../../features/misc/stub_screens.dart';
 import '../../features/shared_course/shared_course_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final auth = ref.watch(authProvider);
+  final authStatus = ref.watch(authProvider.select((state) => state.status));
 
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: '/auth-loading',
+    overridePlatformDefaultLocation: true,
     redirect: (context, state) {
-      final status = auth.status;
-      final isAuth = status == AuthStatus.authenticated;
-      final isUnknown = status == AuthStatus.unknown;
-
-      if (isUnknown) return null; // Still loading
-
-      final protectedPaths = [
-        '/dashboard',
-        '/create',
-        '/generating',
-        '/course',
-        '/quiz',
-        '/certificate',
-        '/profile',
-        '/payment',
-        '/subscription',
-        '/notes',
-        '/audio',
-      ];
-
-      final isProtected = protectedPaths.any((p) => state.uri.path.startsWith(p));
-
-      if (!isAuth && isProtected) return '/signin';
-      if (isAuth && (state.uri.path == '/signin' || state.uri.path == '/signup')) {
-        return '/dashboard';
-      }
-      return null;
+      return mobileAuthRedirect(authStatus, state.uri.path);
     },
     routes: [
+      GoRoute(
+          path: '/auth-loading',
+          builder: (_, __) => const _AuthLoadingScreen()),
+
       // ── Public ──────────────────────────────────────────────────────────────
-      GoRoute(path: '/', builder: (_, __) => const LandingScreen()),
+      GoRoute(path: '/', builder: (_, __) => const _AuthLoadingScreen()),
+      GoRoute(path: '/landing', builder: (_, __) => const LandingScreen()),
       GoRoute(path: '/features', builder: (_, __) => const FeaturesScreen()),
       GoRoute(path: '/about', builder: (_, __) => const AboutScreen()),
       GoRoute(
@@ -94,21 +79,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: ':slug',
-            builder: (_, state) => BlogDetailScreen(slug: state.pathParameters['slug']!),
+            builder: (_, state) =>
+                BlogDetailScreen(slug: state.pathParameters['slug']!),
           ),
         ],
       ),
       GoRoute(path: '/contact', builder: (_, __) => const ContactScreen()),
       GoRoute(
         path: '/policy/:slug',
-        builder: (_, state) => PolicyScreen(slug: state.pathParameters['slug']!),
+        builder: (_, state) =>
+            PolicyScreen(slug: state.pathParameters['slug']!),
       ),
       GoRoute(path: '/download', builder: (_, __) => const DownloadScreen()),
 
       // ── Auth ─────────────────────────────────────────────────────────────────
       GoRoute(path: '/signin', builder: (_, __) => const SignInScreen()),
       GoRoute(path: '/signup', builder: (_, __) => const SignUpScreen()),
-      GoRoute(path: '/forgot-password', builder: (_, __) => const ForgotPasswordScreen()),
+      GoRoute(
+          path: '/forgot-password',
+          builder: (_, __) => const ForgotPasswordScreen()),
       GoRoute(
         path: '/reset-password/:token',
         builder: (_, state) =>
@@ -128,7 +117,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(path: '/dashboard', builder: (_, __) => const HomeScreen()),
           GoRoute(path: '/create', builder: (_, __) => const CreateScreen()),
-          GoRoute(path: '/audio', builder: (_, __) => const AudioCoursesScreen()),
+          GoRoute(
+              path: '/audio', builder: (_, __) => const AudioCoursesScreen()),
           GoRoute(path: '/notes', builder: (_, __) => const NotesScreen()),
           GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
         ],
@@ -144,8 +134,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/course/:courseId',
-        builder: (_, state) =>
-            CourseScreen(courseId: int.parse(state.pathParameters['courseId']!)),
+        builder: (_, state) => CourseScreen(
+            courseId: int.parse(state.pathParameters['courseId']!)),
       ),
       GoRoute(
         path: '/quiz/:courseId',
@@ -196,3 +186,56 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     errorBuilder: (_, state) => ErrorScreen(message: state.error?.message),
   );
 });
+
+String? mobileAuthRedirect(AuthStatus status, String location) {
+  final isAuth = status == AuthStatus.authenticated;
+  final isUnknown = status == AuthStatus.unknown;
+  final isLoading = location == '/auth-loading';
+
+  if (isUnknown) {
+    return isLoading ? null : '/auth-loading';
+  }
+
+  if (isLoading) {
+    return isAuth ? '/dashboard' : '/signin';
+  }
+
+  final protectedPaths = [
+    '/dashboard',
+    '/create',
+    '/generating',
+    '/course',
+    '/quiz',
+    '/certificate',
+    '/profile',
+    '/payment',
+    '/subscription',
+    '/notes',
+    '/audio',
+  ];
+
+  final isProtected = protectedPaths.any((p) => location.startsWith(p));
+
+  if (!isAuth && (isProtected || location == '/')) return '/signin';
+  if (isAuth &&
+      (location == '/signin' || location == '/signup' || location == '/')) {
+    return '/dashboard';
+  }
+  return null;
+}
+
+class _AuthLoadingScreen extends StatelessWidget {
+  const _AuthLoadingScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Color(0xFF050816),
+      body: SafeArea(
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+    );
+  }
+}

@@ -79,7 +79,7 @@ class HomeScreen extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
-                onPressed: () => context.push('/create'),
+                onPressed: () => _openCreate(context),
                 icon: const Icon(Icons.auto_awesome, size: 18),
                 label: Text(l10n.t('create_course'),
                     style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -116,7 +116,7 @@ class HomeScreen extends ConsumerWidget {
                     action: NvButton(
                       label: l10n.t('create_course'),
                       width: 220,
-                      onTap: () => context.push('/create'),
+                      onTap: () => _openCreate(context),
                     ),
                   ),
                 );
@@ -142,6 +142,10 @@ class HomeScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _openCreate(BuildContext context) {
+    context.go('/create');
   }
 
   Future<void> _deleteCourse(BuildContext ctx, WidgetRef ref, int id) async {

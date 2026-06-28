@@ -31,9 +31,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     setState(() => _loading = true);
     try {
       final success = await ref.read(authProvider.notifier).login(
-        _emailCtrl.text.trim(),
-        _passCtrl.text,
-      );
+            _emailCtrl.text.trim(),
+            _passCtrl.text,
+          );
       if (success) {
         if (mounted) context.go('/dashboard');
       } else {
@@ -47,11 +47,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 
   Future<void> _googleLogin() async {
-     try {
-       await ref.read(authProvider.notifier).loginWithGoogle();
-     } catch (e) {
-       if (mounted) showSnack(context, 'Google Sign-In not implemented yet', error: true);
-     }
+    try {
+      await ref.read(authProvider.notifier).loginWithGoogle();
+    } catch (e) {
+      if (mounted) {
+        showSnack(context, 'Google Sign-In not implemented yet', error: true);
+      }
+    }
   }
 
   @override
@@ -62,7 +64,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     // Checking extensions.dart might be needed, but I'll stick to standard strings if not sure.
     // To be safe, I will use hardcoded strings for now or standard Localizations if I see the import.
     // The import '../../utils/extensions.dart' suggests it's there.
-    
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -83,8 +85,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color(0xFF111827).withAlpha(150) // Gray-900/60
-                          : Colors.white.withAlpha(200),           // White/80
+                          ? const Color(0xFF111827)
+                              .withAlpha(150) // Gray-900/60
+                          : Colors.white.withAlpha(200), // White/80
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: isDark
@@ -108,10 +111,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           height: 64,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1F2937) : Colors.white,
+                            color:
+                                isDark ? const Color(0xFF1F2937) : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(5),
+                              color: isDark
+                                  ? Colors.white.withAlpha(10)
+                                  : Colors.black.withAlpha(5),
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -121,12 +127,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                               ),
                             ],
                           ),
-                          child: const Icon(Icons.auto_awesome, size: 32, color: AppColors.primary),
+                          child: const Icon(Icons.auto_awesome,
+                              size: 32, color: AppColors.primary),
                           // Using Icon as placeholder if image asset missing
                           // child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
                         ),
                         const SizedBox(height: 24),
-                        
+
                         const Text(
                           'Welcome Back',
                           style: TextStyle(
@@ -160,19 +167,25 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           prefix: const Icon(Icons.lock_outline, size: 20),
                           hint: '••••••••',
                           suffix: IconButton(
-                            icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, size: 20),
-                            onPressed: () => setState(() => _obscure = !_obscure),
+                            icon: Icon(
+                                _obscure
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                size: 20),
+                            onPressed: () =>
+                                setState(() => _obscure = !_obscure),
                           ),
                           obscure: _obscure,
                         ),
-                        
+
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
                             onPressed: () => context.push('/forgot-password'),
                             style: TextButton.styleFrom(
                               foregroundColor: AppColors.primary,
-                              textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                              textStyle: const TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 13),
                             ),
                             child: const Text('Forgot Password?'),
                           ),
@@ -188,19 +201,25 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
                         const SizedBox(height: 24),
                         Row(children: [
-                          Expanded(child: Divider(color: Theme.of(context).dividerColor)),
+                          Expanded(
+                              child: Divider(
+                                  color: Theme.of(context).dividerColor)),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
                               'OR',
                               style: TextStyle(
-                                color: isDark ? Colors.grey[500] : Colors.grey[400],
+                                color: isDark
+                                    ? Colors.grey[500]
+                                    : Colors.grey[400],
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
-                          Expanded(child: Divider(color: Theme.of(context).dividerColor)),
+                          Expanded(
+                              child: Divider(
+                                  color: Theme.of(context).dividerColor)),
                         ]),
                         const SizedBox(height: 24),
 
@@ -213,7 +232,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                             Text(
                               'Don\'t have an account?',
                               style: TextStyle(
-                                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
                               ),
                             ),
                             TextButton(
@@ -253,17 +274,20 @@ class _GoogleButton extends StatelessWidget {
           side: BorderSide(color: Theme.of(context).dividerColor, width: 1.0),
           backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
           foregroundColor: isDark ? Colors.white : Colors.black87,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         onPressed: onTap,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-              padding: const EdgeInsets.all(2),
-              child: const Icon(Icons.g_mobiledata, color: Colors.blue, size: 24) // Fallback if no SVG
-            ),
+                decoration: const BoxDecoration(
+                    color: Colors.white, shape: BoxShape.circle),
+                padding: const EdgeInsets.all(2),
+                child: const Icon(Icons.g_mobiledata,
+                    color: Colors.blue, size: 24) // Fallback if no SVG
+                ),
             const SizedBox(width: 10),
             const Text('Continue with Google',
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
