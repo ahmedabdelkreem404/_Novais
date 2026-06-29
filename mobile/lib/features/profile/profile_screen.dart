@@ -5,6 +5,7 @@ import '../../core/auth/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../widgets/widgets.dart';
+import '../../core/api/platform_config_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -17,6 +18,10 @@ class ProfileScreen extends ConsumerWidget {
     final locale = ref.watch(localeProvider);
     final isDark = themeMode == ThemeMode.dark;
     final isAr = locale.languageCode == 'ar';
+    final configAsync = ref.watch(platformConfigProvider);
+    final showThemeToggle = !configAsync.hasValue ||
+        (configAsync.value!.systemThemeMode != 'light_only' &&
+            configAsync.value!.systemThemeMode != 'dark_only');
 
     return Scaffold(
       body: CustomScrollView(
@@ -70,12 +75,13 @@ class ProfileScreen extends ConsumerWidget {
               child: Column(children: [
                 // ── Settings Card ─────────────────────────────────────
                 _section(context, 'Preferences', [
-                  _switchTile(context,
-                    icon: isDark ? Icons.dark_mode : Icons.light_mode,
-                    title: isDark ? l10n.t('dark_mode') : l10n.t('light_mode'),
-                    value: isDark,
-                    onChanged: (_) => ref.read(themeModeProvider.notifier).toggle(),
-                  ),
+                  if (showThemeToggle)
+                    _switchTile(context,
+                      icon: isDark ? Icons.dark_mode : Icons.light_mode,
+                      title: isDark ? l10n.t('dark_mode') : l10n.t('light_mode'),
+                      value: isDark,
+                      onChanged: (_) => ref.read(themeModeProvider.notifier).toggle(),
+                    ),
                   _switchTile(context,
                     icon: Icons.translate,
                     title: 'العربية / Arabic',
