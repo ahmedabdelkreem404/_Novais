@@ -40,6 +40,11 @@ class ApiEndpoints {
   static const plans = '/plans';
   static const paymentCheckout = '/payment/checkout';
   static const cancelSubscription = '/payment/cancel-subscription';
+  static const offlinePaymentInstructions = '/offline-payments/instructions';
+  static const offlinePayments = '/offline-payments';
+  static String offlinePayment(int id) => '/offline-payments/$id';
+  static String cancelOfflinePayment(int id) =>
+      '/offline-payments/$id/cancel';
 
   // Public
   static String sharedCourse(String token) => '/share/$token';
