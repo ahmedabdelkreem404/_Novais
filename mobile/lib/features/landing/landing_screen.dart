@@ -30,6 +30,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
     with TickerProviderStateMixin {
   final _scrollController = ScrollController();
   bool _isScrolled = false;
+  bool _menuOpen = false;
   String _billing = 'monthly';
 
   // Keys for scroll-to
@@ -50,9 +51,15 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
       if (scrolled != _isScrolled) setState(() => _isScrolled = scrolled);
     });
 
-    _floatCtrl1 = AnimationController(vsync: this, duration: const Duration(seconds: 6))..repeat(reverse: true);
-    _floatCtrl2 = AnimationController(vsync: this, duration: const Duration(seconds: 7))..repeat(reverse: true);
-    _floatCtrl3 = AnimationController(vsync: this, duration: const Duration(seconds: 5))..repeat(reverse: true);
+    _floatCtrl1 =
+        AnimationController(vsync: this, duration: const Duration(seconds: 6))
+          ..repeat(reverse: true);
+    _floatCtrl2 =
+        AnimationController(vsync: this, duration: const Duration(seconds: 7))
+          ..repeat(reverse: true);
+    _floatCtrl3 =
+        AnimationController(vsync: this, duration: const Duration(seconds: 5))
+          ..repeat(reverse: true);
   }
 
   @override
@@ -65,9 +72,11 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
   }
 
   void _scrollTo(GlobalKey key) {
+    if (_menuOpen) setState(() => _menuOpen = false);
     final ctx = key.currentContext;
     if (ctx == null) return;
-    Scrollable.ensureVisible(ctx, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+    Scrollable.ensureVisible(ctx,
+        duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
   }
 
   @override
@@ -76,7 +85,8 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
     final plansAsync = ref.watch(plansProvider);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0a0f1e) : const Color(0xFFf8faff),
+      backgroundColor:
+          isDark ? const Color(0xFF0a0f1e) : const Color(0xFFf8faff),
       body: Stack(
         children: [
           CustomScrollView(
@@ -156,6 +166,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
 
           // ── Sticky Navbar ──────────────────────────────────────────────
           _buildNavbar(isDark),
+          _buildMobileMenuOverlay(isDark),
         ],
       ),
     );
@@ -164,14 +175,20 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
   // ─── Navbar ─────────────────────────────────────────────────────────────────
 
   Widget _buildNavbar(bool isDark) {
+    final isMobile = MediaQuery.sizeOf(context).width < 720;
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
         color: _isScrolled
-            ? (isDark ? const Color(0xFF0a0f1e).withAlpha(230) : Colors.white.withAlpha(230))
+            ? (isDark
+                ? const Color(0xFF0a0f1e).withAlpha(230)
+                : Colors.white.withAlpha(230))
             : Colors.transparent,
         border: _isScrolled
-            ? Border(bottom: BorderSide(color: isDark ? Colors.white12 : Colors.black12))
+            ? Border(
+                bottom:
+                    BorderSide(color: isDark ? Colors.white12 : Colors.black12))
             : const Border(),
       ),
       child: SafeArea(
@@ -184,16 +201,14 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
                 // Logo
                 GestureDetector(
                   onTap: () => _scrollController.animateTo(0,
-                      duration: const Duration(milliseconds: 400), curve: Curves.easeOut),
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeOut),
                   child: Row(children: [
-                    Container(
-                      width: 32, height: 32,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.gradientStart, AppColors.gradientEnd]),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
+                    Image.asset(
+                      'assets/images/logo.png',
+                      width: 32,
+                      height: 32,
+                      fit: BoxFit.contain,
                     ),
                     const SizedBox(width: 8),
                     Text('NOVAIS',
@@ -201,44 +216,286 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
                           fontFamily: 'PlusJakartaSans',
                           fontWeight: FontWeight.w800,
                           fontSize: 16,
-                          color: isDark ? Colors.white : const Color(0xFF0f172a),
+                          color:
+                              isDark ? Colors.white : const Color(0xFF0f172a),
                         )),
                   ]),
                 ),
 
                 const Spacer(),
 
-                // Nav links (compact on mobile)
-                TextButton(
-                  onPressed: () => _scrollTo(_featuresKey),
-                  style: TextButton.styleFrom(minimumSize: const Size(0, 36)),
-                  child: Text('Features',
-                      style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black54)),
-                ),
-                TextButton(
-                  onPressed: () => _scrollTo(_pricingKey),
-                  style: TextButton.styleFrom(minimumSize: const Size(0, 36)),
-                  child: Text('Pricing',
-                      style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black54)),
-                ),
-
-                const SizedBox(width: 4),
-
-                // Auth buttons
-                TextButton(
-                  onPressed: () => context.go('/signin'),
-                  style: TextButton.styleFrom(minimumSize: const Size(0, 32)),
-                  child: Text('Login',
-                      style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : Colors.black54)),
-                ),
-                const SizedBox(width: 4),
-                _PrimaryButton(
-                  label: 'Sign Up',
-                  small: true,
-                  onTap: () => context.go('/signup'),
-                ),
+                if (isMobile)
+                  Semantics(
+                    button: true,
+                    label: 'Menu',
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => setState(() => _menuOpen = true),
+                      child: SizedBox(
+                        width: 56,
+                        height: 56,
+                        child: Icon(
+                          Icons.menu_rounded,
+                          color:
+                              isDark ? Colors.white : const Color(0xFF0f172a),
+                          size: 30,
+                        ),
+                      ),
+                    ),
+                  )
+                else ...[
+                  TextButton(
+                    onPressed: () => _scrollTo(_featuresKey),
+                    style: TextButton.styleFrom(minimumSize: const Size(0, 36)),
+                    child: Text('Features',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.white70 : Colors.black54)),
+                  ),
+                  TextButton(
+                    onPressed: () => _scrollTo(_processKey),
+                    style: TextButton.styleFrom(minimumSize: const Size(0, 36)),
+                    child: Text('Process',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.white70 : Colors.black54)),
+                  ),
+                  TextButton(
+                    onPressed: () => _scrollTo(_pricingKey),
+                    style: TextButton.styleFrom(minimumSize: const Size(0, 36)),
+                    child: Text('Pricing',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.white70 : Colors.black54)),
+                  ),
+                  const SizedBox(width: 4),
+                  TextButton(
+                    onPressed: () => context.go('/signin'),
+                    style: TextButton.styleFrom(minimumSize: const Size(0, 32)),
+                    child: Text('Login',
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.white70 : Colors.black54)),
+                  ),
+                  const SizedBox(width: 4),
+                  _PrimaryButton(
+                    label: 'Sign Up',
+                    small: true,
+                    onTap: () => context.go('/signup'),
+                  ),
+                ],
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileMenuOverlay(bool isDark) {
+    final size = MediaQuery.sizeOf(context);
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final panelWidth = (size.width * 0.5).clamp(178.0, 220.0).toDouble();
+    final bg = isDark ? const Color(0xFF050816) : Colors.white;
+    final fg = isDark ? Colors.white : const Color(0xFF0f172a);
+    final muted = isDark ? Colors.white60 : const Color(0xFF64748b);
+    final border = isDark ? Colors.white12 : const Color(0xFFE5E7EB);
+
+    return IgnorePointer(
+      ignoring: !_menuOpen,
+      child: Stack(
+        children: [
+          AnimatedOpacity(
+            opacity: 0,
+            duration: const Duration(milliseconds: 180),
+            child: GestureDetector(
+              onTap: () => setState(() => _menuOpen = false),
+              child: Container(color: Colors.black),
+            ),
+          ),
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOutCubic,
+            top: 0,
+            bottom: 0,
+            left: isAr ? (_menuOpen ? 0 : -panelWidth) : null,
+            right: isAr ? null : (_menuOpen ? 0 : -panelWidth),
+            width: panelWidth,
+            child: SafeArea(
+              bottom: false,
+              child: Material(
+                color: bg,
+                elevation: 8,
+                shadowColor: Colors.black.withAlpha(isDark ? 120 : 35),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      right: isAr ? BorderSide(color: border) : BorderSide.none,
+                      left: isAr ? BorderSide.none : BorderSide(color: border),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(
+                        height: 56,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Row(
+                            textDirection:
+                                isAr ? TextDirection.rtl : TextDirection.ltr,
+                            children: [
+                              Image.asset(
+                                'assets/images/logo.png',
+                                width: 28,
+                                height: 28,
+                                fit: BoxFit.contain,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'NOVAIS',
+                                style: TextStyle(
+                                  color: fg,
+                                  fontSize: 12,
+                                  fontFamily: 'PlusJakartaSans',
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const Spacer(),
+                              IconButton(
+                                tooltip: 'Close',
+                                onPressed: () =>
+                                    setState(() => _menuOpen = false),
+                                icon: Icon(Icons.close_rounded, color: muted),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Divider(height: 1, color: border),
+                      const SizedBox(height: 12),
+                      _mobileMenuItem(
+                        label: isAr ? 'المميزات' : 'Features',
+                        color: fg,
+                        onTap: () => _scrollTo(_featuresKey),
+                      ),
+                      _mobileMenuItem(
+                        label: isAr ? 'آلية العمل' : 'Process',
+                        color: fg,
+                        onTap: () => _scrollTo(_processKey),
+                      ),
+                      _mobileMenuItem(
+                        label: isAr ? 'الأسعار' : 'Pricing',
+                        color: fg,
+                        onTap: () => _scrollTo(_pricingKey),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 26, vertical: 14),
+                        child: Divider(color: border),
+                      ),
+                      Center(
+                        child: Container(
+                          height: 48,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color:
+                                isDark ? const Color(0xFF0F172A) : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: border),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                tooltip: isAr ? 'English' : 'العربية',
+                                onPressed: () => ref
+                                    .read(localeProvider.notifier)
+                                    .setLanguage(isAr ? 'en' : 'ar'),
+                                icon: Icon(Icons.language_rounded,
+                                    color: fg, size: 18),
+                              ),
+                              Text(
+                                isAr ? 'EN' : 'AR',
+                                style: TextStyle(
+                                  color: fg,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              IconButton(
+                                tooltip: isAr ? 'تبديل المظهر' : 'Toggle theme',
+                                onPressed: () => ref
+                                    .read(themeModeProvider.notifier)
+                                    .toggle(),
+                                icon: Icon(
+                                  isDark
+                                      ? Icons.dark_mode_outlined
+                                      : Icons.light_mode_outlined,
+                                  color: fg,
+                                  size: 18,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      TextButton(
+                        onPressed: () {
+                          setState(() => _menuOpen = false);
+                          context.go('/signin');
+                        },
+                        child: Text(
+                          isAr ? 'تسجيل الدخول' : 'Login',
+                          style: TextStyle(color: muted, fontSize: 12),
+                        ),
+                      ),
+                      Center(
+                        child: SizedBox(
+                          width: 126,
+                          child: _PrimaryButton(
+                            label: isAr ? 'إنشاء حساب' : 'Sign Up',
+                            small: true,
+                            onTap: () {
+                              setState(() => _menuOpen = false);
+                              context.go('/signup');
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _mobileMenuItem({
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+      child: TextButton(
+        onPressed: onTap,
+        style: TextButton.styleFrom(
+          alignment: Alignment.centerLeft,
+          minimumSize: const Size.fromHeight(42),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -248,6 +505,8 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
   // ─── Hero ────────────────────────────────────────────────────────────────────
 
   Widget _buildHero(bool isDark) {
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 60, 24, 40),
       child: Column(
@@ -259,11 +518,16 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF1e293b) : Colors.white,
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
-              boxShadow: [BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 12)],
+              border:
+                  Border.all(color: isDark ? Colors.white12 : Colors.black12),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 12)
+              ],
             ),
             child: Text(
-              'AI-POWERED COURSE CREATION',
+              isAr
+                  ? 'إنشاء دورات بالذكاء الاصطناعي'
+                  : 'AI-POWERED COURSE CREATION',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -286,12 +550,13 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
               ),
               children: [
                 TextSpan(
-                  text: 'Transform Text into\n',
-                  style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0f172a)),
+                  text: isAr ? 'حوّل النص إلى\n' : 'Transform Text into\n',
+                  style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF0f172a)),
                 ),
-                const WidgetSpan(
+                WidgetSpan(
                   child: _GradientText(
-                    text: ' Complete Courses',
+                    text: isAr ? 'دورات تعليمية كاملة' : ' Complete Courses',
                     fontSize: 38,
                     fontWeight: FontWeight.w800,
                   ),
@@ -303,7 +568,9 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
 
           // Subtitle
           Text(
-            'Easily create personalized courses tailored to your needs. Interact with NOVAIS (your AI Learning Coach), generate courses in 23+ languages, and master skills through practice.',
+            isAr
+                ? 'أنشئ تجارب تعليمية مخصصة بسهولة مع NOVAIS، مدربك الذكي للتعلّم. أنشئ دورات تفاعلية بأكثر من 23 لغة وتعلّم بالصور والفيديو والتدريب العملي.'
+                : 'Easily create personalized courses tailored to your needs. Interact with NOVAIS (your AI Learning Coach), generate courses in 23+ languages, and master skills through practice.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
@@ -315,8 +582,8 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
 
           // CTA
           _PrimaryButton(
-            label: 'Start Creating Now',
-            icon: Icons.arrow_forward,
+            label: isAr ? 'ابدأ الآن' : 'Start Creating Now',
+            icon: isAr ? Icons.arrow_back : Icons.arrow_forward,
             onTap: () => context.go('/signup'),
           ),
         ],
@@ -352,14 +619,20 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
                       ],
                     ),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+                    border: Border.all(
+                        color: isDark ? Colors.white10 : Colors.black12),
                   ),
-                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(Icons.laptop_mac, size: 48, color: AppColors.primary.withAlpha(150)),
-                    const SizedBox(height: 8),
-                    Text('NOVAIS Platform Preview',
-                        style: TextStyle(color: AppColors.primary.withAlpha(180), fontWeight: FontWeight.w600)),
-                  ]),
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.laptop_mac,
+                            size: 48, color: AppColors.primary.withAlpha(150)),
+                        const SizedBox(height: 8),
+                        Text('NOVAIS Platform Preview',
+                            style: TextStyle(
+                                color: AppColors.primary.withAlpha(180),
+                                fontWeight: FontWeight.w600)),
+                      ]),
                 ),
               ),
             ),
@@ -458,7 +731,11 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
               ),
               children: [
                 TextSpan(text: titleNormal),
-                WidgetSpan(child: _GradientText(text: titleAccent, fontSize: 26, fontWeight: FontWeight.w800)),
+                WidgetSpan(
+                    child: _GradientText(
+                        text: titleAccent,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800)),
                 if (titleSuffix != null) TextSpan(text: titleSuffix),
               ],
             ),
@@ -469,7 +746,10 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: isDark ? Colors.grey[400] : Colors.grey[600], height: 1.6),
+              style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  height: 1.6),
             ),
           ],
           const SizedBox(height: 32),
@@ -484,12 +764,36 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
 
   Widget _buildFeaturesGrid(bool isDark) {
     final features = [
-      (Icons.auto_awesome, 'AI-Powered Generation', 'Advanced AI algorithms analyze your inputs to generate comprehensive courses.'),
-      (Icons.bar_chart, 'Course Type Preferences', 'Choose between Image + Theory or Video + Theory formats for a personalized learning journey.'),
-      (Icons.check_circle_outline, 'Quiz Creation', 'Generate relevant quizzes and assessments to reinforce learning outcomes.'),
-      (Icons.language, 'Multilanguage Courses', 'Generate AI image, video, or textual courses in 23+ multiple languages.'),
-      (Icons.chat_bubble_outline, 'Talk to NOVAIS', 'Chat with your AI Learning Coach to get answers and guidance while learning.'),
-      (Icons.download_outlined, 'Export Course', 'Download your generated course in various formats for offline access.'),
+      (
+        Icons.auto_awesome,
+        'AI-Powered Generation',
+        'Advanced AI algorithms analyze your inputs to generate comprehensive courses.'
+      ),
+      (
+        Icons.bar_chart,
+        'Course Type Preferences',
+        'Choose between Image + Theory or Video + Theory formats for a personalized learning journey.'
+      ),
+      (
+        Icons.check_circle_outline,
+        'Quiz Creation',
+        'Generate relevant quizzes and assessments to reinforce learning outcomes.'
+      ),
+      (
+        Icons.language,
+        'Multilanguage Courses',
+        'Generate AI image, video, or textual courses in 23+ multiple languages.'
+      ),
+      (
+        Icons.chat_bubble_outline,
+        'Talk to NOVAIS',
+        'Chat with your AI Learning Coach to get answers and guidance while learning.'
+      ),
+      (
+        Icons.download_outlined,
+        'Export Course',
+        'Download your generated course in various formats for offline access.'
+      ),
     ];
 
     return GridView.builder(
@@ -504,7 +808,8 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
       itemCount: features.length,
       itemBuilder: (context, i) {
         final (icon, title, desc) = features[i];
-        return _FeatureCard(icon: icon, title: title, desc: desc, isDark: isDark);
+        return _FeatureCard(
+            icon: icon, title: title, desc: desc, isDark: isDark);
       },
     );
   }
@@ -513,10 +818,30 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
 
   Widget _buildSteps(bool isDark) {
     final steps = [
-      (Icons.chat_bubble_outline, '01', 'Enter Topics', 'Begin the course creation journey by entering your desired topics and a list of subtopics.'),
-      (Icons.bar_chart, '02', 'Choose Preferences', 'Choose between Image + Theory or Video + Theory formats for a personalized learning journey.'),
-      (Icons.language, '03', 'Choose Course Language', 'Choose from 23+ languages in which you want to create a course.'),
-      (Icons.auto_awesome, '04', 'AI Magic', 'Watch as our AI processes your inputs to generate a customized course.'),
+      (
+        Icons.chat_bubble_outline,
+        '01',
+        'Enter Topics',
+        'Begin the course creation journey by entering your desired topics and a list of subtopics.'
+      ),
+      (
+        Icons.bar_chart,
+        '02',
+        'Choose Preferences',
+        'Choose between Image + Theory or Video + Theory formats for a personalized learning journey.'
+      ),
+      (
+        Icons.language,
+        '03',
+        'Choose Course Language',
+        'Choose from 23+ languages in which you want to create a course.'
+      ),
+      (
+        Icons.auto_awesome,
+        '04',
+        'AI Magic',
+        'Watch as our AI processes your inputs to generate a customized course.'
+      ),
     ];
 
     return Stack(
@@ -551,7 +876,8 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
           children: steps.asMap().entries.map((e) {
             final idx = e.key;
             final (icon, num, title, desc) = e.value;
-            final isLeft = idx.isEven; // content left on odd steps (1, 3), right on even (2, 4)
+            final isLeft = idx
+                .isEven; // content left on odd steps (1, 3), right on even (2, 4)
             return _StepCard(
               icon: icon,
               stepNum: num,
@@ -570,10 +896,30 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
 
   Widget _buildTestimonials(bool isDark) {
     final testimonials = [
-      ('SJ', 'Sarah Johnson', 'Content Creator, EdTech', 'NOVAIS created complex course content in minutes that would have taken 40 hours of manual work. The quality is remarkably better.'),
-      ('DC', 'Prof. David Chen', 'Computer Science Department', 'As a university professor, I was skeptical about AI-generated courses. But NOVAIS perfectly structured my research into a comprehensive course for my students.'),
-      ('MR', 'Michael Rodriguez', 'Head of L&D, TechCorp', 'The learning tool reduced our onboarding content creation time by 80% while improving engagement metrics significantly.'),
-      ('AW', 'Anna Wilson', 'Lead Instructional Designer', 'The quiz generation feature alone is worth the subscription. It creates thoughtful assessments that actually test understanding, not just memorization.'),
+      (
+        'SJ',
+        'Sarah Johnson',
+        'Content Creator, EdTech',
+        'NOVAIS created complex course content in minutes that would have taken 40 hours of manual work. The quality is remarkably better.'
+      ),
+      (
+        'DC',
+        'Prof. David Chen',
+        'Computer Science Department',
+        'As a university professor, I was skeptical about AI-generated courses. But NOVAIS perfectly structured my research into a comprehensive course for my students.'
+      ),
+      (
+        'MR',
+        'Michael Rodriguez',
+        'Head of L&D, TechCorp',
+        'The learning tool reduced our onboarding content creation time by 80% while improving engagement metrics significantly.'
+      ),
+      (
+        'AW',
+        'Anna Wilson',
+        'Lead Instructional Designer',
+        'The quiz generation feature alone is worth the subscription. It creates thoughtful assessments that actually test understanding, not just memorization.'
+      ),
     ];
     return Column(
       children: testimonials
@@ -607,7 +953,9 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
             color: isDark ? const Color(0xFF1e293b) : Colors.white,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
-            boxShadow: [BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 12)],
+            boxShadow: [
+              BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 12)
+            ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -617,11 +965,18 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
                 onTap: () => setState(() => _billing = cycle),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   decoration: BoxDecoration(
                     color: active ? AppColors.primary : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
-                    boxShadow: active ? [BoxShadow(color: AppColors.primary.withAlpha(80), blurRadius: 8)] : [],
+                    boxShadow: active
+                        ? [
+                            BoxShadow(
+                                color: AppColors.primary.withAlpha(80),
+                                blurRadius: 8)
+                          ]
+                        : [],
                   ),
                   child: Row(children: [
                     Text(
@@ -629,20 +984,27 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: active ? Colors.white : (isDark ? Colors.white60 : Colors.black54),
+                        color: active
+                            ? Colors.white
+                            : (isDark ? Colors.white60 : Colors.black54),
                       ),
                     ),
                     if (cycle == 'yearly') ...[
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: const Color(0xFF22c55e).withAlpha(40),
                           borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: const Color(0xFF22c55e).withAlpha(80)),
+                          border: Border.all(
+                              color: const Color(0xFF22c55e).withAlpha(80)),
                         ),
                         child: const Text('SAVE 30%',
-                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF22c55e))),
+                            style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF22c55e))),
                       ),
                     ],
                   ]),
@@ -714,7 +1076,9 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
   List<String> _planFeatures(Map<String, dynamic> plan, String slug) {
     final rawFeatures = plan['features'];
     if (rawFeatures is Map && rawFeatures['en'] is List) {
-      return (rawFeatures['en'] as List).map((feature) => feature.toString()).toList();
+      return (rawFeatures['en'] as List)
+          .map((feature) => feature.toString())
+          .toList();
     }
     final limit = plan['course_limit'];
     if (slug == 'free') {
@@ -756,7 +1120,12 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
           color: isDark ? const Color(0xFF0f172a) : Colors.white,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
-          boxShadow: [BoxShadow(color: AppColors.primary.withAlpha(20), blurRadius: 40, spreadRadius: -5)],
+          boxShadow: [
+            BoxShadow(
+                color: AppColors.primary.withAlpha(20),
+                blurRadius: 40,
+                spreadRadius: -5)
+          ],
         ),
         child: Column(
           children: [
@@ -775,7 +1144,10 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
             Text(
               'Join thousands of educators, trainers, and content creators who are saving time and creating better learning experiences with NOVAIS.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: isDark ? Colors.grey[400] : Colors.grey[600], height: 1.6),
+              style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  height: 1.6),
             ),
             const SizedBox(height: 24),
             _PrimaryButton(
@@ -797,7 +1169,8 @@ class _GradientText extends StatelessWidget {
   final double fontSize;
   final FontWeight fontWeight;
 
-  const _GradientText({required this.text, required this.fontSize, required this.fontWeight});
+  const _GradientText(
+      {required this.text, required this.fontSize, required this.fontWeight});
 
   @override
   Widget build(BuildContext context) {
@@ -827,18 +1200,30 @@ class _PrimaryButton extends StatelessWidget {
   final VoidCallback onTap;
   final bool small;
 
-  const _PrimaryButton({required this.label, required this.onTap, this.icon, this.small = false});
+  const _PrimaryButton(
+      {required this.label,
+      required this.onTap,
+      this.icon,
+      this.small = false});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: small ? 16 : 24, vertical: small ? 8 : 14),
+        alignment: Alignment.center,
+        padding: EdgeInsets.symmetric(
+            horizontal: small ? 16 : 24, vertical: small ? 8 : 14),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [AppColors.gradientStart, AppColors.gradientEnd]),
+          gradient: const LinearGradient(
+              colors: [AppColors.gradientStart, AppColors.gradientEnd]),
           borderRadius: BorderRadius.circular(small ? 10 : 14),
-          boxShadow: [BoxShadow(color: AppColors.primary.withAlpha(80), blurRadius: 16, offset: const Offset(0, 4))],
+          boxShadow: [
+            BoxShadow(
+                color: AppColors.primary.withAlpha(80),
+                blurRadius: 16,
+                offset: const Offset(0, 4))
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -895,7 +1280,9 @@ class _FloatingIcon extends StatelessWidget {
               color: isDark ? const Color(0xFF1e293b) : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: borderColor.withAlpha(150), width: 1.5),
-              boxShadow: [BoxShadow(color: borderColor.withAlpha(60), blurRadius: 16)],
+              boxShadow: [
+                BoxShadow(color: borderColor.withAlpha(60), blurRadius: 16)
+              ],
             ),
             child: Icon(icon, color: iconColor, size: 22),
           ),
@@ -913,7 +1300,11 @@ class _FeatureCard extends StatelessWidget {
   final String desc;
   final bool isDark;
 
-  const _FeatureCard({required this.icon, required this.title, required this.desc, required this.isDark});
+  const _FeatureCard(
+      {required this.icon,
+      required this.title,
+      required this.desc,
+      required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -923,7 +1314,9 @@ class _FeatureCard extends StatelessWidget {
         color: isDark ? const Color(0xFF0f172a) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 12)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 12)
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -933,7 +1326,10 @@ class _FeatureCard extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [AppColors.primary.withAlpha(40), AppColors.primary.withAlpha(15)],
+                colors: [
+                  AppColors.primary.withAlpha(40),
+                  AppColors.primary.withAlpha(15)
+                ],
               ),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -1002,7 +1398,11 @@ class _StepCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        Text(desc, style: TextStyle(fontSize: 12, height: 1.5, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+        Text(desc,
+            style: TextStyle(
+                fontSize: 12,
+                height: 1.5,
+                color: isDark ? Colors.grey[400] : Colors.grey[600])),
       ]),
     );
 
@@ -1012,8 +1412,12 @@ class _StepCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0f172a) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? Colors.white.withAlpha(50) : Colors.black12, width: 2),
-        boxShadow: [BoxShadow(color: AppColors.primary.withAlpha(30), blurRadius: 12)],
+        border: Border.all(
+            color: isDark ? Colors.white.withAlpha(50) : Colors.black12,
+            width: 2),
+        boxShadow: [
+          BoxShadow(color: AppColors.primary.withAlpha(30), blurRadius: 12)
+        ],
       ),
       child: Icon(icon, color: AppColors.primary, size: 24),
     );
@@ -1026,7 +1430,9 @@ class _StepCard extends StatelessWidget {
         color: isDark ? const Color(0xFF0a0f1e) : const Color(0xFFf8faff),
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.primary, width: 2.5),
-        boxShadow: [BoxShadow(color: AppColors.primary.withAlpha(60), blurRadius: 8)],
+        boxShadow: [
+          BoxShadow(color: AppColors.primary.withAlpha(60), blurRadius: 8)
+        ],
       ),
     );
 
@@ -1038,14 +1444,18 @@ class _StepCard extends StatelessWidget {
               ? [
                   Expanded(child: content),
                   const SizedBox(width: 12),
-                  Column(mainAxisAlignment: MainAxisAlignment.center, children: [node]),
+                  Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [node]),
                   const SizedBox(width: 12),
                   Expanded(child: Center(child: iconWidget)),
                 ]
               : [
                   Expanded(child: Center(child: iconWidget)),
                   const SizedBox(width: 12),
-                  Column(mainAxisAlignment: MainAxisAlignment.center, children: [node]),
+                  Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [node]),
                   const SizedBox(width: 12),
                   Expanded(child: content),
                 ],
@@ -1081,13 +1491,17 @@ class _TestimonialCard extends StatelessWidget {
         color: isDark ? const Color(0xFF0f172a) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 12)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 12)
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Stars
-          const Text('★★★★★', style: TextStyle(color: Color(0xFFfbbf24), fontSize: 14, letterSpacing: 2)),
+          const Text('★★★★★',
+              style: TextStyle(
+                  color: Color(0xFFfbbf24), fontSize: 14, letterSpacing: 2)),
           const SizedBox(height: 10),
           // Quote
           Text(
@@ -1107,18 +1521,29 @@ class _TestimonialCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: const BoxDecoration(
-                gradient: LinearGradient(colors: [AppColors.gradientStart, AppColors.gradientEnd]),
+                gradient: LinearGradient(
+                    colors: [AppColors.gradientStart, AppColors.gradientEnd]),
                 shape: BoxShape.circle,
               ),
               child: Center(
                 child: Text(initials,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13)),
               ),
             ),
             const SizedBox(width: 12),
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(name, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: isDark ? Colors.white : const Color(0xFF0f172a))),
-              Text(role, style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[500] : Colors.grey[600])),
+              Text(name,
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: isDark ? Colors.white : const Color(0xFF0f172a))),
+              Text(role,
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.grey[500] : Colors.grey[600])),
             ]),
           ]),
         ],
@@ -1159,11 +1584,14 @@ class _PlanCard extends StatelessWidget {
         color: isDark ? const Color(0xFF0f172a) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isPrimary ? AppColors.primary : (isDark ? Colors.white10 : Colors.black12),
+          color: isPrimary
+              ? AppColors.primary
+              : (isDark ? Colors.white10 : Colors.black12),
           width: isPrimary ? 2 : 1,
         ),
         boxShadow: [
-          if (isPrimary) BoxShadow(color: AppColors.primary.withAlpha(40), blurRadius: 20),
+          if (isPrimary)
+            BoxShadow(color: AppColors.primary.withAlpha(40), blurRadius: 20),
           BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 12),
         ],
       ),
@@ -1175,18 +1603,28 @@ class _PlanCard extends StatelessWidget {
             // Badge
             if (badge != null) ...[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [AppColors.gradientStart, AppColors.gradientEnd]),
+                  gradient: const LinearGradient(
+                      colors: [AppColors.gradientStart, AppColors.gradientEnd]),
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: Text(badge!, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 11)),
+                child: Text(badge!,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11)),
               ),
               const SizedBox(height: 10),
             ],
 
             // Plan name
-            Text(name, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF0f172a))),
+            Text(name,
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : const Color(0xFF0f172a))),
             const SizedBox(height: 8),
 
             // Price
@@ -1206,13 +1644,18 @@ class _PlanCard extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(currency,
-                      style: TextStyle(fontSize: 14, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+                      style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600])),
                 ),
                 if (period.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Text(period,
-                        style: TextStyle(fontSize: 13, color: isDark ? Colors.grey[500] : Colors.grey[500])),
+                        style: TextStyle(
+                            fontSize: 13,
+                            color:
+                                isDark ? Colors.grey[500] : Colors.grey[500])),
                   ),
               ],
             ),
@@ -1222,10 +1665,16 @@ class _PlanCard extends StatelessWidget {
             ...features.map((f) => Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Row(children: [
-                    const Icon(Icons.check_circle, color: AppColors.primary, size: 16),
+                    const Icon(Icons.check_circle,
+                        color: AppColors.primary, size: 16),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(f, style: TextStyle(fontSize: 13, color: isDark ? Colors.grey[300] : Colors.grey[700])),
+                      child: Text(f,
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: isDark
+                                  ? Colors.grey[300]
+                                  : Colors.grey[700])),
                     ),
                   ]),
                 )),
@@ -1240,24 +1689,37 @@ class _PlanCard extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [AppColors.gradientStart, AppColors.gradientEnd]),
+                          gradient: const LinearGradient(colors: [
+                            AppColors.gradientStart,
+                            AppColors.gradientEnd
+                          ]),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Center(
                           child: Text('Get Started',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14)),
                         ),
                       ),
                     )
                   : OutlinedButton(
                       onPressed: onTap,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: isDark ? Colors.white : const Color(0xFF0f172a),
-                        side: BorderSide(color: isDark ? Colors.white.withAlpha(50) : Colors.black26),
+                        foregroundColor:
+                            isDark ? Colors.white : const Color(0xFF0f172a),
+                        side: BorderSide(
+                            color: isDark
+                                ? Colors.white.withAlpha(50)
+                                : Colors.black26),
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('Get Started', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                      child: const Text('Get Started',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700, fontSize: 14)),
                     ),
             ),
           ],

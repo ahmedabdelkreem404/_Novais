@@ -15,15 +15,25 @@ class AppSidebar extends ConsumerWidget {
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
     final bg = isDark ? const Color(0xFF0F0F0F) : Colors.white;
     final border = isDark ? const Color(0xFF2A2A2A) : Colors.grey[200]!;
+    final drawerWidth = (MediaQuery.sizeOf(context).width * 0.84)
+        .clamp(300.0, 360.0)
+        .toDouble();
+    const edgeRadius = Radius.circular(18);
 
     return Drawer(
+      width: drawerWidth,
       backgroundColor: bg,
       surfaceTintColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(
+          left: isAr ? edgeRadius : Radius.zero,
+          right: isAr ? Radius.zero : edgeRadius,
+        ),
+      ),
       child: Column(
         children: [
           Container(
-            height: 64,
+            height: 86,
             decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: border)),
             ),
@@ -33,23 +43,14 @@ class AppSidebar extends ConsumerWidget {
               bottom: false,
               child: Row(
                 children: [
-                  Container(
+                  Image.asset(
+                    'assets/images/logo.png',
                     width: 32,
                     height: 32,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withAlpha(10)
-                          : Colors.blue.withAlpha(20),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Icon(
-                        Icons.auto_awesome,
-                        color: AppColors.primary,
-                        size: 20,
-                      ),
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const SizedBox(
+                      width: 32,
+                      height: 32,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -97,7 +98,7 @@ class AppSidebar extends ConsumerWidget {
                 ElevatedButton(
                   key: const Key('drawer_create_button'),
                   onPressed: () {
-                    Scaffold.maybeOf(context)?.closeDrawer();
+                    Navigator.of(context).pop();
                     try {
                       context.push('/create');
                     } catch (_) {}
@@ -161,6 +162,7 @@ class AppSidebar extends ConsumerWidget {
                   label: l10n.t('logout'),
                   onTap: () {
                     ref.read(authProvider.notifier).logout();
+                    Navigator.of(context).pop();
                     try {
                       context.go('/signin');
                     } catch (_) {}
@@ -344,7 +346,7 @@ class _NavItem extends StatelessWidget {
           ),
         ),
         onTap: () {
-          Scaffold.maybeOf(context)?.closeDrawer();
+          Navigator.of(context).pop();
           try {
             context.go(path);
           } catch (_) {}

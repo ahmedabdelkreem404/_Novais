@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import '../../core/api/api_client.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/api/endpoints.dart';
 import '../../core/theme/app_theme.dart';
@@ -12,14 +14,14 @@ import '../../models/course.dart';
 import '../../widgets/widgets.dart';
 
 final _courseDetailProvider =
-    FutureProvider.family<Course, int>((ref, id) async {
+    FutureProvider.family<Course, String>((ref, id) async {
   final api = ref.watch(apiClientProvider);
   final res = await api.dio.get(ApiEndpoints.course(id));
   return Course.fromJson(res.data);
 });
 
 class CourseScreen extends ConsumerStatefulWidget {
-  final int courseId;
+  final String courseId;
   const CourseScreen({super.key, required this.courseId});
 
   @override
@@ -31,6 +33,9 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
   late TabController _tabCtrl;
   int _currentLesson = 0;
   bool _drawerOpen = false;
+  Course? _course;
+  bool _preparingLesson = false;
+  final Set<String> _requestedLessons = {};
 
   @override
   void initState() {
@@ -49,16 +54,28 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
     final l10n = context.l10n;
     final courseAsync = ref.watch(_courseDetailProvider(widget.courseId));
 
-    return Scaffold(
-      body: courseAsync.when(
-        loading: () => const NvLoading(message: 'Loading course...'),
-        error: (e, _) => NvEmptyState(
-          icon: Icons.error_outline,
-          title: 'Failed to load course',
-          subtitle: e.toString(),
-        ),
-        data: (course) => _buildCourse(context, l10n, course),
+    return courseAsync.when(
+      loading: () => const Scaffold(
+        body: NvLoading(message: 'Loading course...'),
       ),
+      error: (e, _) => Scaffold(
+        body: NvEmptyState(
+          icon: Icons.error_outline,
+          title: l10n.t('failed_load_course'),
+          subtitle: e.toString(),
+          action: NvButton(
+            label: l10n.t('retry'),
+            width: 140,
+            onTap: () => ref.invalidate(_courseDetailProvider(widget.courseId)),
+          ),
+        ),
+      ),
+      data: (course) {
+        if (_course == null || _course!.id != course.id) {
+          _course = course;
+        }
+        return _buildCourse(context, l10n, _course!);
+      },
     );
   }
 
@@ -66,6 +83,7 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
       BuildContext context, AppLocalizations l10n, Course course) {
     final lessons = course.lessons;
     final lesson = lessons.isNotEmpty ? lessons[_currentLesson] : null;
+    _scheduleLessonPreparation(course, lesson);
 
     return Scaffold(
       appBar: AppBar(
@@ -75,12 +93,12 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
           IconButton(
             icon: const Icon(Icons.quiz_outlined),
             tooltip: l10n.t('quiz'),
-            onPressed: () => context.push('/quiz/${widget.courseId}'),
+            onPressed: () => context.push('/quiz/${course.id}'),
           ),
           IconButton(
             icon: const Icon(Icons.workspace_premium_outlined),
             tooltip: l10n.t('certificate'),
-            onPressed: () => context.push('/certificate/${widget.courseId}'),
+            onPressed: () => context.push('/certificate/${course.id}'),
           ),
           IconButton(
             icon: const Icon(Icons.menu),
@@ -133,7 +151,14 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                                   ),
                                   const SizedBox(height: 16),
                                 ],
-                                if (lesson.content != null)
+                                if (_preparingLesson &&
+                                    (lesson.content == null ||
+                                        lesson.content!.isEmpty)) ...[
+                                  const SizedBox(height: 12),
+                                  NvLoading(
+                                      message: l10n.t('preparing_lesson')),
+                                ] else if (lesson.content != null &&
+                                    lesson.content!.isNotEmpty)
                                   MarkdownBody(
                                     data: lesson.content!,
                                     styleSheet: MarkdownStyleSheet(
@@ -153,6 +178,25 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                                           fontFamily: 'monospace'),
                                     ),
                                   ),
+                                if (!_preparingLesson &&
+                                    (lesson.content == null ||
+                                        lesson.content!.isEmpty)) ...[
+                                  const SizedBox(height: 12),
+                                  NvEmptyState(
+                                    icon: Icons.auto_awesome,
+                                    title: l10n.t('lesson_not_ready'),
+                                    subtitle: l10n.t('lesson_not_ready_desc'),
+                                    action: NvButton(
+                                      label: l10n.t('retry'),
+                                      width: 140,
+                                      onTap: () => _prepareLesson(
+                                        course,
+                                        lesson,
+                                        force: true,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -199,10 +243,14 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
               ),
 
               // ── AI Chat ────────────────────────────────────────────
-              _ChatTab(courseId: widget.courseId),
+              _ChatTab(
+                courseId: course.apiId,
+                topic: course.title,
+                context: lesson?.content ?? '',
+              ),
 
               // ── Notes ──────────────────────────────────────────────
-              _NotesTab(courseId: widget.courseId),
+              _NotesTab(courseId: course.id),
             ],
           ),
 
@@ -286,6 +334,78 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
       ),
     );
   }
+
+  bool _lessonNeedsPreparation(Lesson? lesson) {
+    if (lesson == null) return false;
+    final hasContent =
+        lesson.content != null && lesson.content!.trim().isNotEmpty;
+    final hasMedia = lesson.videoUrl != null || lesson.imageUrl != null;
+    return !hasContent || !hasMedia;
+  }
+
+  void _scheduleLessonPreparation(Course course, Lesson? lesson) {
+    if (!_lessonNeedsPreparation(lesson) || _preparingLesson) return;
+    final key = '${lesson!.topicTitle}/${lesson.title}';
+    if (_requestedLessons.contains(key)) return;
+    _requestedLessons.add(key);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _prepareLesson(course, lesson);
+    });
+  }
+
+  Future<void> _prepareLesson(
+    Course course,
+    Lesson lesson, {
+    bool force = false,
+  }) async {
+    final key = '${lesson.topicTitle}/${lesson.title}';
+    if (_preparingLesson) return;
+    if (!force && !_lessonNeedsPreparation(lesson)) return;
+
+    setState(() => _preparingLesson = true);
+    try {
+      final api = ref.read(apiClientProvider);
+      final res = await api.dio.post(ApiEndpoints.generateLesson, data: {
+        'course_id': course.apiId,
+        'chapter_title': lesson.topicTitle,
+        'subtopic_title': lesson.title,
+        'language': course.language ?? 'English',
+      });
+
+      final data = res.data['data'];
+      if (data is Map) {
+        final generated = Lesson.fromJson({
+          ...Map<String, dynamic>.from(data),
+          'id': lesson.id,
+          'course_id': lesson.courseId,
+          'topic_title': lesson.topicTitle,
+          'title': lesson.title,
+        });
+        final updatedLessons = [...course.lessons];
+        final index = updatedLessons.indexWhere(
+          (item) =>
+              item.title == lesson.title &&
+              item.topicTitle == lesson.topicTitle,
+        );
+        if (index >= 0) {
+          updatedLessons[index] = lesson.copyWith(
+            content: generated.content,
+            mediaUrl: generated.mediaUrl,
+            mediaType: generated.mediaType,
+            metadata: generated.metadata,
+            completed: true,
+          );
+          if (mounted) {
+            setState(() => _course = course.copyWith(lessons: updatedLessons));
+          }
+        }
+      }
+    } catch (_) {
+      _requestedLessons.remove(key);
+    } finally {
+      if (mounted) setState(() => _preparingLesson = false);
+    }
+  }
 }
 
 class _LessonImageCard extends StatelessWidget {
@@ -295,14 +415,15 @@ class _LessonImageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedUrl = url == null ? null : ApiClient.resolveMediaUrl(url!);
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: AspectRatio(
         aspectRatio: 16 / 9,
-        child: url == null || url!.isEmpty
+        child: resolvedUrl == null || resolvedUrl.isEmpty
             ? const _MediaFallback(icon: Icons.image_outlined)
             : Image.network(
-                url!,
+                resolvedUrl,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) =>
                     const _MediaFallback(icon: Icons.broken_image_outlined),
@@ -320,6 +441,21 @@ class _LessonVideoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final uri = Uri.tryParse(url);
+    final embedUrl = _youtubeEmbedUrl(url);
+
+    if (embedUrl != null) {
+      final controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..loadRequest(Uri.parse(embedUrl));
+
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: WebViewWidget(controller: controller),
+        ),
+      );
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -358,6 +494,27 @@ class _LessonVideoCard extends StatelessWidget {
       ),
     );
   }
+
+  String? _youtubeEmbedUrl(String raw) {
+    final uri = Uri.tryParse(raw);
+    if (uri == null) return null;
+
+    String? id;
+    if (uri.host.contains('youtube.com')) {
+      id = uri.queryParameters['v'];
+      if (id == null && uri.pathSegments.contains('embed')) {
+        final index = uri.pathSegments.indexOf('embed');
+        if (uri.pathSegments.length > index + 1) {
+          id = uri.pathSegments[index + 1];
+        }
+      }
+    } else if (uri.host.contains('youtu.be') && uri.pathSegments.isNotEmpty) {
+      id = uri.pathSegments.first;
+    }
+
+    if (id == null || id.length < 6) return null;
+    return 'https://www.youtube.com/embed/$id?rel=0&playsinline=1';
+  }
 }
 
 class _MediaFallback extends StatelessWidget {
@@ -379,8 +536,15 @@ class _MediaFallback extends StatelessWidget {
 // ── Chat Tab ─────────────────────────────────────────────────────────────────
 
 class _ChatTab extends ConsumerStatefulWidget {
-  final int courseId;
-  const _ChatTab({required this.courseId});
+  final String courseId;
+  final String topic;
+  final String context;
+
+  const _ChatTab({
+    required this.courseId,
+    required this.topic,
+    required this.context,
+  });
 
   @override
   ConsumerState<_ChatTab> createState() => _ChatTabState();
@@ -427,9 +591,13 @@ class _ChatTabState extends ConsumerState<_ChatTab> {
       final api = ref.read(apiClientProvider);
       final res = await api.dio.post(ApiEndpoints.chat, data: {
         'message': msg,
-        'course_id': widget.courseId,
+        'courseId': widget.courseId,
+        'topic': widget.topic,
+        'context': widget.context,
+        'history': _messages,
       });
-      final reply = res.data['message'] ?? res.data['content'] ?? '';
+      final reply =
+          res.data['reply'] ?? res.data['message'] ?? res.data['content'] ?? '';
       if (mounted) {
         setState(() {
           _messages.add({'role': 'assistant', 'content': reply.toString()});

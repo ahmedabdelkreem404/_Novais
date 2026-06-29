@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../core/api/api_client.dart';
+import '../core/l10n/app_localizations.dart';
 import '../core/theme/app_theme.dart';
 import '../models/course.dart';
 
@@ -154,8 +156,12 @@ class NvCourseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = context.l10n;
     final progress = _calculateProgress(course);
     final chapterCount = course.lessons.length;
+    final imageUrl = course.imageUrl == null
+        ? null
+        : ApiClient.resolveMediaUrl(course.imageUrl!);
 
     return Semantics(
       label: 'course_card',
@@ -190,8 +196,8 @@ class NvCourseCard extends StatelessWidget {
                     ClipRRect(
                       borderRadius:
                           const BorderRadius.vertical(top: Radius.circular(16)),
-                      child: course.imageUrl != null
-                          ? Image.network(course.imageUrl!,
+                      child: imageUrl != null
+                          ? Image.network(imageUrl,
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => _placeholder())
                           : _placeholder(),
@@ -220,7 +226,7 @@ class NvCourseCard extends StatelessWidget {
                       child: Row(
                         children: [
                           _Badge(
-                            text: (course.type ?? 'Interactive'),
+                            text: _courseTypeLabel(course.type, l10n),
                             color: const Color(0xFF2563EB), // Blue-600
                             textColor: Colors.white,
                           ),
@@ -272,14 +278,14 @@ class NvCourseCard extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('$progress% Complete',
+                              Text('$progress% ${l10n.t('complete')}',
                                   style: TextStyle(
                                       fontSize: 11,
                                       color: isDark
                                           ? Colors.grey[400]
                                           : Colors.grey[500],
                                       fontWeight: FontWeight.w500)),
-                              Text('$chapterCount Chapters',
+                              Text('$chapterCount ${l10n.t('chapters')}',
                                   style: TextStyle(
                                       fontSize: 11,
                                       color: isDark
@@ -309,8 +315,8 @@ class NvCourseCard extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Continue',
-                        style: TextStyle(
+                    Text(l10n.t('continue'),
+                        style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: AppColors.primary)),
@@ -345,6 +351,16 @@ class NvCourseCard extends StatelessWidget {
     // Mock calculation since we don't have 'done' status in simple Lesson model yet
     // In real app, iterate lessons and check completion
     return 0;
+  }
+
+  String _courseTypeLabel(String? type, AppLocalizations l10n) {
+    final normalized = (type ?? '').toLowerCase();
+    if (normalized.contains('video')) return l10n.t('video');
+    if (normalized.contains('audio')) return l10n.t('audio_type');
+    if (normalized.contains('image') || normalized.contains('theory')) {
+      return l10n.t('theory');
+    }
+    return l10n.t('interactive_course');
   }
 }
 

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/l10n/app_localizations.dart';
-import '../../core/theme/app_theme.dart';
 
 import '../../widgets/app_sidebar.dart';
 
@@ -29,6 +28,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
 
     return Scaffold(
       key: _scaffoldKey,
+      drawerScrimColor: Colors.black.withAlpha(isDark ? 170 : 110),
       drawer: const AppSidebar(),
       appBar: AppBar(
         leading: IconButton(
@@ -38,20 +38,17 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         ),
         title: Row(
           children: [
-            Container(
+            Image.asset(
+              'assets/images/logo.png',
               width: 28,
               height: 28,
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withAlpha(10)
-                    : Colors.blue.withAlpha(20),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Icon(Icons.auto_awesome,
-                  color: AppColors.primary, size: 16),
+              fit: BoxFit.contain,
             ),
             const SizedBox(width: 8),
-            // On larger screens, maybe show title? For now just logo like web mobile.
+            const Text(
+              'NOVAIS',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+            ),
           ],
         ),
         centerTitle: false,

@@ -25,14 +25,29 @@ final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>(
 );
 
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
-  ThemeModeNotifier() : super(ThemeMode.dark) {
+  ThemeModeNotifier() : super(ThemeMode.system) {
     _load();
   }
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    final dark = prefs.getBool('dark_mode') ?? true;
-    state = dark ? ThemeMode.dark : ThemeMode.light;
+    final mode = prefs.getString('theme_mode');
+    if (mode == 'dark') {
+      state = ThemeMode.dark;
+      return;
+    }
+    if (mode == 'light') {
+      state = ThemeMode.light;
+      return;
+    }
+
+    final legacyDark = prefs.getBool('dark_mode');
+    if (legacyDark != null) {
+      state = legacyDark ? ThemeMode.dark : ThemeMode.light;
+      return;
+    }
+
+    state = ThemeMode.system;
   }
 
   Future<void> toggle() async {
@@ -40,6 +55,7 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
     final newDark = state != ThemeMode.dark;
     state = newDark ? ThemeMode.dark : ThemeMode.light;
     await prefs.setBool('dark_mode', newDark);
+    await prefs.setString('theme_mode', newDark ? 'dark' : 'light');
   }
 }
 
@@ -50,13 +66,14 @@ final localeProvider = StateNotifierProvider<LocaleNotifier, Locale>(
 );
 
 class LocaleNotifier extends StateNotifier<Locale> {
-  LocaleNotifier() : super(const Locale('en')) {
+  LocaleNotifier() : super(_deviceLocale()) {
     _load();
   }
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    final lang = prefs.getString('language') ?? 'en';
+    final lang = prefs.getString('language');
+    if (lang == null) return;
     state = Locale(lang);
   }
 
@@ -66,6 +83,12 @@ class LocaleNotifier extends StateNotifier<Locale> {
     await prefs.setString('language', lang);
     const storage = FlutterSecureStorage();
     await storage.write(key: 'language', value: lang);
+  }
+
+  static Locale _deviceLocale() {
+    final deviceLang =
+        WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+    return Locale(deviceLang == 'ar' ? 'ar' : 'en');
   }
 }
 

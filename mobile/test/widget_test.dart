@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:novais/core/api/api_client.dart';
+import 'package:novais/core/api/safe_json.dart';
 import 'package:novais/core/auth/auth_provider.dart';
 import 'package:novais/core/l10n/app_localizations.dart';
 import 'package:novais/core/router/app_router.dart';
@@ -30,7 +31,7 @@ void main() {
 
   test('auth loading state stays on loading route', () {
     expect(mobileAuthRedirect(AuthStatus.unknown, '/auth-loading'), isNull);
-    expect(mobileAuthRedirect(AuthStatus.unknown, '/'), '/auth-loading');
+    expect(mobileAuthRedirect(AuthStatus.unknown, '/'), isNull);
     expect(mobileAuthRedirect(AuthStatus.unknown, '/create'), '/auth-loading');
   });
 
@@ -45,11 +46,18 @@ void main() {
   test('unauthenticated protected routes go to signin', () {
     expect(mobileAuthRedirect(AuthStatus.unauthenticated, '/auth-loading'),
         '/signin');
-    expect(mobileAuthRedirect(AuthStatus.unauthenticated, '/'), '/signin');
+    expect(mobileAuthRedirect(AuthStatus.unauthenticated, '/'), isNull);
     expect(mobileAuthRedirect(AuthStatus.unauthenticated, '/dashboard'),
         '/signin');
     expect(
         mobileAuthRedirect(AuthStatus.unauthenticated, '/create'), '/signin');
+  });
+
+  test('api decoder tolerates invalid unicode escapes in course payloads', () {
+    final decoded = decodeNovaisJson(r'{"title":"Bad \user escape"}')
+        as Map<String, dynamic>;
+
+    expect(decoded['title'], r'Bad \user escape');
   });
 
   testWidgets('authenticated shell renders dashboard',

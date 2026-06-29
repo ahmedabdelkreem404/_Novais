@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
 import '../cache/api_cache.dart';
+import 'safe_json.dart';
 
 const String _kDeviceIdKey = 'device_id';
 
@@ -10,6 +11,15 @@ class ApiClient {
     'API_URL',
     defaultValue: 'http://10.0.2.2:8000/api', // Android emulator → localhost
   );
+
+  static String resolveMediaUrl(String url) {
+    final parsed = Uri.tryParse(url);
+    if (parsed == null || parsed.hasScheme) return url;
+
+    final base = Uri.parse(_baseUrl);
+    final origin = '${base.scheme}://${base.authority}';
+    return Uri.parse(origin).resolve(url).toString();
+  }
 
   late final Dio dio;
   final FlutterSecureStorage _storage;
@@ -25,6 +35,7 @@ class ApiClient {
         'Accept': 'application/json',
       },
     ));
+    dio.transformer = SyncTransformer(jsonDecodeCallback: decodeNovaisJson);
 
     dio.interceptors.addAll([
       _AuthInterceptor(_storage),

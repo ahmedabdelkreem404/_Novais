@@ -106,31 +106,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Logo
-                        Container(
-                          width: 64,
-                          height: 64,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color:
-                                isDark ? const Color(0xFF1F2937) : Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isDark
-                                  ? Colors.white.withAlpha(10)
-                                  : Colors.black.withAlpha(5),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(10),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(Icons.auto_awesome,
-                              size: 32, color: AppColors.primary),
-                          // Using Icon as placeholder if image asset missing
-                          // child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+                        Image.asset(
+                          'assets/images/logo.png',
+                          width: 68,
+                          height: 68,
+                          fit: BoxFit.contain,
                         ),
                         const SizedBox(height: 24),
 

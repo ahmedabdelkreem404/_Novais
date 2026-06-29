@@ -28,7 +28,7 @@ class HomeScreen extends ConsumerWidget {
       color: isDark ? const Color(0xFF050816) : const Color(0xFFF8FAFC),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 60, 20, 100),
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,10 +97,10 @@ class HomeScreen extends ConsumerWidget {
               height: 420,
               child: NvEmptyState(
                 icon: Icons.error_outline,
-                title: 'Failed to load courses',
+                title: l10n.t('failed_load_courses'),
                 subtitle: e.toString(),
                 action: NvButton(
-                  label: 'Retry',
+                  label: l10n.t('retry'),
                   width: 140,
                   onTap: () => ref.refresh(_coursesProvider.future),
                 ),
@@ -125,15 +125,32 @@ class HomeScreen extends ConsumerWidget {
               }
 
               return Column(
-                children: courses.map((course) {
+                children: courses.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final course = entry.value;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 20),
-                    child: AspectRatio(
-                      aspectRatio: 1.1,
-                      child: NvCourseCard(
-                        course: course,
-                        onTap: () => context.push('/course/${course.id}'),
-                        onDelete: () => _deleteCourse(context, ref, course.id),
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: 1),
+                      duration: Duration(milliseconds: 280 + (index * 70)),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, child) {
+                        return Opacity(
+                          opacity: value,
+                          child: Transform.translate(
+                            offset: Offset(0, 18 * (1 - value)),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: AspectRatio(
+                        aspectRatio: 0.92,
+                        child: NvCourseCard(
+                          course: course,
+                          onTap: () => context.push('/course/${course.id}'),
+                          onDelete: () =>
+                              _deleteCourse(context, ref, course.id),
+                        ),
                       ),
                     ),
                   );
@@ -211,12 +228,13 @@ class _UsageCard extends StatelessWidget {
                       size: 18, color: AppColors.primary),
                 ),
                 const SizedBox(width: 10),
-                const Text(
-                  'COURSES LIMIT',
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5),
+                Text(
+                  context.l10n.t('courses_limit'),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ]),
               Text(
@@ -242,7 +260,7 @@ class _UsageCard extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'Remaining courses: 3',
+              context.l10n.t('remaining_courses').replaceFirst('{count}', '3'),
               style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,

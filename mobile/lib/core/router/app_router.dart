@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
@@ -52,6 +53,7 @@ import '../../features/notes/notes_screen.dart';
 // ── Stub public pages (blog, contact, about, features)
 import '../../features/misc/stub_screens.dart';
 import '../../features/shared_course/shared_course_screen.dart';
+import '../../widgets/widgets.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authProvider);
@@ -59,35 +61,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
-      final status = auth.status;
-      final isAuth = status == AuthStatus.authenticated;
-      final isUnknown = status == AuthStatus.unknown;
-
-      if (isUnknown) return null; // Still loading
-
-      final protectedPaths = [
-        '/dashboard',
-        '/create',
-        '/generating',
-        '/course',
-        '/quiz',
-        '/certificate',
-        '/profile',
-        '/payment',
-        '/subscription',
-        '/notes',
-        '/audio',
-      ];
-
-      final isProtected =
-          protectedPaths.any((p) => state.uri.path.startsWith(p));
-
-      if (!isAuth && isProtected) return '/signin';
-      if (isAuth &&
-          (state.uri.path == '/signin' || state.uri.path == '/signup')) {
-        return '/dashboard';
-      }
-      return null;
+      return mobileAuthRedirect(auth.status, state.uri.path);
     },
     routes: [
       // ── Public ──────────────────────────────────────────────────────────────
@@ -112,6 +86,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             PolicyScreen(slug: state.pathParameters['slug']!),
       ),
       GoRoute(path: '/download', builder: (_, __) => const DownloadScreen()),
+      GoRoute(
+        path: '/auth-loading',
+        builder: (_, __) =>
+            const Scaffold(body: NvLoading(message: 'Loading...')),
+      ),
 
       // ── Auth ─────────────────────────────────────────────────────────────────
       GoRoute(path: '/signin', builder: (_, __) => const SignInScreen()),
@@ -156,7 +135,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/course/:courseId',
         builder: (_, state) => CourseScreen(
-            courseId: int.parse(state.pathParameters['courseId']!)),
+          courseId: state.pathParameters['courseId']!,
+        ),
       ),
       GoRoute(
         path: '/quiz/:courseId',
@@ -214,7 +194,22 @@ String? mobileAuthRedirect(AuthStatus status, String location) {
   final isLoading = location == '/auth-loading';
 
   if (isUnknown) {
-    return isLoading ? null : '/auth-loading';
+    final protectedPaths = [
+      '/dashboard',
+      '/create',
+      '/generating',
+      '/course',
+      '/quiz',
+      '/certificate',
+      '/profile',
+      '/payment',
+      '/subscription',
+      '/notes',
+      '/audio',
+    ];
+    final isProtected = protectedPaths.any((path) => location.startsWith(path));
+    if (isProtected) return isLoading ? null : '/auth-loading';
+    return null;
   }
 
   if (isLoading) {
@@ -237,7 +232,7 @@ String? mobileAuthRedirect(AuthStatus status, String location) {
 
   final isProtected = protectedPaths.any((path) => location.startsWith(path));
 
-  if (!isAuth && (isProtected || location == '/')) {
+  if (!isAuth && isProtected) {
     return '/signin';
   }
 

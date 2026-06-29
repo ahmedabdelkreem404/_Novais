@@ -20,7 +20,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
-  
+
   bool _obscure = true;
   bool _loading = false;
 
@@ -38,14 +38,14 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
       if (success) {
         if (mounted) {
-           // If direct login after register (token returned) -> dashboard
-           // If email verify needed -> verify-email screen
-           final auth = ref.read(authProvider);
-           if (auth.status == AuthStatus.authenticated) {
-              context.go('/dashboard');
-           } else {
-              context.push('/verify-email?email=${_emailCtrl.text.trim()}');
-           }
+          // If direct login after register (token returned) -> dashboard
+          // If email verify needed -> verify-email screen
+          final auth = ref.read(authProvider);
+          if (auth.status == AuthStatus.authenticated) {
+            context.go('/dashboard');
+          } else {
+            context.push('/verify-email?email=${_emailCtrl.text.trim()}');
+          }
         }
       } else {
         if (mounted) showSnack(context, 'Registration failed', error: true);
@@ -65,11 +65,11 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       body: Stack(
         children: [
           const AppAnimatedBackground(),
-          
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
                   child: BackdropFilter(
@@ -92,23 +92,13 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                             Center(
-                               child: Column(children: [
-                                Container(
-                                  width: 68, height: 68,
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [AppColors.gradientStart, AppColors.gradientEnd]),
-                                    borderRadius: BorderRadius.circular(20),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.primary.withAlpha(80),
-                                        blurRadius: 20,
-                                        offset: const Offset(0, 8),
-                                      )
-                                    ],
-                                  ),
-                                  child: const Icon(Icons.auto_awesome, color: Colors.white, size: 34),
+                            Center(
+                              child: Column(children: [
+                                Image.asset(
+                                  'assets/images/logo.png',
+                                  width: 72,
+                                  height: 72,
+                                  fit: BoxFit.contain,
                                 ),
                                 const SizedBox(height: 20),
                                 const Text('NOVAIS',
@@ -121,51 +111,73 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                                 Text('Create your free account',
                                     style: TextStyle(
                                         fontSize: 14,
-                                        color: Theme.of(context).colorScheme.onSurface.withAlpha(128))),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withAlpha(128))),
                               ]),
                             ),
                             const SizedBox(height: 36),
 
                             NvTextField(
-                              label: 'Full Name', hint: 'John Doe',
+                              label: 'Full Name',
+                              hint: 'John Doe',
                               controller: _nameCtrl,
-                              validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                              validator: (v) => (v == null || v.trim().isEmpty)
+                                  ? 'Required'
+                                  : null,
                             ),
                             const SizedBox(height: 14),
                             NvTextField(
-                              label: 'Email Address', hint: 'you@example.com',
+                              label: 'Email Address',
+                              hint: 'you@example.com',
                               controller: _emailCtrl,
                               keyboardType: TextInputType.emailAddress,
-                              validator: (v) => (v == null || !v.contains('@')) ? 'Invalid email' : null,
+                              validator: (v) => (v == null || !v.contains('@'))
+                                  ? 'Invalid email'
+                                  : null,
                             ),
                             const SizedBox(height: 14),
                             NvTextField(
                               label: 'Password',
-                              controller: _passCtrl, obscure: _obscure,
-                              validator: (v) => (v == null || v.length < 8) ? 'Min 8 characters' : null,
+                              controller: _passCtrl,
+                              obscure: _obscure,
+                              validator: (v) => (v == null || v.length < 8)
+                                  ? 'Min 8 characters'
+                                  : null,
                               suffix: IconButton(
-                                icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                                onPressed: () => setState(() => _obscure = !_obscure),
+                                icon: Icon(_obscure
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined),
+                                onPressed: () =>
+                                    setState(() => _obscure = !_obscure),
                               ),
                             ),
                             const SizedBox(height: 14),
                             NvTextField(
                               label: 'Confirm Password',
-                              controller: _confirmCtrl, obscure: true,
-                              validator: (v) => v != _passCtrl.text ? 'Passwords do not match' : null,
+                              controller: _confirmCtrl,
+                              obscure: true,
+                              validator: (v) => v != _passCtrl.text
+                                  ? 'Passwords do not match'
+                                  : null,
                             ),
                             const SizedBox(height: 24),
 
                             // Terms note
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
                               child: Text.rich(
                                 TextSpan(children: [
                                   TextSpan(
                                       text: 'By signing up, you agree to our ',
                                       style: TextStyle(
                                           fontSize: 12,
-                                          color: Theme.of(context).colorScheme.onSurface.withAlpha(128))),
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withAlpha(128))),
                                   const TextSpan(
                                       text: 'Terms of Service',
                                       style: TextStyle(
@@ -176,7 +188,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                                       text: ' and ',
                                       style: TextStyle(
                                           fontSize: 12,
-                                          color: Theme.of(context).colorScheme.onSurface.withAlpha(128))),
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withAlpha(128))),
                                   const TextSpan(
                                       text: 'Privacy Policy',
                                       style: TextStyle(
@@ -188,20 +203,29 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                             ),
                             const SizedBox(height: 24),
 
-                            NvButton(label: 'Create Account', onTap: _register, loading: _loading),
+                            NvButton(
+                                label: 'Create Account',
+                                onTap: _register,
+                                loading: _loading),
                             const SizedBox(height: 24),
 
-                            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                              Text('Already have an account?',
-                                  style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSurface.withAlpha(160))),
-                              TextButton(
-                                onPressed: () => context.go('/signin'),
-                                child: const Text('Sign In',
-                                    style: TextStyle(
-                                        color: AppColors.primary, fontWeight: FontWeight.w600)),
-                              ),
-                            ]),
+                            Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text('Already have an account?',
+                                      style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withAlpha(160))),
+                                  TextButton(
+                                    onPressed: () => context.go('/signin'),
+                                    child: const Text('Sign In',
+                                        style: TextStyle(
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.w600)),
+                                  ),
+                                ]),
                           ],
                         ),
                       ),

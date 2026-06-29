@@ -16,10 +16,10 @@ class ApiEndpoints {
   // Courses
   static const courses = '/courses';
   static const generateCourse = '/generate-course';
-  static String course(int id) => '/courses/$id';
-  static String updateCourse(int id) => '/courses/$id';
-  static String deleteCourse(int id) => '/courses/$id';
-  static String lesson(int courseId, int lessonId) =>
+  static String course(Object id) => '/courses/$id';
+  static String updateCourse(Object id) => '/courses/$id';
+  static String deleteCourse(Object id) => '/courses/$id';
+  static String lesson(Object courseId, int lessonId) =>
       '/courses/$courseId/lessons/$lessonId';
   static String createQuiz(int id) => '/courses/$id/quiz';
   static String getQuizzes(int id) => '/courses/$id/quiz';
@@ -27,7 +27,8 @@ class ApiEndpoints {
   static String shareLink(int id) => '/courses/$id/share';
   static String exportPdf(int id) => '/courses/$id/export/pdf';
   static String exportPpt(int id) => '/courses/$id/export/ppt';
-  static String chatHistory(int courseId) => '/courses/$courseId/chat/history';
+  static String chatHistory(Object courseId) =>
+      '/courses/$courseId/chat/history';
 
   // Chat
   static const chat = '/chat';
