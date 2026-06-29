@@ -166,6 +166,7 @@ Route::post('/contact', [\App\Http\Controllers\ContactController::class, 'store'
 Route::get('/policies', [\App\Http\Controllers\PolicyController::class, 'index']);
 Route::get('/social-links', [\App\Http\Controllers\SocialLinkController::class, 'index']);
 Route::get('/plans', [\App\Http\Controllers\CMSController::class, 'getPlans']);
+Route::get('/platform-config', [\App\Http\Controllers\PlatformConfigController::class, 'show']);
 
 // Admin Routes
 Route::middleware(['auth:api', 'is_admin'])->prefix('admin')->group(function () {
@@ -195,6 +196,9 @@ Route::middleware(['auth:api', 'is_admin'])->prefix('admin')->group(function () 
 
     Route::get('/courses', [\App\Http\Controllers\AdminController::class, 'getCourses']);
     Route::put('/courses/{id}', [\App\Http\Controllers\AdminController::class, 'updateCourse']);
+    Route::get('/courses/{id}/lessons', [\App\Http\Controllers\AdminController::class, 'getCourseLessons']);
+    Route::put('/lessons/{id}', [\App\Http\Controllers\AdminController::class, 'updateLesson']);
+    Route::post('/media/upload', [\App\Http\Controllers\MediaController::class, 'upload']);
     Route::get('/contacts', [\App\Http\Controllers\ContactController::class, 'index']); // Admin Get Contacts
     Route::post('/contacts/{id}/reply', [\App\Http\Controllers\ContactController::class, 'reply']);
     Route::delete('/contacts/{id}', [\App\Http\Controllers\ContactController::class, 'destroy']);
@@ -215,4 +219,8 @@ Route::middleware(['auth:api', 'is_admin'])->prefix('admin')->group(function () 
     Route::get('/pages/{slug}', [\App\Http\Controllers\PageController::class, 'show']);
     Route::put('/pages/{slug}', [\App\Http\Controllers\PageController::class, 'update']);
     Route::post('/pages/{slug}', [\App\Http\Controllers\PageController::class, 'update']);
+
+    // Platform Config Admin
+    Route::get('/platform-config', [\App\Http\Controllers\PlatformConfigController::class, 'adminShow']);
+    Route::put('/platform-config', [\App\Http\Controllers\PlatformConfigController::class, 'update']);
 });

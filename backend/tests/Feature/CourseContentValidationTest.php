@@ -63,7 +63,7 @@ class CourseContentValidationTest extends TestCase
 
     public function test_store_course_normalizes_empty_lesson_content_and_arabic_titles(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'premium']);
         $content = [
             'title' => 'مقدمة في البرمجة',
             'chapters' => [[

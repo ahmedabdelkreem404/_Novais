@@ -54,17 +54,22 @@ const Landing = () => {
     };
 
     const [plans, setPlans] = React.useState([]);
+    const [config, setConfig] = React.useState(null);
 
     React.useEffect(() => {
-        const fetchPlans = async () => {
+        const fetchPlansAndConfig = async () => {
             try {
-                const res = await axios.get(`${serverURL}/plans`);
-                setPlans(Array.isArray(res.data) ? res.data : []);
+                const [plansRes, configRes] = await Promise.all([
+                    axios.get(`${serverURL}/plans`),
+                    axios.get(`${serverURL}/platform-config`)
+                ]);
+                setPlans(Array.isArray(plansRes.data) ? plansRes.data : []);
+                setConfig(configRes.data);
             } catch (err) {
-                console.error("Failed to fetch plans", err);
+                console.error("Failed to fetch plans or config", err);
             }
         };
-        fetchPlans();
+        fetchPlansAndConfig();
     }, []);
 
     const getPlan = (slug) => (Array.isArray(plans) ? plans : []).find(p => p.slug === slug) || {};
@@ -86,18 +91,26 @@ const Landing = () => {
                         animate="visible"
                         variants={staggerContainer}
                     >
-                        <motion.div className="landing-badge" variants={fadeInUp}>{t('landing.badge')}</motion.div>
+                        <motion.div className="landing-badge" variants={fadeInUp}>
+                            {(config && (isRtl ? config.web_hero_badge_ar : config.web_hero_badge_en)) || t('landing.badge')}
+                        </motion.div>
                         <motion.h1 className="h1 landing-hero__title" variants={fadeInUp}>
-                            {t('landing.title_main')}<br />
-                            <span className="landing-hero__titleAccent">{t('landing.title_accent')}</span>
+                            {config && (isRtl ? config.web_hero_title_ar : config.web_hero_title_en) ? (
+                                isRtl ? config.web_hero_title_ar : config.web_hero_title_en
+                            ) : (
+                                <>
+                                    {t('landing.title_main')}<br />
+                                    <span className="landing-hero__titleAccent">{t('landing.title_accent')}</span>
+                                </>
+                            )}
                         </motion.h1>
                         <motion.p className="landing-hero__subtitle" variants={fadeInUp}>
-                            {t('landing.subtitle')}
+                            {(config && (isRtl ? config.web_hero_subtitle_ar : config.web_hero_subtitle_en)) || t('landing.subtitle')}
                         </motion.p>
 
                         <motion.div className="landing-hero__cta" variants={fadeInUp}>
                             <Button variant="primary" size="xl" onClick={() => navigate('/signup')}>
-                                {t('landing.cta_start')}
+                                {(config && (isRtl ? config.web_hero_cta_ar : config.web_hero_cta_en)) || t('landing.cta_start')}
                                 {isRtl ? <LuArrowRight className="rotate-180" /> : <LuArrowRight />}
                             </Button>
                         </motion.div>
@@ -145,11 +158,31 @@ const Landing = () => {
                                 </motion.div>
                             </div>
 
-                            <img
-                                className="landing-preview__image"
-                                src={slideOne}
-                                alt="Platform Screenshot"
-                            />
+                            {config && config.hero_media_url ? (
+                                config.hero_media_type === 'video' ? (
+                                    <video
+                                        className="landing-preview__image w-full rounded-2xl object-cover shadow-2xl"
+                                        src={config.hero_media_url.startsWith('http') ? config.hero_media_url : `${serverURL.replace('/api', '')}${config.hero_media_url}`}
+                                        autoPlay
+                                        muted={config.hero_media_muted !== undefined ? !!config.hero_media_muted : true}
+                                        loop={config.hero_media_loop !== undefined ? !!config.hero_media_loop : true}
+                                        playsInline
+                                        poster={config.hero_media_poster ? (config.hero_media_poster.startsWith('http') ? config.hero_media_poster : `${serverURL.replace('/api', '')}${config.hero_media_poster}`) : undefined}
+                                    />
+                                ) : (
+                                    <img
+                                        className="landing-preview__image w-full rounded-2xl object-cover shadow-2xl"
+                                        src={config.hero_media_url.startsWith('http') ? config.hero_media_url : `${serverURL.replace('/api', '')}${config.hero_media_url}`}
+                                        alt="Platform Preview"
+                                    />
+                                )
+                            ) : (
+                                <img
+                                    className="landing-preview__image"
+                                    src={slideOne}
+                                    alt="Platform Screenshot"
+                                />
+                            )}
                         </div>
                     </motion.div>
                 </div>

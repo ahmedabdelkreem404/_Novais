@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../core/auth/auth_provider.dart';
 import '../core/l10n/app_localizations.dart';
 import '../core/theme/app_theme.dart';
+import '../core/api/platform_config_provider.dart';
 
 class AppSidebar extends ConsumerWidget {
   const AppSidebar({super.key});
@@ -18,7 +19,10 @@ class AppSidebar extends ConsumerWidget {
     final drawerWidth = (MediaQuery.sizeOf(context).width * 0.84)
         .clamp(300.0, 360.0)
         .toDouble();
-    const edgeRadius = Radius.circular(18);
+    final configAsync = ref.watch(platformConfigProvider);
+    final showThemeToggle = !configAsync.hasValue ||
+        (configAsync.value!.systemThemeMode != 'light_only' &&
+            configAsync.value!.systemThemeMode != 'dark_only');
 
     return Drawer(
       width: drawerWidth,
@@ -149,14 +153,15 @@ class AppSidebar extends ConsumerWidget {
                         .setLanguage(isAr ? 'en' : 'ar');
                   },
                 ),
-                _ActionItem(
-                  key: const Key('drawer_theme_button'),
-                  icon: isDark ? Icons.light_mode : Icons.dark_mode,
-                  label: l10n.t('toggle_theme'),
-                  onTap: () {
-                    ref.read(themeModeProvider.notifier).toggle();
-                  },
-                ),
+                if (showThemeToggle)
+                  _ActionItem(
+                    key: const Key('drawer_theme_button'),
+                    icon: isDark ? Icons.light_mode : Icons.dark_mode,
+                    label: l10n.t('toggle_theme'),
+                    onTap: () {
+                      ref.read(themeModeProvider.notifier).toggle();
+                    },
+                  ),
                 _ActionItem(
                   icon: Icons.logout,
                   label: l10n.t('logout'),

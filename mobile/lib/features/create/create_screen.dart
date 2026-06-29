@@ -5,6 +5,8 @@ import '../../core/auth/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../widgets/widgets.dart';
+import '../../core/api/platform_config_provider.dart';
+import '../../models/platform_config.dart';
 
 class CreateScreen extends ConsumerStatefulWidget {
   const CreateScreen({super.key});
@@ -42,18 +44,30 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
     'Dutch',
   ];
 
-  void _onFeatureSelect(String feature, dynamic value) {
+  void _onFeatureSelect(String feature, dynamic value, PlatformConfig? config) {
     final user = ref.read(authProvider).user;
     final isPro = user?.isPro == true;
 
     // Premium checks
     bool isPremiumFeature = false;
     if (feature == 'modules' && value > 5) isPremiumFeature = true;
-    if (feature == 'type' && value.toString().contains('Video')) {
-      isPremiumFeature = true;
-    }
     if (feature == 'level' && value == 'Professional') isPremiumFeature = true;
-    if (feature == 'language' && value != 'English') isPremiumFeature = true;
+
+    if (config != null) {
+      if (feature == 'type') {
+        isPremiumFeature = config.isPremiumCourseType(value.toString());
+      }
+      if (feature == 'language') {
+        isPremiumFeature = config.isPremiumLanguage(value.toString());
+      }
+    } else {
+      if (feature == 'type' && value.toString().contains('Video')) {
+        isPremiumFeature = true;
+      }
+      if (feature == 'language' && value != 'English') {
+        isPremiumFeature = true;
+      }
+    }
 
     if (isPremiumFeature && !isPro) {
       _showPremiumDialog();
@@ -125,6 +139,27 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = ref.watch(authProvider).user;
     final isPro = user?.isPro == true;
+
+    final configAsync = ref.watch(platformConfigProvider);
+    final config = configAsync.valueOrNull;
+
+    final languages = config?.enabledLanguages ?? _languages;
+    final courseTypes = config?.enabledCourseTypes ?? [
+      'Theory & Image Course',
+      'Video & Theory Course',
+    ];
+    final creationEnabled = config?.courseCreationEnabled ?? true;
+
+    // Verify current selection is still in the active list
+    String selectedLanguage = _language;
+    if (!languages.contains(selectedLanguage)) {
+      selectedLanguage = languages.contains('English') ? 'English' : languages.first;
+    }
+
+    String selectedType = _type;
+    if (!courseTypes.contains(selectedType)) {
+      selectedType = courseTypes.first;
+    }
 
     return Material(
       color: isDark ? const Color(0xFF050816) : const Color(0xFFF8FAFC),
@@ -207,6 +242,34 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Disabled Warning
+                  if (!creationEnabled)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 20),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withAlpha(20),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red.withAlpha(50)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              l10n.t('disabled_warning'),
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                   // Topic
                   const _SectionHeader(
                       label: 'TOPIC', icon: Icons.lightbulb_outline),
@@ -272,7 +335,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                   // Language
                   const _SectionHeader(label: 'LANGUAGE', icon: Icons.language),
                   DropdownButtonFormField<String>(
-                    value: _language,
+                    value: selectedLanguage,
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: isDark
@@ -287,8 +350,8 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                     icon: const Icon(Icons.keyboard_arrow_down),
                     dropdownColor:
                         isDark ? const Color(0xFF1F1F1F) : Colors.white,
-                    items: _languages.map((l) {
-                      final isPrem = l != 'English';
+                    items: languages.map((l) {
+                      final isPrem = config != null ? config.isPremiumLanguage(l) : l != 'English';
                       return DropdownMenuItem(
                         value: l,
                         child: Row(children: [
@@ -301,7 +364,11 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                         ]),
                       );
                     }).toList(),
-                    onChanged: (v) => _onFeatureSelect('language', v),
+                    onChanged: (v) {
+                      if (v != null) {
+                        _onFeatureSelect('language', v, config);
+                      }
+                    },
                   ),
                   const SizedBox(height: 24),
 
@@ -328,7 +395,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                         isSelected: _level == level,
                         isPremium: isPrem,
                         isLocked: isPrem && !isPro,
-                        onTap: () => _onFeatureSelect('level', level),
+                        onTap: () => _onFeatureSelect('level', level, config),
                       );
                     }).toList(),
                   ),
@@ -350,7 +417,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                             isSelected: _modules == m,
                             isPremium: isPrem,
                             isLocked: isPrem && !isPro,
-                            onTap: () => _onFeatureSelect('modules', m),
+                            onTap: () => _onFeatureSelect('modules', m, config),
                           ),
                         ),
                       );
@@ -362,9 +429,8 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                   const _SectionHeader(
                       label: 'FORMAT', icon: Icons.auto_stories_outlined),
                   Column(
-                    children: ['Theory & Image Course', 'Video & Theory Course']
-                        .map((t) {
-                      final isPrem = t.contains('Video');
+                    children: courseTypes.map((t) {
+                      final isPrem = config != null ? config.isPremiumCourseType(t) : t.contains('Video');
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: _TypeCard(
@@ -377,10 +443,10 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                           icon: t.contains('Video')
                               ? Icons.videocam
                               : Icons.menu_book,
-                          isSelected: _type == t,
+                          isSelected: selectedType == t,
                           isPremium: isPrem,
                           isLocked: isPrem && !isPro,
-                          onTap: () => _onFeatureSelect('type', t),
+                          onTap: () => _onFeatureSelect('type', t, config),
                         ),
                       );
                     }).toList(),
@@ -395,14 +461,14 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                     child: ElevatedButton(
                       key: const Key('create_generate_button'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: creationEnabled ? AppColors.primary : Colors.grey,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16)),
-                        elevation: 4,
-                        shadowColor: AppColors.primary.withAlpha(80),
+                        elevation: creationEnabled ? 4 : 0,
+                        shadowColor: creationEnabled ? AppColors.primary.withAlpha(80) : Colors.transparent,
                       ),
-                      onPressed: _generate,
+                      onPressed: creationEnabled ? _generate : null,
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

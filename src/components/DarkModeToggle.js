@@ -23,6 +23,11 @@ const DarkModeToggle = () => {
         document.documentElement.classList.toggle('dark', isDarkMode);
     }, [isDarkMode]);
 
+    const themeMode = localStorage.getItem('systemThemeMode') || 'user_choice';
+    if (themeMode === 'light_only' || themeMode === 'dark_only') {
+        return null; // Locked theme, hide switch
+    }
+
     return (
         <button
 

@@ -15,14 +15,18 @@ const Pricing = () => {
     const [billingCycle, setBillingCycle] = useState('monthly');
 
     const [plansData, setPlansData] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchPlans = async () => {
+            setLoading(true);
             try {
                 const res = await axios.get(`${serverURL}/plans`);
                 setPlansData(res.data);
             } catch (err) {
                 console.error("Failed to fetch plans", err);
+            } finally {
+                setLoading(false);
             }
         };
         fetchPlans();
@@ -66,9 +70,11 @@ const Pricing = () => {
             name: getPlanField(getDBPlan('pro'), 'name', t('pricing.pro_plan')),
             desc: getPlanField(getDBPlan('pro'), 'description', t('pricing.pro_desc')),
             price: billingCycle === 'monthly'
-                ? (getDBPlan('pro').price_egp || 50)
-                : (getDBPlan('pro').price_egp * 10 || 500),
-            oldPrice: billingCycle === 'monthly' ? 70 : 700,
+                ? (getDBPlan('pro').price_egp || 0)
+                : (getDBPlan('pro').price_egp * 10 || 0),
+            oldPrice: billingCycle === 'monthly'
+                ? (getDBPlan('pro').price_egp ? Math.round(getDBPlan('pro').price_egp * 1.4) : 0)
+                : (getDBPlan('pro').price_egp ? Math.round(getDBPlan('pro').price_egp * 10 * 1.4) : 0),
             icon: LuRocket,
             color: 'indigo',
             popular: true,
@@ -82,26 +88,18 @@ const Pricing = () => {
                         .replace(/(Create\s+)\d+(\s+Courses?)/i, `$1${limitText}$2`)
                         .replace(/(إنشاء\s+)\d+(\s+دورة)/i, `$1${limitText}$2`);
                 })
-                : [
-                    t('pricing.features.subtopics_10'),
-                    billingCycle === 'monthly'
-                        ? (getDBPlan('pro').course_limit === -1 ? t('pricing.features.unlimited') : `${getDBPlan('pro').course_limit || 3} ${t('common.courses_limit')}`)
-                        : (getDBPlan('pro').course_limit === -1 ? t('pricing.features.unlimited') : `${(getDBPlan('pro').course_limit || 3) * 12} ${t('common.courses_limit')}`),
-                    t('pricing.features.full_access'),
-                    t('pricing.features.theory_image'),
-                    t('pricing.features.video_theory'),
-                    t('pricing.features.ai_chat'),
-                    t('pricing.features.languages_23')
-                ]
+                : []
         },
         {
             id: 'elite',
             name: getPlanField(getDBPlan('elite'), 'name', t('pricing.elite_plan')),
             desc: getPlanField(getDBPlan('elite'), 'description', t('pricing.elite_desc')),
             price: billingCycle === 'monthly'
-                ? (getDBPlan('elite').price_egp || 80)
-                : (getDBPlan('elite').price_egp * 10 || 800),
-            oldPrice: billingCycle === 'monthly' ? 120 : 1200,
+                ? (getDBPlan('elite').price_egp || 0)
+                : (getDBPlan('elite').price_egp * 10 || 0),
+            oldPrice: billingCycle === 'monthly'
+                ? (getDBPlan('elite').price_egp ? Math.round(getDBPlan('elite').price_egp * 1.5) : 0)
+                : (getDBPlan('elite').price_egp ? Math.round(getDBPlan('elite').price_egp * 10 * 1.5) : 0),
             icon: LuFlame,
             color: 'amber',
             features: (getDBPlan('elite').features?.[lang] || getDBPlan('elite').features?.['ar'])
@@ -114,18 +112,7 @@ const Pricing = () => {
                         .replace(/(Create\s+)\d+(\s+Courses?)/i, `$1${limitText}$2`)
                         .replace(/(إنشاء\s+)\d+(\s+دورة)/i, `$1${limitText}$2`);
                 })
-                : [
-                    t('pricing.features.subtopics_10'),
-                    billingCycle === 'monthly'
-                        ? (getDBPlan('elite').course_limit === -1 ? t('pricing.features.unlimited') : `${getDBPlan('elite').course_limit || 10} ${t('common.courses_limit')}`)
-                        : (getDBPlan('elite').course_limit === -1 ? t('pricing.features.unlimited') : `${(getDBPlan('elite').course_limit || 10) * 12} ${t('common.courses_limit')}`),
-                    t('pricing.features.full_access'),
-                    t('pricing.features.unlimited'),
-                    t('pricing.features.video_theory'),
-                    t('pricing.features.teams'),
-                    t('pricing.features.api_access'),
-                    t('pricing.features.dedicated_support')
-                ]
+                : []
         }
     ];
 
@@ -152,6 +139,17 @@ const Pricing = () => {
 
     const location = require('react-router-dom').useLocation();
     const isDashboard = location.pathname.includes('/dashboard');
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#020617]">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+                    <p className="text-sm font-medium text-gray-400 animate-pulse">{t('common.loading')}</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={`pricing-page ${isDashboard ? 'h-full' : 'min-h-screen'} relative py-8 md:py-12 px-4 bg-gradient-to-b from-gray-50 to-white dark:from-[#020617] dark:to-[#0f172a] transition-colors duration-500 overflow-hidden ${isRtl ? 'rtl' : 'ltr'}`} dir={isRtl ? 'rtl' : 'ltr'}>

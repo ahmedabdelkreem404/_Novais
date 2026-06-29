@@ -133,17 +133,21 @@ const SocialLinks = () => {
                             <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 text-xl shadow-inner">
                                 {getIcon(link.platform)}
                             </div>
-                            <div className="flex-grow">
-                                <input
-                                    value={link.platform}
-                                    onChange={(e) => updateLinkState(link.id, 'platform', e.target.value)}
-                                    placeholder={t('admin.dashboard.social_links.platform') || 'Platform (e.g. Facebook)'}
-                                    className="w-full border-none bg-transparent font-bold p-0 focus:ring-0 text-lg outline-none placeholder:text-gray-400"
-                                />
+                            <div>
+                                <h4 className="font-bold text-lg text-gray-900 dark:text-white capitalize">
+                                    {link.platform || 'New Social Link'}
+                                </h4>
                             </div>
                         </div>
 
                         <div className="space-y-4">
+                            <Input
+                                label={t('admin.dashboard.social_links.platform') || 'Platform Name'}
+                                value={link.platform}
+                                onChange={(e) => updateLinkState(link.id, 'platform', e.target.value)}
+                                placeholder="e.g. Facebook, Twitter"
+                            />
+
                             <Input
                                 label={t('admin.dashboard.social_links.url') || 'URL'}
                                 value={link.url}

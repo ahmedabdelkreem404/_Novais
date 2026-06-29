@@ -118,6 +118,79 @@ const CreateCourse = () => {
         )
     ) || localStorage.getItem('role') === 'admin';
 
+    const [config, setConfig] = useState(null);
+
+    useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const res = await axios.get(`${serverURL}/platform-config`);
+                setConfig(res.data);
+                if (res.data) {
+                    if (res.data.enabled_course_types && res.data.enabled_course_types.length > 0) {
+                        if (!res.data.enabled_course_types.includes(formData.type)) {
+                            setFormData(prev => ({ ...prev, type: res.data.enabled_course_types[0] }));
+                        }
+                    }
+                    if (res.data.enabled_languages && res.data.enabled_languages.length > 0) {
+                        if (!res.data.enabled_languages.includes(formData.language)) {
+                            setFormData(prev => ({ ...prev, language: res.data.enabled_languages[0] }));
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch platform config:", error);
+            }
+        };
+        fetchConfig();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const activeLanguages = config
+        ? config.enabled_languages.map(lang => ({
+            name: lang,
+            isPremium: !config.all_languages_free && !config.free_languages.includes(lang)
+          }))
+        : languagesList;
+
+    const activeCourseTypes = config
+        ? config.enabled_course_types
+        : ['Theory & Image Course', 'Video & Theory Course'];
+
+    const activeLevels = config
+        ? (config.enabled_levels ?? ['Beginner', 'Intermediate', 'Advanced', 'Professional'])
+        : ['Beginner', 'Intermediate', 'Advanced', 'Professional'];
+
+    const activeDepths = config
+        ? (config.enabled_depths ?? [5, 10])
+        : [5, 10];
+
+    const isCourseTypePremium = (type) => {
+        if (!config) {
+            return type.includes('Video');
+        }
+        const isVideo = type.toLowerCase().includes('video');
+        if (isVideo && !config.video_courses_free) {
+            return true;
+        }
+        return !config.free_course_types.includes(type);
+    };
+
+    const isLevelPremium = (level) => {
+        if (!config) {
+            return level === 'Professional';
+        }
+        return !(config.free_levels ?? ['Beginner', 'Intermediate', 'Advanced']).includes(level);
+    };
+
+    const isDepthPremium = (depth) => {
+        if (!config) {
+            return depth > 5;
+        }
+        return depth > (config.free_depth_limit ?? 5);
+    };
+
+    const creationDisabled = config && !config.course_creation_enabled;
+
     // Premium Check Handler
     const handleFeatureClick = (feature, value) => {
         // If user is premium, allow everything immediately
@@ -129,10 +202,10 @@ const CreateCourse = () => {
 
         // Free Plan Limits Definitions
         const isPremiumFeature =
-            (feature === 'numModules' && value > 5) ||
-            (feature === 'type' && value.includes('Video')) ||
-            (feature === 'language' && value !== 'English') ||
-            (feature === 'level' && value === 'Professional');
+            (feature === 'numModules' && isDepthPremium(value)) ||
+            (feature === 'type' && isCourseTypePremium(value)) ||
+            (feature === 'language' && (activeLanguages.find(l => l.name === value)?.isPremium)) ||
+            (feature === 'level' && isLevelPremium(value));
 
         if (isPremiumFeature) {
             setShowPremiumModal(true);
@@ -319,9 +392,8 @@ const CreateCourse = () => {
                                 <LuRocket className="text-blue-500" /> {t('create_page.level_label')}
                             </label>
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 items-stretch">
-                                {['Beginner', 'Intermediate', 'Advanced', 'Professional'].map(val => {
-                                    const isProfessional = val === 'Professional';
-                                    const showLock = !isPremiumUser && isProfessional;
+                                {activeLevels.map(val => {
+                                    const showLock = !isPremiumUser && isLevelPremium(val);
 
                                     return (
                                         <div
@@ -334,7 +406,7 @@ const CreateCourse = () => {
                                             `}
                                         >
                                             <span className={`text-[8.5px] sm:text-[10px] md:text-xs font-bold uppercase break-normal whitespace-normal leading-tight tracking-tighter px-0.5 ${formData.level === val ? 'text-blue-700 dark:text-blue-300' : 'text-gray-500'}`}>
-                                                {t(`create_page.levels.${val.toLowerCase()}`)}
+                                                {t(`create_page.levels.${val.toLowerCase()}`) || val}
                                             </span>
                                             {showLock && (
                                                 <LuGem className="text-amber-500" size={12} />
@@ -351,7 +423,7 @@ const CreateCourse = () => {
                                 <LuLayers className="text-blue-500" /> {t('create_page.depth_label')}
                             </label>
                             <div className="grid grid-cols-2 gap-4">
-                                {[5, 10].map(val => (
+                                {activeDepths.map(val => (
                                     <div
                                         key={val}
                                         onClick={() => handleFeatureClick('numModules', val)}
@@ -367,7 +439,7 @@ const CreateCourse = () => {
                                         <span className={`text-xs font-bold uppercase ${formData.numModules === val ? 'text-blue-700 dark:text-blue-300' : 'text-gray-500'}`}>
                                             {t('create_page.depth_unit')}
                                         </span>
-                                        {!isPremiumUser && val > 5 && (
+                                        {!isPremiumUser && isDepthPremium(val) && (
                                             <div className="absolute top-2 right-2 text-amber-500">
                                                 <LuGem size={16} />
                                             </div>
@@ -383,9 +455,8 @@ const CreateCourse = () => {
                                 <LuBookOpen className="text-blue-500" /> {t('create_page.format_label')}
                             </label>
                             <div className="grid grid-cols-1 gap-3">
-                                {['Theory & Image Course', 'Video & Theory Course'].map(val => {
-                                    const isFeaturePremium = val.includes('Video');
-                                    const showLock = !isPremiumUser && isFeaturePremium;
+                                {activeCourseTypes.map(val => {
+                                    const showLock = !isPremiumUser && isCourseTypePremium(val);
 
                                     return (
                                         <div
@@ -398,14 +469,14 @@ const CreateCourse = () => {
                                             `}
                                         >
                                             <div className={`p-2 rounded-lg ${formData.type === val ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
-                                                {val.includes('Video') ? <LuVideo size={20} /> : <LuBookOpen size={20} />}
+                                                {val.toLowerCase().includes('video') ? <LuVideo size={20} /> : <LuBookOpen size={20} />}
                                             </div>
                                             <div>
                                                 <span className={`block text-sm font-bold ${formData.type === val ? 'text-blue-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
-                                                    {t(`create_page.types.${val.includes('Video') ? 'video_theory' : 'theory_image'}`)}
+                                                    {val}
                                                 </span>
                                                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                                                    {val.includes('Video') ? t('create_page.format_video_desc') : t('create_page.format_theory_desc')}
+                                                    {val.toLowerCase().includes('video') ? t('create_page.format_video_desc') : t('create_page.format_theory_desc')}
                                                 </span>
                                             </div>
                                             {formData.type === val && (
@@ -429,7 +500,7 @@ const CreateCourse = () => {
                 <div className="mt-12 pt-8 border-t border-gray-100 dark:border-gray-800">
                     <button
                         onClick={handleGenerate}
-                        disabled={!formData.topic}
+                        disabled={!formData.topic || creationDisabled}
                         className="w-full relative group overflow-hidden bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl flex items-center justify-center gap-3 font-bold text-lg shadow-xl shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transform hover:-translate-y-1"
                     >
                         <span className="relative z-10 flex items-center gap-2">

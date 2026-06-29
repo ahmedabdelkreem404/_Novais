@@ -181,6 +181,7 @@ class AppLocalizations {
       'feature_lang_body':
           'Generate courses in 15+ languages including Arabic.',
       'features_title': 'Why NOVAIS?',
+      'disabled_warning': 'Course generation is temporarily disabled by the administrator.',
     },
     'ar': {
       'app_name': 'نوفايس',
@@ -346,6 +347,7 @@ class AppLocalizations {
       'feature_lang_title': 'متعدد اللغات',
       'feature_lang_body': 'أنشئ دورات بأكثر من 15 لغة بما في ذلك العربية.',
       'features_title': 'لماذا NOVAIS؟',
+      'disabled_warning': 'إنشاء الدورات معطل مؤقتاً من قبل المسؤول.',
     },
   };
 

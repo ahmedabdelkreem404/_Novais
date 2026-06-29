@@ -653,6 +653,35 @@
                 "url": "الرابط",
                 "no_links": "لا توجد روابط تواصل اجتماعي. انقر على \"إضافة رابط جديد\" للبدء."
             }
+        },
+        "platform_settings": "إعدادات المنصة",
+        "platform_config": {
+            "title": "إعدادات المنصة",
+            "course_creation_enabled": "تفعيل إنشاء الكورسات",
+            "all_languages_free": "جميع اللغات مجانية",
+            "video_courses_enabled": "تفعيل كورسات الفيديو",
+            "video_courses_free": "كورسات الفيديو مجانية",
+            "enabled_languages": "اللغات المتاحة",
+            "free_languages": "اللغات المجانية",
+            "enabled_course_types": "أنواع الكورسات المتاحة",
+            "free_course_types": "أنواع الكورسات المجانية",
+            "save_btn": "حفظ إعدادات المنصة",
+            "saving": "جاري الحفظ...",
+            "loading": "جاري تحميل إعدادات المنصة...",
+            "placeholder": "عنصر واحد في كل سطر",
+            "saved_success": "تم حفظ إعدادات المنصة بنجاح",
+            "saved_fail": "فشل حفظ إعدادات المنصة",
+            "load_fail": "فشل تحميل إعدادات المنصة",
+            "enabled_levels": "مستويات التعقيد المتاحة",
+            "free_levels": "مستويات التعقيد المجانية",
+            "enabled_depths": "الأعماق المتاحة (عدد الدروس)",
+            "free_depth_limit": "الحد الأقصى للدروس المجانية",
+            "hero_media_title": "وسائط المعاينة في الصفحة الرئيسية",
+            "image": "صورة",
+            "video": "فيديو",
+            "upload_file": "رفع ملف من الجهاز",
+            "web_link": "رابط ويب مباشر",
+            "media_uploaded": "تم رفع الملف بنجاح"
         }
     },
     "home": {

@@ -69,6 +69,7 @@ import ManageBlogs from './admin/manageblogs';
 import CreateBlog from './admin/createblog';
 import EditBlog from './admin/editblog';
 import AdminPlans from './admin/plans';
+import PlatformSettings from './admin/platformsettings';
 import SocialLinks from './admin/sociallinks';
 import OfflinePayments from './admin/offlinepayments';
 
@@ -111,11 +112,39 @@ function App() {
     return stored === null ? true : stored === 'true';
   });
 
+  const { serverURL } = require('./constants');
+
+  useEffect(() => {
+    const fetchThemeMode = async () => {
+      try {
+        const res = await axios.get(`${serverURL}/platform-config`);
+        if (res.data && res.data.system_theme_mode) {
+          localStorage.setItem('systemThemeMode', res.data.system_theme_mode);
+          window.dispatchEvent(new Event('themeChange'));
+        }
+      } catch (err) {
+        console.error("Failed to fetch theme mode config", err);
+      }
+    };
+    fetchThemeMode();
+  }, [serverURL]);
+
   useEffect(() => {
     // Apply Dark Mode to HTML tag for Tailwind
     const applyTheme = () => {
-      const stored = localStorage.getItem('darkMode');
-      const isDark = stored === null ? true : stored === 'true';
+      const mode = localStorage.getItem('systemThemeMode') || 'user_choice';
+      let isDark = true;
+      if (mode === 'light_only') {
+        isDark = false;
+      } else if (mode === 'dark_only') {
+        isDark = true;
+      } else if (mode === 'system_default') {
+        isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      } else {
+        const stored = localStorage.getItem('darkMode');
+        isDark = stored === null ? true : stored === 'true';
+      }
+
       setIsDarkMode(isDark);
       if (isDark) {
         document.documentElement.classList.add('dark');
@@ -164,8 +193,6 @@ function AnimatedRoutes() {
             AUTH ROUTES 
             Standalone (No Navbar/Footer)
           */}
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
         <Route path="/forgotpassword" element={<ForgotPassword />} />
         <Route path="/auth/social/callback" element={<SocialCallback />} />
         <Route path="/reset-password" element={<ResetPassword />} />
@@ -177,6 +204,9 @@ function AnimatedRoutes() {
           */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Landing />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/download" element={<DownloadApp />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogDetail />} />
           <Route path="/features" element={<Features />} />
@@ -243,6 +273,7 @@ function AnimatedRoutes() {
           <Route path="create-blog" element={<CreateBlog />} />
           <Route path="edit-blog/:slug" element={<EditBlog />} />
           <Route path="plans" element={<AdminPlans />} />
+          <Route path="platform-settings" element={<PlatformSettings />} />
           <Route path="offline-payments" element={<OfflinePayments />} />
           <Route path="social-links" element={<SocialLinks />} />
         </Route>

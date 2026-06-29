@@ -10,6 +10,8 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\CurriculumValidator;
+use App\Models\PlatformSetting;
+use App\Services\SubscriptionService;
 
 class CourseController extends Controller
 {
@@ -50,6 +52,10 @@ class CourseController extends Controller
             'subTopics' => 'nullable|array',
             'level' => 'sometimes|string' // New Parameter
         ]);
+
+        if ($response = $this->platformGateResponse($request)) {
+            return $response;
+        }
 
         try {
             \Log::info('Triggering Course Generation', [
@@ -97,6 +103,10 @@ class CourseController extends Controller
             'language' => 'nullable|string',
             'content' => 'required|json', // The full course structure
         ]);
+
+        if ($response = $this->platformGateResponse($request)) {
+            return $response;
+        }
 
         try {
             // If content is provided, we just save it.
@@ -317,5 +327,86 @@ class CourseController extends Controller
         $course = Course::with('lessons')->find($share->course_id);
         
         return response()->json($course);
+    }
+
+    private function isPaidUser($user): bool
+    {
+        return $user->role === 'admin'
+            || $user->role === 'premium'
+            || (new SubscriptionService())->isPaidStatus($user->sub_status);
+    }
+
+    private function platformGateResponse(Request $request)
+    {
+        $user = auth('api')->user();
+        if (!$user) {
+            return response()->json(['message' => 'unauthorized'], 401);
+        }
+
+        $config = PlatformSetting::currentConfig();
+        $language = ucfirst(strtolower($request->input('language', 'English')));
+        
+        $rawType = $request->input('type', 'Theory & Image Course');
+        $type = str_contains(strtolower($rawType), 'video') ? 'Video & Theory Course' : 'Theory & Image Course';
+        
+        $isVideo = str_contains(strtolower($type), 'video');
+        $isPaid = $this->isPaidUser($user);
+
+        if (!$config['course_creation_enabled']) {
+            return response()->json(['message' => 'platform.course_creation_disabled'], 403);
+        }
+
+        if (!in_array($language, $config['enabled_languages'], true)) {
+            return response()->json(['message' => 'platform.language_disabled'], 403);
+        }
+
+        if (!in_array($type, $config['enabled_course_types'], true)) {
+            return response()->json(['message' => 'platform.course_type_disabled'], 403);
+        }
+
+        if ($isVideo && !$config['video_courses_enabled']) {
+            return response()->json(['message' => 'platform.video_courses_disabled'], 403);
+        }
+
+        if (!$isPaid && !$config['all_languages_free'] && !in_array($language, $config['free_languages'], true)) {
+            return response()->json(['message' => 'platform.language_requires_upgrade'], 403);
+        }
+
+        $freeTypes = $config['free_course_types'];
+        if ($isVideo && $config['video_courses_free'] && !in_array($type, $freeTypes, true)) {
+            $freeTypes[] = $type;
+        }
+
+        if (!$isPaid && !in_array($type, $freeTypes, true)) {
+            return response()->json(['message' => 'platform.course_type_requires_upgrade'], 403);
+        }
+
+        // Level validation
+        if ($request->has('level')) {
+            $level = ucfirst(strtolower($request->input('level')));
+            $enabledLevels = $config['enabled_levels'] ?? ['Beginner', 'Intermediate', 'Advanced', 'Professional'];
+            if (!in_array($level, $enabledLevels, true)) {
+                return response()->json(['message' => 'platform.level_disabled'], 403);
+            }
+            $freeLevels = $config['free_levels'] ?? ['Beginner', 'Intermediate', 'Advanced'];
+            if (!$isPaid && !in_array($level, $freeLevels, true)) {
+                return response()->json(['message' => 'platform.level_requires_upgrade'], 403);
+            }
+        }
+
+        // Depth validation
+        if ($request->has('numModules')) {
+            $depth = (int) $request->input('numModules');
+            $enabledDepths = $config['enabled_depths'] ?? [5, 10];
+            if (!in_array($depth, $enabledDepths, true)) {
+                return response()->json(['message' => 'platform.depth_disabled'], 403);
+            }
+            $freeDepthLimit = (int) ($config['free_depth_limit'] ?? 5);
+            if (!$isPaid && $depth > $freeDepthLimit) {
+                return response()->json(['message' => 'platform.depth_requires_upgrade'], 403);
+            }
+        }
+
+        return null;
     }
 }

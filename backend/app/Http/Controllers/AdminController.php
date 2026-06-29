@@ -250,4 +250,101 @@ class AdminController extends Controller
         $user->delete();
         return response()->json(['message' => 'admin.user_deleted']);
     }
+
+    public function getCourseLessons($courseId)
+    {
+        $course = Course::findOrFail($courseId);
+        $lessons = $course->lessons()->get();
+        return response()->json([
+            'success' => true,
+            'lessons' => $lessons
+        ]);
+    }
+
+    public function updateLesson(Request $request, $id)
+    {
+        $request->validate([
+            'title' => 'required|string',
+            'content' => 'required|string',
+            'media_url' => 'nullable|string',
+            'media_type' => 'required|string|in:image,video,none',
+        ]);
+
+        $lesson = \App\Models\Lesson::findOrFail($id);
+        $oldTitle = $lesson->title;
+
+        // Update the lesson table
+        $lesson->update([
+            'title' => $request->title,
+            'content' => $request->content,
+            'media_url' => $request->media_url,
+            'media_type' => $request->media_type,
+        ]);
+
+        // Sync to Course metadata
+        $course = Course::find($lesson->course_id);
+        if ($course && $course->metadata) {
+            $metadata = $course->metadata;
+            $updated = false;
+
+            $possibleKeys = ['chapters', 'topics', 'content'];
+            foreach ($possibleKeys as $mainKey) {
+                if (isset($metadata[$mainKey]) && is_array($metadata[$mainKey])) {
+                    foreach ($metadata[$mainKey] as &$section) {
+                        $subsKey = isset($section['subtopics']) ? 'subtopics' : (isset($section['sections']) ? 'sections' : null);
+                        if ($subsKey && isset($section[$subsKey]) && is_array($section[$subsKey])) {
+                            foreach ($section[$subsKey] as &$subtopic) {
+                                if (($subtopic['title'] ?? '') === $oldTitle) {
+                                    $subtopic['title'] = $request->title;
+                                    $subtopic['content'] = $request->content;
+                                    $subtopic['theory'] = $request->content;
+
+                                    if (!isset($subtopic['metadata']) || !is_array($subtopic['metadata'])) {
+                                        $subtopic['metadata'] = [];
+                                    }
+
+                                    if ($request->media_type === 'image') {
+                                        $subtopic['metadata']['images'] = [[
+                                            'url' => $request->media_url,
+                                            'title' => $request->title,
+                                            'source' => 'admin_upload',
+                                            'verified' => true,
+                                            'score' => 1.0,
+                                        ]];
+                                        $subtopic['metadata']['videos'] = [];
+                                    } elseif ($request->media_type === 'video') {
+                                        $subtopic['metadata']['videos'] = [[
+                                            'url' => $request->media_url,
+                                            'title' => $request->title,
+                                            'platform' => 'video',
+                                            'verified' => true,
+                                            'score' => 1.0,
+                                        ]];
+                                        $subtopic['metadata']['images'] = [];
+                                    } else {
+                                        $subtopic['metadata']['images'] = [];
+                                        $subtopic['metadata']['videos'] = [];
+                                    }
+
+                                    $updated = true;
+                                    break 3;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if ($updated) {
+                $course->metadata = $metadata;
+                $course->save();
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'admin.lesson_updated',
+            'lesson' => $lesson
+        ]);
+    }
 }

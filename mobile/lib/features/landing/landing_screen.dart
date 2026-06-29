@@ -306,7 +306,7 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
       child: Stack(
         children: [
           AnimatedOpacity(
-            opacity: 0,
+            opacity: _menuOpen ? 0.4 : 0.0,
             duration: const Duration(milliseconds: 180),
             child: GestureDetector(
               onTap: () => setState(() => _menuOpen = false),
@@ -321,12 +321,12 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
             left: isAr ? (_menuOpen ? 0 : -panelWidth) : null,
             right: isAr ? null : (_menuOpen ? 0 : -panelWidth),
             width: panelWidth,
-            child: SafeArea(
-              bottom: false,
-              child: Material(
-                color: bg,
-                elevation: 8,
-                shadowColor: Colors.black.withAlpha(isDark ? 120 : 35),
+            child: Material(
+              color: bg,
+              elevation: 8,
+              shadowColor: Colors.black.withAlpha(isDark ? 120 : 35),
+              child: SafeArea(
+                bottom: false,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     border: Border(

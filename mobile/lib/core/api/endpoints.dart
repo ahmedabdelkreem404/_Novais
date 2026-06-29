@@ -65,4 +65,7 @@ class ApiEndpoints {
   static const generate = '/generate';
   static const generateLesson = '/generate-lesson';
   static const translateTitle = '/translate-title';
+
+  // Platform Config
+  static const platformConfig = '/platform-config';
 }
