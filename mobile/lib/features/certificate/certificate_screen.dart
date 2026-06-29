@@ -16,7 +16,7 @@ import '../../models/course.dart';
 import '../../widgets/widgets.dart';
 
 class CertificateScreen extends ConsumerStatefulWidget {
-  final String courseId;
+  final int courseId;
   const CertificateScreen({super.key, required this.courseId});
   @override
   ConsumerState<CertificateScreen> createState() => _CertificateScreenState();
@@ -65,7 +65,9 @@ class _CertificateScreenState extends ConsumerState<CertificateScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final user = ref.watch(authProvider).user;
-    if (_loading) return const Scaffold(body: NvLoading());
+    if (_loading) {
+      return const Scaffold(body: NvLoading());
+    }
     if (_course == null) {
       return Scaffold(
           appBar: AppBar(),

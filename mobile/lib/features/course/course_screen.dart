@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -13,14 +12,14 @@ import '../../models/course.dart';
 import '../../widgets/widgets.dart';
 
 final _courseDetailProvider =
-    FutureProvider.family<Course, String>((ref, id) async {
+    FutureProvider.family<Course, int>((ref, id) async {
   final api = ref.watch(apiClientProvider);
   final res = await api.dio.get(ApiEndpoints.course(id));
   return Course.fromJson(res.data);
 });
 
 class CourseScreen extends ConsumerStatefulWidget {
-  final String courseId;
+  final int courseId;
   const CourseScreen({super.key, required this.courseId});
 
   @override
@@ -32,9 +31,6 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
   late TabController _tabCtrl;
   int _currentLesson = 0;
   bool _drawerOpen = false;
-  final Map<int, Lesson> _loadedLessons = {};
-  final Set<int> _loadingLessonIds = {};
-  final Set<int> _failedLessonIds = {};
 
   @override
   void initState() {
@@ -69,21 +65,7 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
   Widget _buildCourse(
       BuildContext context, AppLocalizations l10n, Course course) {
     final lessons = course.lessons;
-    final baseLesson = lessons.isNotEmpty ? lessons[_currentLesson] : null;
-    final lesson = baseLesson == null
-        ? null
-        : (_loadedLessons[baseLesson.id] ?? baseLesson);
-    final hasLessonContent =
-        lesson?.content != null && lesson!.content!.trim().isNotEmpty;
-
-    if (baseLesson != null &&
-        !hasLessonContent &&
-        !_loadingLessonIds.contains(baseLesson.id) &&
-        !_failedLessonIds.contains(baseLesson.id)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _loadLessonContent(course, baseLesson);
-      });
-    }
+    final lesson = lessons.isNotEmpty ? lessons[_currentLesson] : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -143,23 +125,15 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                                             fontWeight: FontWeight.w700)),
                                 const SizedBox(height: 16),
                                 if (lesson.videoUrl != null) ...[
-                                  _LessonVideoCard(
-                                    url: lesson.videoUrl!,
-                                    title: lesson.title,
+                                  _LessonVideoCard(url: lesson.videoUrl!),
+                                  const SizedBox(height: 16),
+                                ] else ...[
+                                  _LessonImageCard(
+                                    url: lesson.imageUrl ?? course.imageUrl,
                                   ),
                                   const SizedBox(height: 16),
                                 ],
-                                if (lesson.imageUrl != null) ...[
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Image.network(lesson.imageUrl!,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) =>
-                                            const SizedBox()),
-                                  ),
-                                  const SizedBox(height: 16),
-                                ],
-                                if (hasLessonContent)
+                                if (lesson.content != null)
                                   MarkdownBody(
                                     data: lesson.content!,
                                     styleSheet: MarkdownStyleSheet(
@@ -177,23 +151,6 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                                           backgroundColor:
                                               AppColors.primary.withAlpha(25),
                                           fontFamily: 'monospace'),
-                                    ),
-                                  ),
-                                if (!hasLessonContent &&
-                                    !_failedLessonIds.contains(lesson.id))
-                                  const Padding(
-                                    padding: EdgeInsets.only(top: 16),
-                                    child: NvLoading(
-                                        message: 'Loading lesson content...'),
-                                  ),
-                                if (!hasLessonContent &&
-                                    _failedLessonIds.contains(lesson.id))
-                                  const Padding(
-                                    padding: EdgeInsets.only(top: 16),
-                                    child: NvEmptyState(
-                                      icon: Icons.error_outline,
-                                      title: 'Failed to load lesson content',
-                                      subtitle: 'Please reopen this lesson.',
                                     ),
                                   ),
                               ],
@@ -242,10 +199,10 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
               ),
 
               // ── AI Chat ────────────────────────────────────────────
-              _ChatTab(courseId: course.id),
+              _ChatTab(courseId: widget.courseId),
 
               // ── Notes ──────────────────────────────────────────────
-              _NotesTab(courseId: course.id),
+              _NotesTab(courseId: widget.courseId),
             ],
           ),
 
@@ -286,9 +243,6 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                             final l = course.lessons[i];
                             final isActive = i == _currentLesson;
                             return ListTile(
-                              key: i == 0
-                                  ? const Key('lesson_card')
-                                  : Key('lesson_card_$i'),
                               selected: isActive,
                               selectedTileColor:
                                   AppColors.primary.withAlpha(25),
@@ -332,107 +286,97 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
       ),
     );
   }
+}
 
-  Future<void> _loadLessonContent(Course course, Lesson lesson) async {
-    if (!mounted || _loadingLessonIds.contains(lesson.id)) return;
-    setState(() => _loadingLessonIds.add(lesson.id));
+class _LessonImageCard extends StatelessWidget {
+  final String? url;
 
-    try {
-      final api = ref.read(apiClientProvider);
-      final res = await api.dio.get(
-        ApiEndpoints.lesson(widget.courseId, lesson.id),
-        options: Options(receiveTimeout: const Duration(minutes: 3)),
-      );
-      final loaded = Lesson.fromJson(res.data);
-      if (!mounted) return;
-      setState(() => _loadedLessons[lesson.id] = loaded);
-    } catch (_) {
-      if (mounted) {
-        setState(() => _failedLessonIds.add(lesson.id));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _loadingLessonIds.remove(lesson.id));
-      }
-    }
+  const _LessonImageCard({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: url == null || url!.isEmpty
+            ? const _MediaFallback(icon: Icons.image_outlined)
+            : Image.network(
+                url!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const _MediaFallback(icon: Icons.broken_image_outlined),
+              ),
+      ),
+    );
+  }
+}
+
+class _LessonVideoCard extends StatelessWidget {
+  final String url;
+
+  const _LessonVideoCard({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    final uri = Uri.tryParse(url);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: uri == null
+              ? null
+              : () => launchUrl(uri, mode: LaunchMode.externalApplication),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child:
+                    const Icon(Icons.play_arrow, color: Colors.white, size: 34),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                uri == null ? 'Video unavailable' : 'Open lesson video',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MediaFallback extends StatelessWidget {
+  final IconData icon;
+
+  const _MediaFallback({required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.primary.withAlpha(18),
+      child: Center(
+        child: Icon(icon, color: AppColors.primary, size: 42),
+      ),
+    );
   }
 }
 
 // ── Chat Tab ─────────────────────────────────────────────────────────────────
-
-class _LessonVideoCard extends StatelessWidget {
-  final String url;
-  final String title;
-
-  const _LessonVideoCard({required this.url, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? Colors.white24 : const Color(0xFFE5E7EB),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.play_circle_fill,
-                  size: 64,
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => _openVideo(context, url),
-              icon: const Icon(Icons.open_in_new, size: 18),
-              label: const Text('Open video'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _openVideo(BuildContext context, String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri == null) {
-      if (context.mounted) showSnack(context, 'Invalid video URL', error: true);
-      return;
-    }
-
-    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!opened && context.mounted) {
-      showSnack(context, 'Failed to open video', error: true);
-    }
-  }
-}
 
 class _ChatTab extends ConsumerStatefulWidget {
   final int courseId;
@@ -715,10 +659,7 @@ class _NotesTabState extends ConsumerState<_NotesTab> {
               ),
             ),
             const SizedBox(width: 8),
-            ElevatedButton(
-                key: const Key('create_save_button'),
-                onPressed: _save,
-                child: Text(l10n.t('save'))),
+            ElevatedButton(onPressed: _save, child: Text(l10n.t('save'))),
           ]),
         ),
       ],

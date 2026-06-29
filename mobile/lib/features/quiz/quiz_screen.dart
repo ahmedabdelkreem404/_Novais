@@ -9,7 +9,7 @@ import '../../models/user.dart';
 import '../../widgets/widgets.dart';
 
 class QuizScreen extends ConsumerStatefulWidget {
-  final String courseId;
+  final int courseId;
   const QuizScreen({super.key, required this.courseId});
   @override
   ConsumerState<QuizScreen> createState() => _QuizScreenState();
@@ -102,7 +102,9 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       );
     }
 
-    if (_done) return _buildResults(context, l10n);
+    if (_done) {
+      return _buildResults(context, l10n);
+    }
 
     final q = _questions[_current];
 

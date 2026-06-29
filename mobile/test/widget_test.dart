@@ -86,6 +86,31 @@ void main() {
     expect(find.byKey(const Key('create_generate_button')), findsOneWidget);
   });
 
+  testWidgets('drawer exposes platform parity language and theme actions',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(_testApp());
+    await _pumpReady(tester);
+
+    await tester.tap(find.byKey(const Key('shell_menu_button')));
+    await _pumpReady(tester);
+
+    expect(find.byKey(const Key('drawer_language_button')), findsOneWidget);
+    expect(find.byKey(const Key('drawer_theme_button')), findsOneWidget);
+    expect(find.byKey(const Key('drawer_usage_card')), findsOneWidget);
+  });
+
+  testWidgets('Arabic localization renders readable Arabic',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(_testApp(locale: const Locale('ar')));
+    await _pumpReady(tester);
+
+    await tester.tap(find.byKey(const Key('shell_menu_button')));
+    await _pumpReady(tester);
+
+    expect(find.text('إنشاء دورة'), findsWidgets);
+    expect(find.text('الملف الشخصي'), findsOneWidget);
+  });
+
   testWidgets('create screen accepts a topic and exposes generate button',
       (WidgetTester tester) async {
     await tester.pumpWidget(_testApp(initialLocation: '/create'));
@@ -159,6 +184,7 @@ Future<void> _pumpReady(WidgetTester tester) async {
 Widget _testApp({
   String initialLocation = '/dashboard',
   Map<String, dynamic>? generatingData,
+  Locale locale = const Locale('en'),
 }) {
   final router = GoRouter(
     initialLocation: initialLocation,
@@ -202,6 +228,7 @@ Widget _testApp({
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [Locale('en'), Locale('ar')],
+      locale: locale,
     ),
   );
 }

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
@@ -55,22 +54,44 @@ import '../../features/misc/stub_screens.dart';
 import '../../features/shared_course/shared_course_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authStatus = ref.watch(authProvider.select((state) => state.status));
+  final auth = ref.watch(authProvider);
 
   return GoRouter(
-    initialLocation: '/auth-loading',
-    overridePlatformDefaultLocation: true,
+    initialLocation: '/',
     redirect: (context, state) {
-      return mobileAuthRedirect(authStatus, state.uri.path);
+      final status = auth.status;
+      final isAuth = status == AuthStatus.authenticated;
+      final isUnknown = status == AuthStatus.unknown;
+
+      if (isUnknown) return null; // Still loading
+
+      final protectedPaths = [
+        '/dashboard',
+        '/create',
+        '/generating',
+        '/course',
+        '/quiz',
+        '/certificate',
+        '/profile',
+        '/payment',
+        '/subscription',
+        '/notes',
+        '/audio',
+      ];
+
+      final isProtected =
+          protectedPaths.any((p) => state.uri.path.startsWith(p));
+
+      if (!isAuth && isProtected) return '/signin';
+      if (isAuth &&
+          (state.uri.path == '/signin' || state.uri.path == '/signup')) {
+        return '/dashboard';
+      }
+      return null;
     },
     routes: [
-      GoRoute(
-          path: '/auth-loading',
-          builder: (_, __) => const _AuthLoadingScreen()),
-
       // ── Public ──────────────────────────────────────────────────────────────
-      GoRoute(path: '/', builder: (_, __) => const _AuthLoadingScreen()),
-      GoRoute(path: '/landing', builder: (_, __) => const LandingScreen()),
+      GoRoute(path: '/', builder: (_, __) => const LandingScreen()),
       GoRoute(path: '/features', builder: (_, __) => const FeaturesScreen()),
       GoRoute(path: '/about', builder: (_, __) => const AboutScreen()),
       GoRoute(
@@ -134,18 +155,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/course/:courseId',
-        builder: (_, state) =>
-            CourseScreen(courseId: state.pathParameters['courseId']!),
+        builder: (_, state) => CourseScreen(
+            courseId: int.parse(state.pathParameters['courseId']!)),
       ),
       GoRoute(
         path: '/quiz/:courseId',
         builder: (_, state) =>
-            QuizScreen(courseId: state.pathParameters['courseId']!),
+            QuizScreen(courseId: int.parse(state.pathParameters['courseId']!)),
       ),
       GoRoute(
         path: '/certificate/:courseId',
         builder: (_, state) => CertificateScreen(
-          courseId: state.pathParameters['courseId']!,
+          courseId: int.parse(state.pathParameters['courseId']!),
         ),
       ),
       GoRoute(
@@ -214,28 +235,16 @@ String? mobileAuthRedirect(AuthStatus status, String location) {
     '/audio',
   ];
 
-  final isProtected = protectedPaths.any((p) => location.startsWith(p));
+  final isProtected = protectedPaths.any((path) => location.startsWith(path));
 
-  if (!isAuth && (isProtected || location == '/')) return '/signin';
+  if (!isAuth && (isProtected || location == '/')) {
+    return '/signin';
+  }
+
   if (isAuth &&
       (location == '/signin' || location == '/signup' || location == '/')) {
     return '/dashboard';
   }
+
   return null;
-}
-
-class _AuthLoadingScreen extends StatelessWidget {
-  const _AuthLoadingScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFF050816),
-      body: SafeArea(
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
-      ),
-    );
-  }
 }

@@ -16,19 +16,18 @@ class ApiEndpoints {
   // Courses
   static const courses = '/courses';
   static const generateCourse = '/generate-course';
-  static String course(Object id) => '/courses/$id';
-  static String updateCourse(Object id) => '/courses/$id';
-  static String deleteCourse(Object id) => '/courses/$id';
-  static String lesson(Object courseId, int lessonId) =>
+  static String course(int id) => '/courses/$id';
+  static String updateCourse(int id) => '/courses/$id';
+  static String deleteCourse(int id) => '/courses/$id';
+  static String lesson(int courseId, int lessonId) =>
       '/courses/$courseId/lessons/$lessonId';
-  static String createQuiz(Object id) => '/courses/$id/quiz';
-  static String getQuizzes(Object id) => '/courses/$id/quiz';
-  static String certificate(Object id) => '/courses/$id/certificate';
-  static String shareLink(Object id) => '/courses/$id/share';
-  static String exportPdf(Object id) => '/courses/$id/export/pdf';
-  static String exportPpt(Object id) => '/courses/$id/export/ppt';
-  static String chatHistory(Object courseId) =>
-      '/courses/$courseId/chat/history';
+  static String createQuiz(int id) => '/courses/$id/quiz';
+  static String getQuizzes(int id) => '/courses/$id/quiz';
+  static String certificate(int id) => '/courses/$id/certificate';
+  static String shareLink(int id) => '/courses/$id/share';
+  static String exportPdf(int id) => '/courses/$id/export/pdf';
+  static String exportPpt(int id) => '/courses/$id/export/ppt';
+  static String chatHistory(int courseId) => '/courses/$courseId/chat/history';
 
   // Chat
   static const chat = '/chat';
@@ -42,6 +41,10 @@ class ApiEndpoints {
   static const plans = '/plans';
   static const paymentCheckout = '/payment/checkout';
   static const cancelSubscription = '/payment/cancel-subscription';
+  static const offlinePaymentInstructions = '/offline-payments/instructions';
+  static const offlinePayments = '/offline-payments';
+  static String offlinePayment(int id) => '/offline-payments/$id';
+  static String cancelOfflinePayment(int id) => '/offline-payments/$id/cancel';
 
   // Public
   static String sharedCourse(String token) => '/share/$token';
