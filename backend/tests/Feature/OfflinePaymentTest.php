@@ -67,6 +67,53 @@ class OfflinePaymentTest extends TestCase
             ->assertJsonPath('data.status', 'pending');
     }
 
+    public function test_request_without_proof_image_and_reference_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $plan = $this->paidPlan();
+
+        $this->actingAsApi($user)
+            ->postJson('/api/offline-payments', [
+                'plan_id' => $plan->id,
+                'method' => 'vodafone_cash',
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['transaction_reference', 'proof_image']);
+    }
+
+    public function test_request_with_proof_image_only_is_accepted(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->create();
+        $plan = $this->paidPlan();
+
+        $this->actingAsApi($user)
+            ->postJson('/api/offline-payments', [
+                'plan_id' => $plan->id,
+                'method' => 'vodafone_cash',
+                'proof_image' => UploadedFile::fake()->image('receipt.png'),
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.transaction_reference', null);
+    }
+
+    public function test_request_with_both_proof_image_and_reference_is_accepted(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->create();
+        $plan = $this->paidPlan();
+
+        $this->actingAsApi($user)
+            ->postJson('/api/offline-payments', [
+                'plan_id' => $plan->id,
+                'method' => 'instapay',
+                'transaction_reference' => 'BOTH-10001',
+                'proof_image' => UploadedFile::fake()->image('receipt.webp'),
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.transaction_reference', 'BOTH-10001');
+    }
+
     public function test_yearly_request_uses_discounted_yearly_amount(): void
     {
         $user = User::factory()->create();
@@ -118,6 +165,92 @@ class OfflinePaymentTest extends TestCase
                 'proof_image' => UploadedFile::fake()->create('receipt.pdf', 10, 'application/pdf'),
             ])
             ->assertStatus(422);
+    }
+
+    public function test_duplicate_pending_request_for_same_plan_cycle_and_method_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $plan = $this->paidPlan();
+
+        $this->actingAsApi($user)
+            ->postJson('/api/offline-payments', [
+                'plan_id' => $plan->id,
+                'billing_cycle' => 'monthly',
+                'method' => 'vodafone_cash',
+                'transaction_reference' => 'DUP-10001',
+            ])
+            ->assertCreated();
+
+        $this->actingAsApi($user)
+            ->postJson('/api/offline-payments', [
+                'plan_id' => $plan->id,
+                'billing_cycle' => 'monthly',
+                'method' => 'vodafone_cash',
+                'transaction_reference' => 'DUP-10002',
+            ])
+            ->assertStatus(422)
+            ->assertJson(['message' => 'offline_payment.duplicate_pending_request']);
+    }
+
+    public function test_request_after_cancellation_is_allowed(): void
+    {
+        $user = User::factory()->create();
+        $plan = $this->paidPlan();
+
+        $first = $this->actingAsApi($user)
+            ->postJson('/api/offline-payments', [
+                'plan_id' => $plan->id,
+                'billing_cycle' => 'monthly',
+                'method' => 'vodafone_cash',
+                'transaction_reference' => 'CANCEL-10001',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->actingAsApi($user)
+            ->postJson("/api/offline-payments/{$first}/cancel")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'cancelled');
+
+        $this->actingAsApi($user)
+            ->postJson('/api/offline-payments', [
+                'plan_id' => $plan->id,
+                'billing_cycle' => 'monthly',
+                'method' => 'vodafone_cash',
+                'transaction_reference' => 'CANCEL-10002',
+            ])
+            ->assertCreated();
+    }
+
+    public function test_request_after_rejection_is_allowed(): void
+    {
+        $user = User::factory()->create();
+        $plan = $this->paidPlan();
+
+        $first = $this->actingAsApi($user)
+            ->postJson('/api/offline-payments', [
+                'plan_id' => $plan->id,
+                'billing_cycle' => 'monthly',
+                'method' => 'instapay',
+                'transaction_reference' => 'REJECT-10001',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        OfflinePaymentRequest::findOrFail($first)->update([
+            'status' => OfflinePaymentRequest::STATUS_REJECTED,
+            'admin_note' => 'Reference not found',
+            'rejected_at' => now(),
+        ]);
+
+        $this->actingAsApi($user)
+            ->postJson('/api/offline-payments', [
+                'plan_id' => $plan->id,
+                'billing_cycle' => 'monthly',
+                'method' => 'instapay',
+                'transaction_reference' => 'REJECT-10002',
+            ])
+            ->assertCreated();
     }
 
     public function test_user_cannot_view_another_users_request(): void
@@ -187,6 +320,43 @@ class OfflinePaymentTest extends TestCase
             ->assertStatus(403);
     }
 
+    public function test_unauthenticated_user_cannot_download_proof(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->create();
+        $request = $this->offlinePaymentFor($user, ['proof_image_path' => 'offline-payment-proofs/receipt.jpg']);
+        Storage::disk('local')->put($request->proof_image_path, 'fake-image');
+
+        $this->getJson("/api/admin/offline-payments/{$request->id}/proof")
+            ->assertStatus(401);
+    }
+
+    public function test_non_admin_cannot_download_proof(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->create(['role' => 'user']);
+        $request = $this->offlinePaymentFor($user, ['proof_image_path' => 'offline-payment-proofs/receipt.jpg']);
+        Storage::disk('local')->put($request->proof_image_path, 'fake-image');
+
+        $this->actingAsApi($user)
+            ->getJson("/api/admin/offline-payments/{$request->id}/proof")
+            ->assertStatus(403);
+    }
+
+    public function test_admin_can_download_proof_from_private_storage(): void
+    {
+        Storage::fake('local');
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create();
+        $request = $this->offlinePaymentFor($user, ['proof_image_path' => 'offline-payment-proofs/receipt.jpg']);
+        Storage::disk('local')->put($request->proof_image_path, 'fake-image');
+
+        $this->actingAsApi($admin)
+            ->get("/api/admin/offline-payments/{$request->id}/proof")
+            ->assertOk()
+            ->assertHeader('content-disposition');
+    }
+
     private function paidPlan(array $overrides = []): Plan
     {
         return Plan::create(array_merge([
@@ -199,11 +369,11 @@ class OfflinePaymentTest extends TestCase
         ], $overrides));
     }
 
-    private function offlinePaymentFor(User $user): OfflinePaymentRequest
+    private function offlinePaymentFor(User $user, array $overrides = []): OfflinePaymentRequest
     {
         $plan = $this->paidPlan();
 
-        return OfflinePaymentRequest::create([
+        return OfflinePaymentRequest::create(array_merge([
             'user_id' => $user->id,
             'plan_id' => $plan->id,
             'billing_cycle' => 'monthly',
@@ -212,11 +382,14 @@ class OfflinePaymentTest extends TestCase
             'method' => 'vodafone_cash',
             'transaction_reference' => 'REF-' . $user->id . '-' . uniqid(),
             'status' => 'pending',
-        ]);
+        ], $overrides));
     }
 
     private function actingAsApi(User $user): self
     {
+        $this->flushHeaders();
+        auth()->forgetGuards();
+
         return $this->withHeaders([
             'Authorization' => 'Bearer ' . JWTAuth::fromUser($user),
             'X-Device-ID' => 'test-device',

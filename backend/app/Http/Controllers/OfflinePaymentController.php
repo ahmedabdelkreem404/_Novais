@@ -11,21 +11,31 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 
 class OfflinePaymentController extends Controller
 {
     public function instructions()
     {
+        $vodafoneCashReceiver = config('services.offline_payments.vodafone_cash_receiver');
+        $instapayReceiver = config('services.offline_payments.instapay_receiver');
+
         return response()->json([
             'methods' => [
                 'vodafone_cash' => [
-                    'receiver' => config('services.offline_payments.vodafone_cash_receiver'),
-                    'instructions' => 'Send the exact plan amount, then upload a screenshot or receipt reference.',
+                    'configured' => filled($vodafoneCashReceiver),
+                    'receiver' => $vodafoneCashReceiver,
+                    'instructions' => filled($vodafoneCashReceiver)
+                        ? 'Send the exact plan amount, then upload a screenshot or receipt reference.'
+                        : 'Vodafone Cash payments are not configured yet.',
                 ],
                 'instapay' => [
-                    'receiver' => config('services.offline_payments.instapay_receiver'),
-                    'instructions' => 'Transfer the exact plan amount, then upload a screenshot or receipt reference.',
+                    'configured' => filled($instapayReceiver),
+                    'receiver' => $instapayReceiver,
+                    'instructions' => filled($instapayReceiver)
+                        ? 'Transfer the exact plan amount, then upload a screenshot or receipt reference.'
+                        : 'InstaPay payments are not configured yet.',
                 ],
             ],
         ]);
@@ -48,16 +58,35 @@ class OfflinePaymentController extends Controller
             return response()->json(['message' => 'offline_payment.invalid_paid_plan'], 422);
         }
 
+        if (blank($validated['transaction_reference'] ?? null) && !$request->hasFile('proof_image')) {
+            throw ValidationException::withMessages([
+                'transaction_reference' => ['offline_payment.proof_or_reference_required'],
+                'proof_image' => ['offline_payment.proof_or_reference_required'],
+            ]);
+        }
+
         $billingCycle = $validated['billing_cycle'] ?? 'monthly';
         $amount = $billingCycle === 'yearly' ? ((float) $plan->price_egp) * 10 : (float) $plan->price_egp;
+        $userId = $request->user()->id;
+
+        $hasPendingRequest = OfflinePaymentRequest::where('user_id', $userId)
+            ->where('plan_id', $plan->id)
+            ->where('billing_cycle', $billingCycle)
+            ->where('method', $validated['method'])
+            ->where('status', OfflinePaymentRequest::STATUS_PENDING)
+            ->exists();
+
+        if ($hasPendingRequest) {
+            return response()->json(['message' => 'offline_payment.duplicate_pending_request'], 422);
+        }
 
         $proofPath = null;
         if ($request->hasFile('proof_image')) {
-            $proofPath = $request->file('proof_image')->store('offline-payment-proofs');
+            $proofPath = $request->file('proof_image')->store('offline-payment-proofs', 'local');
         }
 
         $offlinePayment = OfflinePaymentRequest::create([
-            'user_id' => Auth::id(),
+            'user_id' => $userId,
             'plan_id' => $plan->id,
             'billing_cycle' => $billingCycle,
             'amount' => $amount,
@@ -133,9 +162,9 @@ class OfflinePaymentController extends Controller
     public function proof(OfflinePaymentRequest $offlinePaymentRequest)
     {
         abort_unless($offlinePaymentRequest->proof_image_path, 404);
-        abort_unless(Storage::exists($offlinePaymentRequest->proof_image_path), 404);
+        abort_unless(Storage::disk('local')->exists($offlinePaymentRequest->proof_image_path), 404);
 
-        return Storage::download($offlinePaymentRequest->proof_image_path);
+        return Storage::disk('local')->download($offlinePaymentRequest->proof_image_path);
     }
 
     public function approve(Request $request, OfflinePaymentRequest $offlinePaymentRequest)
