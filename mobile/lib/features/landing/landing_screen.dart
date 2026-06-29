@@ -293,6 +293,14 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
     );
   }
 
+  Widget _buildMobileMenuOverlay(bool isDark) {
+    final size = MediaQuery.sizeOf(context);
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final panelWidth = (size.width * 0.5).clamp(178.0, 220.0).toDouble();
+    final bg = isDark ? const Color(0xFF050816) : Colors.white;
+    final fg = isDark ? Colors.white : const Color(0xFF0f172a);
+    final muted = isDark ? Colors.white60 : const Color(0xFF64748b);
+    final border = isDark ? Colors.white12 : const Color(0xFFE5E7EB);
     final configAsync = ref.watch(platformConfigProvider);
     final showThemeToggle = !configAsync.hasValue ||
         (configAsync.value!.systemThemeMode != 'light_only' &&
