@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/l10n/app_localizations.dart';
+import '../../core/api/platform_config_provider.dart';
 
 import '../../widgets/app_sidebar.dart';
 
@@ -25,6 +26,11 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     // Determine title based on route logic or just generic
     // Actually DashboardNavbar just shows logo + generic icons.
     // We can show Logo in center or left.
+
+    final configAsync = ref.watch(platformConfigProvider);
+    final showThemeToggle = !configAsync.hasValue ||
+        (configAsync.value!.systemThemeMode != 'light_only' &&
+            configAsync.value!.systemThemeMode != 'dark_only');
 
     return Scaffold(
       key: _scaffoldKey,
@@ -68,14 +74,15 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                   .setLanguage(current == 'ar' ? 'en' : 'ar');
             },
           ),
-          IconButton(
-            key: const Key('shell_theme_button'),
-            tooltip: l10n.t('toggle_theme'),
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode_outlined),
-            onPressed: () {
-              ref.read(themeModeProvider.notifier).toggle();
-            },
-          ),
+          if (showThemeToggle)
+            IconButton(
+              key: const Key('shell_theme_button'),
+              tooltip: l10n.t('toggle_theme'),
+              icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode_outlined),
+              onPressed: () {
+                ref.read(themeModeProvider.notifier).toggle();
+              },
+            ),
           const SizedBox(width: 8),
         ],
         backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
