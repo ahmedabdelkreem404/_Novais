@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/api/endpoints.dart';
+import '../../core/api/platform_config_provider.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/widgets.dart';
@@ -292,14 +293,10 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
     );
   }
 
-  Widget _buildMobileMenuOverlay(bool isDark) {
-    final size = MediaQuery.sizeOf(context);
-    final isAr = Localizations.localeOf(context).languageCode == 'ar';
-    final panelWidth = (size.width * 0.5).clamp(178.0, 220.0).toDouble();
-    final bg = isDark ? const Color(0xFF050816) : Colors.white;
-    final fg = isDark ? Colors.white : const Color(0xFF0f172a);
-    final muted = isDark ? Colors.white60 : const Color(0xFF64748b);
-    final border = isDark ? Colors.white12 : const Color(0xFFE5E7EB);
+    final configAsync = ref.watch(platformConfigProvider);
+    final showThemeToggle = !configAsync.hasValue ||
+        (configAsync.value!.systemThemeMode != 'light_only' &&
+            configAsync.value!.systemThemeMode != 'dark_only');
 
     return IgnorePointer(
       ignoring: !_menuOpen,
@@ -423,20 +420,22 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
-                              const SizedBox(width: 4),
-                              IconButton(
-                                tooltip: isAr ? 'تبديل المظهر' : 'Toggle theme',
-                                onPressed: () => ref
-                                    .read(themeModeProvider.notifier)
-                                    .toggle(),
-                                icon: Icon(
-                                  isDark
-                                      ? Icons.dark_mode_outlined
-                                      : Icons.light_mode_outlined,
-                                  color: fg,
-                                  size: 18,
+                              if (showThemeToggle) ...[
+                                const SizedBox(width: 4),
+                                IconButton(
+                                  tooltip: isAr ? 'تبديل المظهر' : 'Toggle theme',
+                                  onPressed: () => ref
+                                      .read(themeModeProvider.notifier)
+                                      .toggle(),
+                                  icon: Icon(
+                                    isDark
+                                        ? Icons.dark_mode_outlined
+                                        : Icons.light_mode_outlined,
+                                    color: fg,
+                                    size: 18,
+                                  ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         ),
