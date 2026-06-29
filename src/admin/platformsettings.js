@@ -6,7 +6,6 @@ import { serverURL } from '../constants';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { 
-  LuSettings, 
   LuLanguages, 
   LuGlobe, 
   LuPalette, 

@@ -118,8 +118,13 @@ function App() {
     const fetchThemeMode = async () => {
       try {
         const res = await axios.get(`${serverURL}/platform-config`);
-        if (res.data && res.data.system_theme_mode) {
-          localStorage.setItem('systemThemeMode', res.data.system_theme_mode);
+        if (res.data) {
+          if (res.data.system_theme_mode) {
+            localStorage.setItem('systemThemeMode', res.data.system_theme_mode);
+          }
+          if (res.data.theme_default_mode) {
+            localStorage.setItem('themeDefaultMode', res.data.theme_default_mode);
+          }
           window.dispatchEvent(new Event('themeChange'));
         }
       } catch (err) {
@@ -142,7 +147,12 @@ function App() {
         isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       } else {
         const stored = localStorage.getItem('darkMode');
-        isDark = stored === null ? true : stored === 'true';
+        if (stored === null) {
+          const defaultTheme = localStorage.getItem('themeDefaultMode') || 'dark';
+          isDark = defaultTheme === 'dark';
+        } else {
+          isDark = stored === 'true';
+        }
       }
 
       setIsDarkMode(isDark);

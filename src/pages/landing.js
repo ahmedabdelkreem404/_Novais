@@ -18,6 +18,17 @@ const Landing = () => {
     const location = useLocation();
     const isRtl = i18n.language === 'ar';
     const [billingCycle, setBillingCycle] = React.useState('monthly');
+    const [videoEnded, setVideoEnded] = React.useState(false);
+    const [isLowBandwidth, setIsLowBandwidth] = React.useState(false);
+
+    React.useEffect(() => {
+        if (navigator.connection) {
+            const conn = navigator.connection;
+            if (conn.saveData || ['slow-2g', '2g', '3g'].includes(conn.effectiveType)) {
+                setIsLowBandwidth(true);
+            }
+        }
+    }, []);
 
     React.useEffect(() => {
         const token = localStorage.getItem('token');
@@ -158,29 +169,40 @@ const Landing = () => {
                                 </motion.div>
                             </div>
 
-                            {config && config.hero_media_url ? (
-                                config.hero_media_type === 'video' ? (
-                                    <video
-                                        className="landing-preview__image w-full rounded-2xl object-cover shadow-2xl"
-                                        src={config.hero_media_url.startsWith('http') ? config.hero_media_url : `${serverURL.replace('/api', '')}${config.hero_media_url}`}
-                                        autoPlay
-                                        muted={config.hero_media_muted !== undefined ? !!config.hero_media_muted : true}
-                                        loop={config.hero_media_loop !== undefined ? !!config.hero_media_loop : true}
-                                        playsInline
-                                        poster={config.hero_media_poster ? (config.hero_media_poster.startsWith('http') ? config.hero_media_poster : `${serverURL.replace('/api', '')}${config.hero_media_poster}`) : undefined}
-                                    />
-                                ) : (
-                                    <img
-                                        className="landing-preview__image w-full rounded-2xl object-cover shadow-2xl"
-                                        src={config.hero_media_url.startsWith('http') ? config.hero_media_url : `${serverURL.replace('/api', '')}${config.hero_media_url}`}
-                                        alt="Platform Preview"
-                                    />
-                                )
+                            {config && 
+                             config.hero_media_type === 'video' && 
+                             config.hero_video_enabled !== false &&
+                             !(config.hero_video_replace_low_bandwidth && isLowBandwidth) &&
+                             !videoEnded ? (
+                                <video
+                                    className="landing-preview__image w-full rounded-2xl object-cover shadow-2xl"
+                                    src={config.hero_media_url && config.hero_media_url.startsWith('http') ? config.hero_media_url : `${serverURL.replace('/api', '')}${config.hero_media_url}`}
+                                    autoPlay={config.hero_video_autoplay !== false}
+                                    muted={config.hero_media_muted !== false}
+                                    loop={config.hero_video_loop_mode === 'loop_forever'}
+                                    controls={config.hero_video_controls_hidden === false}
+                                    playsInline
+                                    poster={config.hero_media_poster ? (config.hero_media_poster.startsWith('http') ? config.hero_media_poster : `${serverURL.replace('/api', '')}${config.hero_media_poster}`) : undefined}
+                                    onEnded={() => {
+                                        if (config.hero_video_loop_mode === 'play_once_then_image') {
+                                            setVideoEnded(true);
+                                        }
+                                    }}
+                                    onError={() => {
+                                        setVideoEnded(true);
+                                    }}
+                                />
                             ) : (
                                 <img
-                                    className="landing-preview__image"
-                                    src={slideOne}
-                                    alt="Platform Screenshot"
+                                    className="landing-preview__image w-full rounded-2xl object-cover shadow-2xl"
+                                    src={
+                                        (videoEnded && config?.hero_video_fallback_image) 
+                                            ? (config.hero_video_fallback_image.startsWith('http') ? config.hero_video_fallback_image : `${serverURL.replace('/api', '')}${config.hero_video_fallback_image}`)
+                                            : (config?.hero_media_url && config?.hero_media_type === 'image')
+                                                ? (config.hero_media_url.startsWith('http') ? config.hero_media_url : `${serverURL.replace('/api', '')}${config.hero_media_url}`)
+                                                : slideOne
+                                    }
+                                    alt="Platform Preview"
                                 />
                             )}
                         </div>
