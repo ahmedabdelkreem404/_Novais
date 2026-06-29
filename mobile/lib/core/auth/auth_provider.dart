@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../api/api_client.dart';
+import '../cache/api_cache.dart';
 import '../../models/user.dart';
 
 // ─── Singleton providers ────────────────────────────────────────────────────
@@ -120,6 +121,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final res = await _apiClient.dio.get('/auth/user-profile');
       final user = AppUser.fromJson(res.data['user'] ?? res.data);
+      await _storage.write(key: 'user_id', value: user.id.toString());
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
     } catch (_) {
       await _storage.delete(key: 'jwt_token');
@@ -147,6 +149,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final token = res.data['token'] ?? res.data['access_token'];
       await _storage.write(key: 'jwt_token', value: token.toString());
       final user = AppUser.fromJson(res.data['user'] ?? {});
+      await _storage.write(key: 'user_id', value: user.id.toString());
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
       return true;
     } on Exception catch (e) {
@@ -166,6 +169,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (token != null) {
         await _storage.write(key: 'jwt_token', value: token.toString());
         final user = AppUser.fromJson(res.data['user'] ?? {});
+        await _storage.write(key: 'user_id', value: user.id.toString());
         state = state.copyWith(status: AuthStatus.authenticated, user: user);
       } else {
         // Needs email verification
@@ -190,6 +194,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       await _apiClient.dio.post('/auth/logout');
     } catch (_) {}
+    await ApiCache.clearAll();
     await _storage.deleteAll();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
@@ -198,6 +203,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final res = await _apiClient.dio.get('/auth/user-profile');
       final user = AppUser.fromJson(res.data['user'] ?? res.data);
+      await _storage.write(key: 'user_id', value: user.id.toString());
       state = state.copyWith(user: user);
     } catch (_) {}
   }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/api/endpoints.dart';
 import '../../core/theme/app_theme.dart';
@@ -119,12 +120,12 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                                         fontFamily: 'PlusJakartaSans',
                                         fontWeight: FontWeight.w700)),
                                 const SizedBox(height: 16),
-                                if (lesson.imageUrl != null) ...[
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Image.network(lesson.imageUrl!,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => const SizedBox()),
+                                if (lesson.videoUrl != null) ...[
+                                  _LessonVideoCard(url: lesson.videoUrl!),
+                                  const SizedBox(height: 16),
+                                ] else ...[
+                                  _LessonImageCard(
+                                    url: lesson.imageUrl ?? course.imageUrl,
                                   ),
                                   const SizedBox(height: 16),
                                 ],
@@ -260,6 +261,94 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _LessonImageCard extends StatelessWidget {
+  final String? url;
+
+  const _LessonImageCard({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: url == null || url!.isEmpty
+            ? const _MediaFallback(icon: Icons.image_outlined)
+            : Image.network(
+                url!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const _MediaFallback(icon: Icons.broken_image_outlined),
+              ),
+      ),
+    );
+  }
+}
+
+class _LessonVideoCard extends StatelessWidget {
+  final String url;
+
+  const _LessonVideoCard({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    final uri = Uri.tryParse(url);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: uri == null
+              ? null
+              : () => launchUrl(uri, mode: LaunchMode.externalApplication),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.play_arrow,
+                    color: Colors.white, size: 34),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                uri == null ? 'Video unavailable' : 'Open lesson video',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MediaFallback extends StatelessWidget {
+  final IconData icon;
+
+  const _MediaFallback({required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.primary.withAlpha(18),
+      child: Center(
+        child: Icon(icon, color: AppColors.primary, size: 42),
       ),
     );
   }
