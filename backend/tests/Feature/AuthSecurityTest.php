@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthSecurityTest extends TestCase
 {
@@ -41,5 +42,20 @@ class AuthSecurityTest extends TestCase
 
         $response->assertOk()
             ->assertJson(['message' => 'If this email exists, a reset link will be sent.']);
+    }
+
+    public function test_authenticated_profile_exposes_subscription_type_for_clients(): void
+    {
+        $user = User::factory()->create([
+            'sub_status' => 'pro_monthly',
+        ]);
+
+        $this->withHeaders([
+            'Authorization' => 'Bearer ' . JWTAuth::fromUser($user),
+            'X-Device-ID' => 'device-a',
+        ])
+            ->getJson('/api/auth/user-profile')
+            ->assertOk()
+            ->assertJsonPath('subscription_type', 'pro');
     }
 }

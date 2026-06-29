@@ -9,15 +9,25 @@ use Illuminate\Support\Facades\Log;
 
 class CourseService
 {
+    protected $aiProvider;
+    protected $creditService;
     protected $validator;
     protected $subscriptionService;
+    protected $mediaResolver;
 
-    public function __construct(AIProviderInterface $aiProvider, CreditService $creditService, CurriculumValidator $validator, SubscriptionService $subscriptionService)
+    public function __construct(
+        AIProviderInterface $aiProvider,
+        CreditService $creditService,
+        CurriculumValidator $validator,
+        SubscriptionService $subscriptionService,
+        MediaResolverService $mediaResolver
+    )
     {
         $this->aiProvider = $aiProvider;
         $this->creditService = $creditService;
         $this->validator = $validator;
         $this->subscriptionService = $subscriptionService;
+        $this->mediaResolver = $mediaResolver;
     }
 
     public function generateOutline(array $data, int $userId)
@@ -117,10 +127,63 @@ class CourseService
 
         // Generate Main Course Photo (Search Real Image)
         $courseTitle = $outline['title'] ?? $data['topic'];
-        $photoUrl = $this->aiProvider->getCourseCoverImage($courseTitle);
+        $photoUrl = method_exists($this->aiProvider, 'getCourseCoverImage')
+            ? $this->aiProvider->getCourseCoverImage($courseTitle)
+            : null;
+        $photoUrl = $photoUrl ?: $this->fallbackCourseCoverImage($courseTitle);
         $outline['cover_image'] = $photoUrl;
 
         return $outline;
+    }
+
+    public function fallbackCourseCoverImage(string $title): string
+    {
+        $text = trim($title) !== '' ? $title : 'NOVAIS Course';
+
+        return 'https://placehold.co/1200x675/1d4ed8/ffffff.png?text=' . rawurlencode($text);
+    }
+
+    public function extractPersistableLessonMedia(array $lessonData, string $courseType): array
+    {
+        $metadata = $lessonData['metadata'] ?? [];
+        if (!is_array($metadata)) {
+            $metadata = [];
+        }
+
+        $images = $metadata['images'] ?? $lessonData['images'] ?? [];
+        $videos = $metadata['videos'] ?? $lessonData['videos'] ?? [];
+        $mediaUrl = $lessonData['media_url'] ?? null;
+        $mediaType = $lessonData['media_type'] ?? null;
+
+        if (!$mediaUrl && $this->isVideoCourse($courseType)) {
+            $video = $this->firstMediaItem($videos);
+            $mediaUrl = $video['url'] ?? null;
+            $mediaType = $mediaUrl ? 'video' : $mediaType;
+        }
+
+        if (!$mediaUrl) {
+            $image = $this->firstMediaItem($images);
+            $mediaUrl = $image['url'] ?? null;
+            $mediaType = $mediaUrl ? 'image' : $mediaType;
+        }
+
+        if (!$mediaUrl && !$this->isVideoCourse($courseType)) {
+            $directImage = $lessonData['image'] ?? $lessonData['image_url'] ?? null;
+            $mediaUrl = is_string($directImage) ? $directImage : null;
+            $mediaType = $mediaUrl ? 'image' : $mediaType;
+        }
+
+        if (!$mediaUrl && $this->isVideoCourse($courseType)) {
+            $directVideo = $lessonData['video'] ?? $lessonData['video_url'] ?? null;
+            $mediaUrl = is_string($directVideo) ? $directVideo : null;
+            $mediaType = $mediaUrl ? 'video' : $mediaType;
+        }
+
+        return [
+            'media_url' => $mediaUrl,
+            'media_type' => in_array($mediaType, ['image', 'video'], true) ? $mediaType : 'none',
+            'metadata' => $metadata,
+        ];
     }
 
     public function createCourse(array $data, int $userId)
@@ -194,15 +257,135 @@ class CourseService
         );
 
         $textContent = $aiResponse['content'] ?? 'Content generation failed.';
-        $mediaData = $aiResponse['media'] ?? [];
+        $mediaData = $this->resolveLessonMedia($aiResponse, $course, $lesson);
         
         // 2. Update Lesson
         $lesson->update([
             'content' => $textContent,
-            'metadata' => $mediaData // Store media in JSON metadata
+            'media_url' => $mediaData['media_url'],
+            'media_type' => $mediaData['media_type'],
+            'metadata' => $mediaData['metadata'],
         ]);
 
         return $lesson;
+    }
+
+    private function resolveLessonMedia(array $aiResponse, Course $course, Lesson $lesson): array
+    {
+        $metadata = [
+            'images' => [],
+            'videos' => [],
+        ];
+
+        $courseType = $course->type ?? 'text';
+        $courseTitle = $course->title ?? 'Course';
+        $lessonTitle = $lesson->title ?? 'Lesson';
+
+        if ($this->isVideoCourse($courseType)) {
+            $queries = $aiResponse['media_queries']['videos'] ?? [];
+            foreach ($queries as $queryData) {
+                $query = is_array($queryData) ? ($queryData['query'] ?? null) : (string) $queryData;
+                if (!$query) {
+                    continue;
+                }
+
+                $constraints = is_array($queryData) ? ($queryData['constraints'] ?? []) : [];
+                $constraints['language'] = $constraints['language'] ?? ($course->language ?? 'English');
+
+                $video = $this->mediaResolver->resolveVideos(
+                    $query,
+                    is_array($queryData) ? ($queryData['intent'] ?? 'educational') : 'educational',
+                    $constraints
+                );
+
+                if ($video && !empty($video['url'])) {
+                    $metadata['videos'][] = $this->normalizeVideoMedia($video);
+                    return [
+                        'media_url' => $video['url'],
+                        'media_type' => 'video',
+                        'metadata' => $metadata,
+                    ];
+                }
+            }
+        }
+
+        $queries = $aiResponse['media_queries']['images'] ?? [];
+        foreach ($queries as $queryData) {
+            $query = is_array($queryData) ? ($queryData['query'] ?? null) : (string) $queryData;
+            if (!$query) {
+                continue;
+            }
+
+            $images = $this->mediaResolver->resolveImagesMultiple(
+                $query,
+                is_array($queryData) ? ($queryData['intent'] ?? 'educational') : 'educational',
+                is_array($queryData) ? ($queryData['constraints'] ?? []) : [],
+                3
+            );
+
+            foreach ($images as $image) {
+                if (!empty($image['url'])) {
+                    $metadata['images'][] = $this->normalizeImageMedia($image);
+                }
+            }
+
+            if (!empty($metadata['images'])) {
+                return [
+                    'media_url' => $metadata['images'][0]['url'],
+                    'media_type' => 'image',
+                    'metadata' => $metadata,
+                ];
+            }
+        }
+
+        $fallback = $this->fallbackCourseCoverImage(trim($courseTitle . ' ' . $lessonTitle));
+        $metadata['images'][] = [
+            'url' => $fallback,
+            'title' => $lessonTitle,
+            'source' => 'placeholder',
+            'verified' => false,
+            'score' => 0.0,
+        ];
+
+        return [
+            'media_url' => $fallback,
+            'media_type' => 'image',
+            'metadata' => $metadata,
+        ];
+    }
+
+    private function isVideoCourse(string $courseType): bool
+    {
+        return str_contains(strtolower($courseType), 'video');
+    }
+
+    private function firstMediaItem($items): ?array
+    {
+        return is_array($items) && isset($items[0]) && is_array($items[0]) ? $items[0] : null;
+    }
+
+    private function normalizeImageMedia(array $image): array
+    {
+        return [
+            'url' => $image['url'],
+            'title' => $image['title'] ?? 'Lesson image',
+            'source' => $image['source'] ?? 'media',
+            'metadata' => $image['metadata'] ?? [],
+            'verified' => (bool) ($image['verified'] ?? (($image['score'] ?? 0) >= 0.25)),
+            'score' => $image['score'] ?? 0.0,
+        ];
+    }
+
+    private function normalizeVideoMedia(array $video): array
+    {
+        return [
+            'url' => $video['url'],
+            'title' => $video['title'] ?? 'Lesson video',
+            'platform' => $video['platform'] ?? ($video['source'] ?? 'video'),
+            'metadata' => $video['metadata'] ?? [],
+            'verified' => (bool) ($video['verified'] ?? (($video['score'] ?? 0) >= 0.25)),
+            'score' => $video['score'] ?? 0.0,
+        ];
     }
 
     public function createQuiz(int $courseId)

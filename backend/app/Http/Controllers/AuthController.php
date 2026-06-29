@@ -308,7 +308,7 @@ class AuthController extends Controller
         $user = auth('api')->user();
         $subscription = $user->subscriptions()->where('status', 'active')->latest()->first();
         
-        $userData = $user->toArray();
+        $userData = $this->clientUserData($user);
         $userData['current_subscription'] = $subscription;
         $userData['subscription_usage'] = $this->subscriptionService->getUserUsage($user);
 
@@ -374,10 +374,40 @@ class AuthController extends Controller
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => auth('api')->factory()->getTTL() * 60,
-            'user' => $user,
+            'user' => $this->clientUserData($user),
             'success' => true,
             'message' => 'auth.login_success' // Frontend expects this message
         ]);
+    }
+
+    private function clientUserData(User $user): array
+    {
+        $data = $user->toArray();
+        $data['subscription_type'] = $this->clientSubscriptionType($user);
+        $data['course_limit'] = $this->subscriptionService->getUserUsage($user)['limit'] ?? null;
+        $data['is_admin'] = $user->role === 'admin';
+        $data['email_verified'] = (bool) $user->email_verified_at;
+
+        return $data;
+    }
+
+    private function clientSubscriptionType(User $user): string
+    {
+        if ($user->role === 'admin') {
+            return 'elite';
+        }
+
+        $status = strtolower((string) ($user->sub_status ?: 'free'));
+
+        if (str_contains($status, 'elite')) {
+            return 'elite';
+        }
+
+        if (str_contains($status, 'pro') || str_contains($status, 'premium')) {
+            return 'pro';
+        }
+
+        return 'free';
     }
     /**
      * Google Login

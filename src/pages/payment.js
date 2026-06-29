@@ -24,7 +24,6 @@ const Payment = () => {
     const initialLastName = nameParts.slice(1).join(' ') || '';
 
     const [paymentMethod, setPaymentMethod] = useState('card');
-    const [phoneNumber, setPhoneNumber] = useState('');
     const [email, setEmail] = useState(localStorage.getItem('email') || '');
     const [mName, setName] = useState(initialFirstName);
     const [lastName, setLastName] = useState(initialLastName);
@@ -80,11 +79,6 @@ const Payment = () => {
             return;
         }
 
-        if (paymentMethod === 'wallet' && !phoneNumber) {
-            toast.error(isRtl ? 'يرجى إدخال رقم المحفظة' : 'Please enter wallet number');
-            return;
-        }
-
         if (isOfflinePayment && !selectedPlan?.id) {
             toast.error(isRtl ? 'تعذر تحديد الباقة المختارة' : 'Unable to resolve selected plan');
             return;
@@ -120,7 +114,7 @@ const Payment = () => {
             const dataToSend = {
                 plan_id,
                 payment_method: paymentMethod,
-                phone: paymentMethod === 'wallet' ? phoneNumber : null,
+                phone: null,
                 // Default values for fields hidden from user
                 address: 'Cairo, Egypt',
                 postal_code: '11511',
@@ -208,21 +202,13 @@ const Payment = () => {
                                 {isRtl ? 'طريقة الدفع' : 'Payment Method'}
                             </label>
 
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                                 <button
                                     onClick={() => setPaymentMethod('card')}
                                     className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${paymentMethod === 'card' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'border-gray-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-white/20'}`}
                                 >
                                     <LuCreditCard className="w-6 h-6 mb-2" />
                                     <span className="text-xs font-bold">{isRtl ? 'بطاقة بنكية' : 'Card'}</span>
-                                </button>
-
-                                <button
-                                    onClick={() => setPaymentMethod('wallet')}
-                                    className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${paymentMethod === 'wallet' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'border-gray-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-white/20'}`}
-                                >
-                                    <LuSmartphone className="w-6 h-6 mb-2" />
-                                    <span className="text-xs font-bold">{isRtl ? 'محفظة إلكترونية' : 'Wallet'}</span>
                                 </button>
 
                                 <button
@@ -241,23 +227,6 @@ const Payment = () => {
                                     <span className="text-xs font-bold">{isRtl ? 'إنستا باي' : 'InstaPay'}</span>
                                 </button>
                             </div>
-
-                            {/* Wallet Phone Input */}
-                            {paymentMethod === 'wallet' && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    className="mb-4"
-                                >
-                                    <Input
-                                        label={isRtl ? 'رقم المحفظة' : 'Wallet Number'}
-                                        value={phoneNumber}
-                                        onChange={(e) => setPhoneNumber(e.target.value)}
-                                        icon={LuSmartphone}
-                                        placeholder="010xxxxxxxx"
-                                    />
-                                </motion.div>
-                            )}
 
                             {isOfflinePayment && (
                                 <motion.div
@@ -330,13 +299,12 @@ const Payment = () => {
                                 className="w-full h-[56px] text-lg"
                             >
                                 {paymentMethod === 'card' && <LuCreditCard className="mr-2" />}
-                                {paymentMethod === 'wallet' && <LuSmartphone className="mr-2" />}
 
                                 {isOfflinePayment
                                     ? (isRtl ? 'إرسال طلب الدفع' : 'Submit offline payment')
                                     : isRtl
-                                        ? `دفع بواسطة ${paymentMethod === 'card' ? 'البطاقة' : 'المحفظة'}`
-                                        : `Pay via ${paymentMethod === 'card' ? 'Card' : 'Wallet'}`}
+                                        ? 'دفع بواسطة البطاقة'
+                                        : 'Pay via Card'}
                             </Button>
                         </div>
                     </Card>

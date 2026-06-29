@@ -60,11 +60,32 @@ const mergeSavedLessonsIntoMetadata = (metadata, lessons = []) => {
                 if (!saved) return subtopic;
 
                 const savedMetadata = normalizeObject(saved.metadata);
+                const savedMediaMetadata = { ...savedMetadata };
+                if (saved.media_url && saved.media_type === 'image' && !savedMediaMetadata.images?.length) {
+                    savedMediaMetadata.images = [{
+                        url: saved.media_url,
+                        title: saved.title,
+                        source: 'course',
+                        verified: true,
+                        score: 1
+                    }];
+                }
+                if (saved.media_url && saved.media_type === 'video' && !savedMediaMetadata.videos?.length) {
+                    savedMediaMetadata.videos = [{
+                        url: saved.media_url,
+                        title: saved.title,
+                        platform: 'video',
+                        metadata: normalizeObject(saved.metadata),
+                        verified: true,
+                        score: 1
+                    }];
+                }
+
                 return {
                     ...subtopic,
                     content: saved.content || subtopic.content,
                     theory: saved.content || subtopic.theory,
-                    metadata: Object.keys(savedMetadata).length ? savedMetadata : subtopic.metadata,
+                    metadata: Object.keys(savedMediaMetadata).length ? savedMediaMetadata : subtopic.metadata,
                     done: Boolean(saved.content) || subtopic.done,
                 };
             });

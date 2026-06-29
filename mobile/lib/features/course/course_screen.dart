@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/api/endpoints.dart';
 import '../../core/theme/app_theme.dart';
@@ -141,6 +142,13 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                                             fontFamily: 'PlusJakartaSans',
                                             fontWeight: FontWeight.w700)),
                                 const SizedBox(height: 16),
+                                if (lesson.videoUrl != null) ...[
+                                  _LessonVideoCard(
+                                    url: lesson.videoUrl!,
+                                    title: lesson.title,
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
                                 if (lesson.imageUrl != null) ...[
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
@@ -351,6 +359,80 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
 }
 
 // ── Chat Tab ─────────────────────────────────────────────────────────────────
+
+class _LessonVideoCard extends StatelessWidget {
+  final String url;
+  final String title;
+
+  const _LessonVideoCard({required this.url, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark ? Colors.white24 : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.play_circle_fill,
+                  size: 64,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _openVideo(context, url),
+              icon: const Icon(Icons.open_in_new, size: 18),
+              label: const Text('Open video'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openVideo(BuildContext context, String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      if (context.mounted) showSnack(context, 'Invalid video URL', error: true);
+      return;
+    }
+
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && context.mounted) {
+      showSnack(context, 'Failed to open video', error: true);
+    }
+  }
+}
 
 class _ChatTab extends ConsumerStatefulWidget {
   final int courseId;

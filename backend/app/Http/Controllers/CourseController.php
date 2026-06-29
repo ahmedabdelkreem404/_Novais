@@ -111,12 +111,18 @@ class CourseController extends Controller
             ]);
             $userId = auth('api')->id(); // Use Auth::id instead of request->user for security
             
+            $courseTitle = $contentData['title'] ?? $request->mainTopic;
+            $courseCover = $contentData['cover_image']
+                ?? $contentData['photo']
+                ?? $contentData['image']
+                ?? null;
+
             $course = Course::create([
                 'user_id' => $userId,
-                'title' => $request->mainTopic,
+                'title' => $courseTitle,
                 'type' => $request->type,
                 'language' => $request->language ?? 'English',
-                'photo' => $contentData['cover_image'] ?? null,
+                'photo' => $courseCover ?: $this->courseService->fallbackCourseCoverImage($courseTitle),
                 'level' => $request->level ?? 'Beginner', // Save Level
                 'metadata' => $contentData // Save full JSON structure
             ]);
@@ -130,11 +136,16 @@ class CourseController extends Controller
                      $subtopics = $topic['subtopics'] ?? ($topic['sections'] ?? []);
                      if (is_array($subtopics)) {
                          foreach ($subtopics as $sub) {
+                             $media = $this->courseService->extractPersistableLessonMedia($sub, $request->type);
+
                              $lesson = Lesson::create([
                                  'course_id' => $course->id,
                                  'topic_title' => $topic['title'] ?? 'General',
                                  'title' => $sub['title'] ?? 'Untitled Lesson',
                                  'content' => $sub['theory'] ?? ($sub['content'] ?? ''),
+                                 'media_url' => $media['media_url'],
+                                 'media_type' => $media['media_type'],
+                                 'metadata' => $media['metadata'],
                              ]);
                          }
                      }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Interfaces\AIProviderInterface;
 use App\Services\MediaResolverService;
+use App\Services\CourseService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,15 +14,18 @@ class AIController extends Controller
     protected $aiService;
     protected $creditService;
     protected $mediaResolver;
+    protected $courseService;
 
     public function __construct(
         AIProviderInterface $aiService, 
         \App\Services\CreditService $creditService,
-        MediaResolverService $mediaResolver
+        MediaResolverService $mediaResolver,
+        CourseService $courseService
     ) {
         $this->aiService = $aiService;
         $this->creditService = $creditService;
         $this->mediaResolver = $mediaResolver;
+        $this->courseService = $courseService;
     }
 
     /**
@@ -592,9 +596,16 @@ class AIController extends Controller
                     ->first();
 
                 if ($lesson) {
+                    $media = $this->courseService->extractPersistableLessonMedia(
+                        $newContent,
+                        $course->type ?? 'text'
+                    );
+
                     $lesson->update([
                         'content' => $newContent['content'] ?? ($newContent['theory'] ?? $lesson->content),
                         'metadata' => $newContent['metadata'] ?? ($lesson->metadata ?? []),
+                        'media_url' => $media['media_url'],
+                        'media_type' => $media['media_type'],
                     ]);
                 }
 
