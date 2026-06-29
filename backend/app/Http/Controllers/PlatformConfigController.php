@@ -9,7 +9,9 @@ class PlatformConfigController extends Controller
 {
     public function show()
     {
-        return response()->json(PlatformSetting::currentConfig());
+        $config = PlatformSetting::currentConfig();
+        unset($config['secret_private_key']);
+        return response()->json($config);
     }
 
     public function adminShow()
@@ -59,6 +61,48 @@ class PlatformConfigController extends Controller
             'hero_media_muted' => 'sometimes|boolean',
             'hero_media_loop' => 'sometimes|boolean',
             'hero_media_poster' => 'sometimes|nullable|string',
+
+            // Branding & Identity
+            'branding_platform_name_en' => 'sometimes|string',
+            'branding_platform_name_ar' => 'sometimes|string',
+            'branding_logo_url' => 'sometimes|nullable|string',
+            'branding_favicon_url' => 'sometimes|nullable|string',
+            
+            // Theme behavior
+            'theme_default_mode' => 'sometimes|string|in:light,dark',
+
+            // Hero Video Options
+            'hero_video_enabled' => 'sometimes|boolean',
+            'hero_video_autoplay' => 'sometimes|boolean',
+            'hero_video_loop_mode' => 'sometimes|string|in:loop_forever,play_once,play_once_then_image',
+            'hero_video_fallback_image' => 'sometimes|nullable|string',
+            'hero_video_controls_hidden' => 'sometimes|boolean',
+            'hero_video_display_target' => 'sometimes|string|in:both,web_only,mobile_only',
+            'hero_video_replace_low_bandwidth' => 'sometimes|boolean',
+
+            // Payment visibility & instructions
+            'payment_methods_visible' => 'sometimes|boolean',
+            'offline_payment_instructions_en' => 'sometimes|string',
+            'offline_payment_instructions_ar' => 'sometimes|string',
+
+            // Feature Flags
+            'feature_pdf_export_enabled' => 'sometimes|boolean',
+            'feature_ppt_export_enabled' => 'sometimes|boolean',
+            'feature_notes_enabled' => 'sometimes|boolean',
+            'feature_quiz_enabled' => 'sometimes|boolean',
+            'feature_chat_enabled' => 'sometimes|boolean',
+            'feature_audio_courses_enabled' => 'sometimes|boolean',
+
+            // SEO / Social
+            'seo_meta_title_en' => 'sometimes|string',
+            'seo_meta_title_ar' => 'sometimes|string',
+            'seo_meta_description_en' => 'sometimes|string',
+            'seo_meta_description_ar' => 'sometimes|string',
+            'seo_meta_keywords_en' => 'sometimes|string',
+            'seo_meta_keywords_ar' => 'sometimes|string',
+
+            // Secret key
+            'secret_private_key' => 'sometimes|string',
         ]);
 
         return response()->json(PlatformSetting::updateConfig($data));

@@ -77,6 +77,48 @@ class PlatformSetting extends Model
             'hero_media_muted' => true,
             'hero_media_loop' => true,
             'hero_media_poster' => null,
+            
+            // Branding & Identity
+            'branding_platform_name_en' => 'NOVAIS',
+            'branding_platform_name_ar' => 'نوفايس',
+            'branding_logo_url' => null,
+            'branding_favicon_url' => null,
+            
+            // Theme behavior
+            'theme_default_mode' => 'dark',
+
+            // Hero Video Options
+            'hero_video_enabled' => true,
+            'hero_video_autoplay' => true,
+            'hero_video_loop_mode' => 'loop_forever', // 'loop_forever' | 'play_once' | 'play_once_then_image'
+            'hero_video_fallback_image' => null,
+            'hero_video_controls_hidden' => true,
+            'hero_video_display_target' => 'both', // 'both' | 'web_only' | 'mobile_only'
+            'hero_video_replace_low_bandwidth' => true,
+
+            // Payment visibility
+            'payment_methods_visible' => true,
+            'offline_payment_instructions_en' => 'Please send subscription price to bank account XXXX.',
+            'offline_payment_instructions_ar' => 'الرجاء إرسال قيمة الاشتراك إلى الحساب البنكي XXXX.',
+
+            // Feature Flags
+            'feature_pdf_export_enabled' => true,
+            'feature_ppt_export_enabled' => true,
+            'feature_notes_enabled' => true,
+            'feature_quiz_enabled' => true,
+            'feature_chat_enabled' => true,
+            'feature_audio_courses_enabled' => true,
+
+            // SEO / Social
+            'seo_meta_title_en' => 'NOVAIS - AI Learning platform',
+            'seo_meta_title_ar' => 'نوفايس - منصة التعلم بالذكاء الاصطناعي',
+            'seo_meta_description_en' => 'Generate personalized courses using AI.',
+            'seo_meta_description_ar' => 'ولد كورسات مخصصة باستخدام الذكاء الاصطناعي.',
+            'seo_meta_keywords_en' => 'ai, course, learn',
+            'seo_meta_keywords_ar' => 'ذكاء اصطناعي, كورس, تعلم',
+
+            // Admin Secrets
+            'secret_private_key' => 'super_secret_value',
         ];
     }
 

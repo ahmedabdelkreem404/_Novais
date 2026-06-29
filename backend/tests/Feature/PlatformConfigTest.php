@@ -218,4 +218,12 @@ class PlatformConfigTest extends TestCase
         $response->assertForbidden()
             ->assertJsonPath('message', 'platform.depth_requires_upgrade');
     }
+
+    public function test_public_config_excludes_admin_only_fields(): void
+    {
+        $response = $this->getJson('/api/platform-config');
+
+        $response->assertOk()
+            ->assertJsonMissingPath('secret_private_key');
+    }
 }
