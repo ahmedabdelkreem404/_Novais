@@ -8,12 +8,15 @@ import Button from '../components/ui/Button';
 import { 
   LuSettings, 
   LuLanguages, 
-  LuRocket, 
-  LuImage, 
-  LuMonitor
+  LuGlobe, 
+  LuPalette, 
+  LuVideo, 
+  LuCreditCard, 
+  LuFlag, 
+  LuSearch, 
+  LuDownload 
 } from 'react-icons/lu';
 
-// Predefined option lists for smooth UX
 const predefinedLanguages = [
   'English', 'Arabic', 'French', 'Spanish', 'German', 'Italian', 
   'Portuguese', 'Russian', 'Japanese', 'Chinese', 'Hindi', 
@@ -36,7 +39,7 @@ const PlatformSettings = () => {
   const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState('general'); // 'general' | 'languages' | 'complexity' | 'web' | 'mobile'
+  const [activeTab, setActiveTab] = useState('identity'); 
   
   const [form, setForm] = useState({
     course_creation_enabled: true,
@@ -71,6 +74,45 @@ const PlatformSettings = () => {
     hero_media_muted: true,
     hero_media_loop: true,
     hero_media_poster: '',
+    
+    // Branding & Identity
+    branding_platform_name_en: 'NOVAIS',
+    branding_platform_name_ar: 'نوفايس',
+    branding_logo_url: '',
+    branding_favicon_url: '',
+    
+    // Theme behavior
+    theme_default_mode: 'dark',
+
+    // Hero Video Options
+    hero_video_enabled: true,
+    hero_video_autoplay: true,
+    hero_video_loop_mode: 'loop_forever', 
+    hero_video_fallback_image: '',
+    hero_video_controls_hidden: true,
+    hero_video_display_target: 'both', 
+    hero_video_replace_low_bandwidth: true,
+
+    // Payment visibility
+    payment_methods_visible: true,
+    offline_payment_instructions_en: '',
+    offline_payment_instructions_ar: '',
+
+    // Feature Flags
+    feature_pdf_export_enabled: true,
+    feature_ppt_export_enabled: true,
+    feature_notes_enabled: true,
+    feature_quiz_enabled: true,
+    feature_chat_enabled: true,
+    feature_audio_courses_enabled: true,
+
+    // SEO / Social
+    seo_meta_title_en: '',
+    seo_meta_title_ar: '',
+    seo_meta_description_en: '',
+    seo_meta_description_ar: '',
+    seo_meta_keywords_en: '',
+    seo_meta_keywords_ar: '',
   });
 
   const fetchConfig = async () => {
@@ -81,11 +123,9 @@ const PlatformSettings = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       
-      setForm({
-        course_creation_enabled: !!res.data.course_creation_enabled,
-        all_languages_free: !!res.data.all_languages_free,
-        video_courses_enabled: !!res.data.video_courses_enabled,
-        video_courses_free: !!res.data.video_courses_free,
+      setForm((current) => ({
+        ...current,
+        ...res.data,
         enabled_languages: Array.isArray(res.data.enabled_languages) ? res.data.enabled_languages : [],
         free_languages: Array.isArray(res.data.free_languages) ? res.data.free_languages : [],
         enabled_course_types: Array.isArray(res.data.enabled_course_types) ? res.data.enabled_course_types : [],
@@ -94,27 +134,7 @@ const PlatformSettings = () => {
         free_levels: Array.isArray(res.data.free_levels) ? res.data.free_levels : [],
         enabled_depths: Array.isArray(res.data.enabled_depths) ? res.data.enabled_depths.map(Number) : [],
         free_depth_limit: res.data.free_depth_limit !== undefined ? Number(res.data.free_depth_limit) : 5,
-        hero_media_type: res.data.hero_media_type || 'image',
-        hero_media_url: res.data.hero_media_url || '',
-        web_hero_title_en: res.data.web_hero_title_en || '',
-        web_hero_title_ar: res.data.web_hero_title_ar || '',
-        web_hero_subtitle_en: res.data.web_hero_subtitle_en || '',
-        web_hero_subtitle_ar: res.data.web_hero_subtitle_ar || '',
-        web_hero_badge_en: res.data.web_hero_badge_en || '',
-        web_hero_badge_ar: res.data.web_hero_badge_ar || '',
-        web_hero_cta_en: res.data.web_hero_cta_en || '',
-        web_hero_cta_ar: res.data.web_hero_cta_ar || '',
-        download_page_title_en: res.data.download_page_title_en || '',
-        download_page_title_ar: res.data.download_page_title_ar || '',
-        download_page_desc_en: res.data.download_page_desc_en || '',
-        download_page_desc_ar: res.data.download_page_desc_ar || '',
-        windows_download_url: res.data.windows_download_url || '',
-        mobile_download_url: res.data.mobile_download_url || '',
-        system_theme_mode: res.data.system_theme_mode || 'user_choice',
-        hero_media_muted: res.data.hero_media_muted !== undefined ? !!res.data.hero_media_muted : true,
-        hero_media_loop: res.data.hero_media_loop !== undefined ? !!res.data.hero_media_loop : true,
-        hero_media_poster: res.data.hero_media_poster || '',
-      });
+      }));
     } catch (error) {
       toast.error(t('admin.platform_config.load_fail') || 'Failed to load platform settings');
     } finally {
@@ -135,40 +155,7 @@ const PlatformSettings = () => {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`${serverURL}/admin/platform-config`, {
-        course_creation_enabled: form.course_creation_enabled,
-        all_languages_free: form.all_languages_free,
-        video_courses_enabled: form.video_courses_enabled,
-        video_courses_free: form.video_courses_free,
-        enabled_languages: form.enabled_languages,
-        free_languages: form.free_languages,
-        enabled_course_types: form.enabled_course_types,
-        free_course_types: form.free_course_types,
-        enabled_levels: form.enabled_levels,
-        free_levels: form.free_levels,
-        enabled_depths: form.enabled_depths.map(Number),
-        free_depth_limit: parseInt(form.free_depth_limit, 10) || 5,
-        hero_media_type: form.hero_media_type,
-        hero_media_url: form.hero_media_url,
-        web_hero_title_en: form.web_hero_title_en,
-        web_hero_title_ar: form.web_hero_title_ar,
-        web_hero_subtitle_en: form.web_hero_subtitle_en,
-        web_hero_subtitle_ar: form.web_hero_subtitle_ar,
-        web_hero_badge_en: form.web_hero_badge_en,
-        web_hero_badge_ar: form.web_hero_badge_ar,
-        web_hero_cta_en: form.web_hero_cta_en,
-        web_hero_cta_ar: form.web_hero_cta_ar,
-        download_page_title_en: form.download_page_title_en,
-        download_page_title_ar: form.download_page_title_ar,
-        download_page_desc_en: form.download_page_desc_en,
-        download_page_desc_ar: form.download_page_desc_ar,
-        windows_download_url: form.windows_download_url,
-        mobile_download_url: form.mobile_download_url,
-        system_theme_mode: form.system_theme_mode,
-        hero_media_muted: form.hero_media_muted,
-        hero_media_loop: form.hero_media_loop,
-        hero_media_poster: form.hero_media_poster,
-      }, {
+      await axios.put(`${serverURL}/admin/platform-config`, form, {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast.success(t('admin.platform_config.saved_success') || 'Platform settings saved');
@@ -187,18 +174,21 @@ const PlatformSettings = () => {
   const isRtl = i18n.language.startsWith('ar');
 
   const tabs = [
-    { id: 'general', name: isRtl ? 'الإعدادات العامة' : 'General', icon: LuSettings },
-    { id: 'languages', name: isRtl ? 'اللغات والأنواع' : 'Languages & Types', icon: LuLanguages },
-    { id: 'complexity', name: isRtl ? 'الصعوبة والدروس' : 'Difficulty & Modules', icon: LuRocket },
-    { id: 'web', name: isRtl ? 'تخصيص الويب' : 'Web Customizer', icon: LuImage },
-    { id: 'mobile', name: isRtl ? 'تطبيق الموبايل والكمبيوتر' : 'Mobile & Desktop App', icon: LuMonitor },
+    { id: 'identity', name: isRtl ? 'الهوية والشعار' : 'Identity & Logo', icon: LuGlobe },
+    { id: 'theme', name: isRtl ? 'مظهر المنصة' : 'Theme Settings', icon: LuPalette },
+    { id: 'hero', name: isRtl ? 'فيديو البطل والواجهة' : 'Hero Video & Media', icon: LuVideo },
+    { id: 'localization', name: isRtl ? 'اللغات والمحتوى' : 'Languages & Content', icon: LuLanguages },
+    { id: 'payments', name: isRtl ? 'المدفوعات والظهور' : 'Payments & Visibility', icon: LuCreditCard },
+    { id: 'features', name: isRtl ? 'مفاتيح الميزات' : 'Feature Flags', icon: LuFlag },
+    { id: 'seo', name: isRtl ? 'محركات البحث' : 'SEO & Socials', icon: LuSearch },
+    { id: 'apps', name: isRtl ? 'تطبيقات التحميل' : 'App Downloads', icon: LuDownload },
   ];
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6 px-2 sm:px-4 md:px-6">
+    <div className="w-full max-w-6xl mx-auto space-y-6 px-1 sm:px-4">
       
-      {/* Dynamic Tab Bar: Scrollable on extremely small devices */}
-      <div className="flex border-b border-gray-200 dark:border-white/10 overflow-x-auto scrollbar-none whitespace-nowrap gap-1">
+      {/* Dynamic Tab Bar */}
+      <div className="flex border-b border-gray-200 dark:border-white/10 overflow-x-auto scrollbar-none whitespace-nowrap gap-1 pb-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -221,193 +211,108 @@ const PlatformSettings = () => {
       {/* Tab Panels */}
       <div className="mt-4">
         
-        {/* TAB 1: General Options */}
-        {activeTab === 'general' && (
-          <div className="space-y-6 animate-in fade-in duration-250">
-            <Card className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+        {/* Tab 1: Identity & Branding */}
+        {activeTab === 'identity' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <Card className="p-4 sm:p-6 space-y-6">
               <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
-                {isRtl ? 'مفاتيح التشغيل الأساسية' : 'Core Switches'}
-              </h3>
-              
-              <div className="grid grid-cols-1 gap-4">
-                {[
-                  {
-                    key: 'course_creation_enabled',
-                    title: t('admin.platform_config.course_creation_enabled') || 'Course creation enabled',
-                    desc: isRtl ? 'السماح للمستخدمين بإنشاء دورات جديدة' : 'Allow users to generate new AI courses'
-                  },
-                  {
-                    key: 'all_languages_free',
-                    title: t('admin.platform_config.all_languages_free') || 'All languages free',
-                    desc: isRtl ? 'إلغاء قيود الاشتراك المدفوع عن جميع اللغات' : 'Make all translation languages available for free plans'
-                  },
-                  {
-                    key: 'video_courses_enabled',
-                    title: t('admin.platform_config.video_courses_enabled') || 'Video courses enabled',
-                    desc: isRtl ? 'تفعيل توليد كورسات الفيديو بالذكاء الاصطناعي' : 'Allow generation of video-based curriculums'
-                  },
-                  {
-                    key: 'video_courses_free',
-                    title: t('admin.platform_config.video_courses_free') || 'Video courses free',
-                    desc: isRtl ? 'إتاحة توليد كورسات الفيديو للحسابات المجانية' : 'Allow free members to generate video courses'
-                  }
-                ].map((item) => (
-                  <div 
-                    key={item.key} 
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 gap-3"
-                  >
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900 dark:text-white">{item.title}</h4>
-                      <p className="text-xs text-gray-400 mt-0.5">{item.desc}</p>
-                    </div>
-                    
-                    {/* Switch Toggle */}
-                    <button
-                      type="button"
-                      onClick={() => toggle(item.key)}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none 
-                        ${form[item.key] ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
-                          ${form[item.key] ? (isRtl ? '-translate-x-5' : 'translate-x-5') : 'translate-x-0'}`}
-                      />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* System Theme Mode selector */}
-            <Card className="p-4 sm:p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
-                  {isRtl ? 'مظهر النظام الافتراضي' : 'System Theme Mode'}
-                </label>
-                <p className="text-xs text-gray-400 mb-3">
-                  {isRtl 
-                    ? 'اختر مظهر المنصة؛ إجبار اللون الفاتح فقط، الداكن فقط، التلقائي حسب الجهاز، أو حرية اختيار العضو.' 
-                    : 'Choose the overall platform theme; force Light Mode only, Dark Mode only, match system OS, or let user decide.'}
-                </p>
-                <select
-                  value={form.system_theme_mode}
-                  onChange={(e) => setForm({ ...form, system_theme_mode: e.target.value })}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white cursor-pointer shadow-sm"
-                >
-                  <option value="user_choice">{isRtl ? 'حرية اختيار العضو (الافتراضي)' : 'User Choice (Default)'}</option>
-                  <option value="system_default">{isRtl ? 'تلقائي حسب نظام الجهاز' : 'System Default (OS)'}</option>
-                  <option value="light_only">{isRtl ? 'المظهر الفاتح فقط (إجباري)' : 'Force Light Mode Only'}</option>
-                  <option value="dark_only">{isRtl ? 'المظهر الداكن فقط (إجباري)' : 'Force Dark Mode Only'}</option>
-                </select>
-              </div>
-            </Card>
-
-            <Card className="p-4 sm:p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
-                  {t('admin.platform_config.free_depth_limit') || "Free depth limit (max lessons)"}
-                </label>
-                <p className="text-xs text-gray-400 mb-3">
-                  {isRtl ? 'أقصى عدد من الفصول/الدروس المجانية المسموح بتوليدها قبل قفل الميزة كعضوية برو' : 'Maximum chapters/lessons allowed for free accounts before requiring a subscription limit'}
-                </p>
-                <input
-                  type="number"
-                  value={form.free_depth_limit}
-                  onChange={(event) => setForm({ ...form, free_depth_limit: Number(event.target.value) })}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
-                />
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {/* TAB 2: Languages and Formats */}
-        {activeTab === 'languages' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-250">
-            <TagSelector
-              label={t('admin.platform_config.enabled_languages') || "Enabled languages"}
-              items={form.enabled_languages}
-              predefinedOptions={predefinedLanguages}
-              onChange={(newVal) => {
-                const filteredFree = form.free_languages.filter(l => newVal.includes(l));
-                setForm({ ...form, enabled_languages: newVal, free_languages: filteredFree });
-              }}
-              placeholderSelect={isRtl ? "اختر لغة لإضافتها..." : "Select language to add..."}
-            />
-
-            <TagSelector
-              label={t('admin.platform_config.free_languages') || "Free languages"}
-              items={form.free_languages}
-              predefinedOptions={form.enabled_languages}
-              onChange={(newVal) => setForm({ ...form, free_languages: newVal })}
-              placeholderSelect={isRtl ? "اختر لغة مجانية..." : "Select free language..."}
-            />
-
-            <TagSelector
-              label={t('admin.platform_config.enabled_course_types') || "Enabled course types"}
-              items={form.enabled_course_types}
-              predefinedOptions={predefinedCourseTypes}
-              onChange={(newVal) => {
-                const filteredFree = form.free_course_types.filter(t_type => newVal.includes(t_type));
-                setForm({ ...form, enabled_course_types: newVal, free_course_types: filteredFree });
-              }}
-              placeholderSelect={isRtl ? "اختر نوع كورس لإضافته..." : "Select course type to add..."}
-            />
-
-            <TagSelector
-              label={t('admin.platform_config.free_course_types') || "Free course types"}
-              items={form.free_course_types}
-              predefinedOptions={form.enabled_course_types}
-              onChange={(newVal) => setForm({ ...form, free_course_types: newVal })}
-              placeholderSelect={isRtl ? "اختر نوع كورس مجاني..." : "Select free course type..."}
-            />
-          </div>
-        )}
-
-        {/* TAB 3: Levels and Depths */}
-        {activeTab === 'complexity' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-250">
-            <TagSelector
-              label={t('admin.platform_config.enabled_levels') || "Enabled complexity levels"}
-              items={form.enabled_levels}
-              predefinedOptions={predefinedLevels}
-              onChange={(newVal) => {
-                const filteredFree = form.free_levels.filter(lvl => newVal.includes(lvl));
-                setForm({ ...form, enabled_levels: newVal, free_levels: filteredFree });
-              }}
-              placeholderSelect={isRtl ? "اختر مستوى لإضافته..." : "Select complexity level to add..."}
-            />
-
-            <TagSelector
-              label={t('admin.platform_config.free_levels') || "Free complexity levels"}
-              items={form.free_levels}
-              predefinedOptions={form.enabled_levels}
-              onChange={(newVal) => setForm({ ...form, free_levels: newVal })}
-              placeholderSelect={isRtl ? "اختر مستوى مجاني..." : "Select free complexity level..."}
-            />
-
-            <TagSelector
-              label={t('admin.platform_config.enabled_depths') || "Enabled depths (number of lessons)"}
-              items={form.enabled_depths}
-              predefinedOptions={predefinedDepths}
-              onChange={(newVal) => setForm({ ...form, enabled_depths: newVal })}
-              placeholderSelect={isRtl ? "اختر عمق الكورس لإضافته..." : "Select depth to add..."}
-            />
-          </div>
-        )}
-
-        {/* TAB 4: Web Customizer */}
-        {activeTab === 'web' && (
-          <div className="space-y-6 animate-in fade-in duration-250">
-            {/* Dynamic Text customization */}
-            <Card className="p-4 sm:p-6 space-y-4">
-              <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
-                {isRtl ? 'تعديل نصوص الصفحة الرئيسية للويب' : 'Landing Page Copywriter'}
+                {isRtl ? 'اسم المنصة وهوية البراند' : 'Platform Identity'}
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                {/* Title */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Platform Name (English)</label>
+                  <input
+                    type="text"
+                    value={form.branding_platform_name_en}
+                    onChange={(e) => setForm({ ...form, branding_platform_name_en: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">اسم المنصة (العربية)</label>
+                  <input
+                    type="text"
+                    value={form.branding_platform_name_ar}
+                    onChange={(e) => setForm({ ...form, branding_platform_name_ar: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    dir="rtl"
+                  />
+                </div>
+              </div>
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FileUploaderCard
+                label={isRtl ? 'شعار المنصة (Logo)' : 'Platform Logo'}
+                fileUrl={form.branding_logo_url}
+                onUploadSuccess={(url) => setForm({ ...form, branding_logo_url: url })}
+                accept="image/*"
+                t={t}
+              />
+              <FileUploaderCard
+                label={isRtl ? 'أيقونة المتصفح (Favicon)' : 'Browser Favicon'}
+                fileUrl={form.branding_favicon_url}
+                onUploadSuccess={(url) => setForm({ ...form, branding_favicon_url: url })}
+                accept="image/*"
+                t={t}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Theme Settings */}
+        {activeTab === 'theme' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <Card className="p-4 sm:p-6 space-y-6">
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
+                {isRtl ? 'إعدادات الثيم ومظهر الألوان' : 'Theme & Color Behavior'}
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
+                    {isRtl ? 'مظهر النظام الأساسي' : 'System Theme Mode'}
+                  </label>
+                  <select
+                    value={form.system_theme_mode}
+                    onChange={(e) => setForm({ ...form, system_theme_mode: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white cursor-pointer"
+                  >
+                    <option value="user_choice">{isRtl ? 'حرية اختيار العضو (الافتراضي)' : 'User Choice (Default)'}</option>
+                    <option value="system_default">{isRtl ? 'تلقائي حسب نظام الجهاز' : 'System Default (OS)'}</option>
+                    <option value="light_only">{isRtl ? 'المظهر الفاتح فقط (إجباري)' : 'Force Light Mode Only'}</option>
+                    <option value="dark_only">{isRtl ? 'المظهر الداكن فقط (إجباري)' : 'Force Dark Mode Only'}</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
+                    {isRtl ? 'المظهر الافتراضي للمنصة' : 'Default Platform Theme'}
+                  </label>
+                  <select
+                    value={form.theme_default_mode}
+                    onChange={(e) => setForm({ ...form, theme_default_mode: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white cursor-pointer"
+                  >
+                    <option value="dark">{isRtl ? 'داكن' : 'Dark'}</option>
+                    <option value="light">{isRtl ? 'فاتح' : 'Light'}</option>
+                  </select>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Tab 3: Hero Video & Media */}
+        {activeTab === 'hero' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <Card className="p-4 sm:p-6 space-y-6">
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
+                {isRtl ? 'تخصيص الهيرو والواجهة التفاعلية' : 'Landing Hero Copywriter'}
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Hero Title (English)</label>
                   <input
@@ -418,7 +323,7 @@ const PlatformSettings = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">العنوان الرئيسي (العربية)</label>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">العنوان الرئيسي للهيرو (العربية)</label>
                   <input
                     type="text"
                     value={form.web_hero_title_ar}
@@ -427,8 +332,6 @@ const PlatformSettings = () => {
                     dir="rtl"
                   />
                 </div>
-
-                {/* Subtitle */}
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Hero Subtitle (English)</label>
                   <textarea
@@ -438,7 +341,7 @@ const PlatformSettings = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">العنوان الفرعي (العربية)</label>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">الوصف الفرعي للهيرو (العربية)</label>
                   <textarea
                     value={form.web_hero_subtitle_ar}
                     onChange={(e) => setForm({ ...form, web_hero_subtitle_ar: e.target.value })}
@@ -446,10 +349,8 @@ const PlatformSettings = () => {
                     dir="rtl"
                   />
                 </div>
-
-                {/* Badge */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Badge Label (English)</label>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Hero Badge Label (English)</label>
                   <input
                     type="text"
                     value={form.web_hero_badge_en}
@@ -458,7 +359,7 @@ const PlatformSettings = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">الشارة العلوية (العربية)</label>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">نص الشارة العلوية (العربية)</label>
                   <input
                     type="text"
                     value={form.web_hero_badge_ar}
@@ -467,10 +368,8 @@ const PlatformSettings = () => {
                     dir="rtl"
                   />
                 </div>
-
-                {/* CTA */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">CTA Button Text (English)</label>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">CTA Button (English)</label>
                   <input
                     type="text"
                     value={form.web_hero_cta_en}
@@ -488,36 +387,452 @@ const PlatformSettings = () => {
                     dir="rtl"
                   />
                 </div>
-
               </div>
             </Card>
 
-            {/* Media Customizer with loop, muted, and poster configurations */}
-            <HeroMediaSettings
-              mediaType={form.hero_media_type}
-              mediaUrl={form.hero_media_url}
-              mediaMuted={form.hero_media_muted}
-              mediaLoop={form.hero_media_loop}
-              mediaPoster={form.hero_media_poster}
-              onSaveMedia={(type, url) => setForm(prev => ({ ...prev, hero_media_type: type, hero_media_url: url }))}
-              onSaveParam={(key, val) => setForm(prev => ({ ...prev, [key]: val }))}
-              t={t}
-              isRtl={isRtl}
-            />
+            <Card className="p-4 sm:p-6 space-y-6">
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
+                {isRtl ? 'مفاتيح وسلوك تشغيل الفيديو' : 'Video Customizer'}
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Media Format</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {['image', 'video'].map((k) => (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => setForm({ ...form, hero_media_type: k })}
+                          className={`py-2 rounded-xl text-xs font-bold transition border cursor-pointer ${form.hero_media_type === k ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300' : 'border-gray-200 bg-white text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-gray-300'}`}
+                        >
+                          {k.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Hero Media URL</label>
+                    <input
+                      type="text"
+                      value={form.hero_media_url}
+                      onChange={(e) => setForm({ ...form, hero_media_url: e.target.value })}
+                      placeholder="https://example.com/video.mp4"
+                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    />
+                  </div>
+
+                  {form.hero_media_type === 'video' && (
+                    <div className="space-y-3 p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-gray-600 dark:text-gray-300">Autoplay Video</span>
+                        <button
+                          type="button"
+                          onClick={() => toggle('hero_video_autoplay')}
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${form.hero_video_autoplay ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
+                        >
+                          <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form.hero_video_autoplay ? (isRtl ? '-translate-x-4' : 'translate-x-4') : 'translate-x-0'}`} />
+                        </button>
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-gray-600 dark:text-gray-300">Play Muted</span>
+                        <button
+                          type="button"
+                          onClick={() => toggle('hero_media_muted')}
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${form.hero_media_muted ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
+                        >
+                          <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form.hero_media_muted ? (isRtl ? '-translate-x-4' : 'translate-x-4') : 'translate-x-0'}`} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-gray-600 dark:text-gray-300">Hide Controls UI</span>
+                        <button
+                          type="button"
+                          onClick={() => toggle('hero_video_controls_hidden')}
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${form.hero_video_controls_hidden ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
+                        >
+                          <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form.hero_video_controls_hidden ? (isRtl ? '-translate-x-4' : 'translate-x-4') : 'translate-x-0'}`} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-gray-600 dark:text-gray-300">Fallback on Low Bandwidth</span>
+                        <button
+                          type="button"
+                          onClick={() => toggle('hero_video_replace_low_bandwidth')}
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${form.hero_video_replace_low_bandwidth ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
+                        >
+                          <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form.hero_video_replace_low_bandwidth ? (isRtl ? '-translate-x-4' : 'translate-x-4') : 'translate-x-0'}`} />
+                        </button>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="font-bold text-xs text-gray-600 dark:text-gray-300 block">Loop Mode</span>
+                        <select
+                          value={form.hero_video_loop_mode}
+                          onChange={(e) => setForm({ ...form, hero_video_loop_mode: e.target.value })}
+                          className="w-full text-xs rounded-lg border border-gray-200 bg-white p-2 text-gray-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
+                        >
+                          <option value="loop_forever">Loop Forever</option>
+                          <option value="play_once">Play Once & Stop</option>
+                          <option value="play_once_then_image">Play Once, then show Fallback Image</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="font-bold text-xs text-gray-600 dark:text-gray-300 block">Target Client</span>
+                        <select
+                          value={form.hero_video_display_target}
+                          onChange={(e) => setForm({ ...form, hero_video_display_target: e.target.value })}
+                          className="w-full text-xs rounded-lg border border-gray-200 bg-white p-2 text-gray-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
+                        >
+                          <option value="both">Both Web & Mobile</option>
+                          <option value="web_only">Web Client Only</option>
+                          <option value="mobile_only">Mobile Client Only</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  {form.hero_media_type === 'video' && (
+                    <>
+                      <FileUploaderCard
+                        label="Video Poster (Loading Image)"
+                        fileUrl={form.hero_media_poster}
+                        onUploadSuccess={(url) => setForm({ ...form, hero_media_poster: url })}
+                        accept="image/*"
+                        t={t}
+                      />
+                      <FileUploaderCard
+                        label="Video Fallback Image"
+                        fileUrl={form.hero_video_fallback_image}
+                        onUploadSuccess={(url) => setForm({ ...form, hero_video_fallback_image: url })}
+                        accept="image/*"
+                        t={t}
+                      />
+                    </>
+                  )}
+                </div>
+              </div>
+            </Card>
           </div>
         )}
 
-        {/* TAB 5: Mobile & Desktop Installation App Customizer */}
-        {activeTab === 'mobile' && (
-          <div className="space-y-6 animate-in fade-in duration-250">
+        {/* Tab 4: Languages & Content */}
+        {activeTab === 'localization' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <Card className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
+                {isRtl ? 'صلاحيات إنشاء الدروس والكورسات' : 'Course Generation Core Controls'}
+              </h3>
+              
+              <div className="grid grid-cols-1 gap-4">
+                {[
+                  {
+                    key: 'course_creation_enabled',
+                    title: isRtl ? 'تفعيل إنشاء الكورسات' : 'Course creation enabled',
+                    desc: isRtl ? 'السماح للمستخدمين بإنشاء دورات جديدة' : 'Allow users to generate new AI courses'
+                  },
+                  {
+                    key: 'all_languages_free',
+                    title: isRtl ? 'جميع اللغات مجانية' : 'All languages free',
+                    desc: isRtl ? 'إلغاء قيود الاشتراك المدفوع عن جميع اللغات' : 'Make all translation languages available for free plans'
+                  },
+                  {
+                    key: 'video_courses_enabled',
+                    title: isRtl ? 'تفعيل كورسات الفيديو' : 'Video courses enabled',
+                    desc: isRtl ? 'تفعيل توليد كورسات الفيديو بالذكاء الاصطناعي' : 'Allow generation of video-based curriculums'
+                  },
+                  {
+                    key: 'video_courses_free',
+                    title: isRtl ? 'كورسات الفيديو مجانية' : 'Video courses free',
+                    desc: isRtl ? 'إتاحة توليد كورسات الفيديو للحسابات المجانية' : 'Allow free members to generate video courses'
+                  }
+                ].map((item) => (
+                  <div 
+                    key={item.key} 
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 gap-3"
+                  >
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-white">{item.title}</h4>
+                      <p className="text-xs text-gray-400 mt-0.5">{item.desc}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggle(item.key)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none 
+                        ${form[item.key] ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
+                    >
+                      <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form[item.key] ? (isRtl ? '-translate-x-5' : 'translate-x-5') : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="p-4 sm:p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
+                  {t('admin.platform_config.free_depth_limit') || "Free depth limit (max lessons)"}
+                </label>
+                <input
+                  type="number"
+                  value={form.free_depth_limit}
+                  onChange={(event) => setForm({ ...form, free_depth_limit: Number(event.target.value) })}
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                />
+              </div>
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <TagSelector
+                label={t('admin.platform_config.enabled_languages') || "Enabled languages"}
+                items={form.enabled_languages}
+                predefinedOptions={predefinedLanguages}
+                onChange={(newVal) => {
+                  const filteredFree = form.free_languages.filter(l => newVal.includes(l));
+                  setForm({ ...form, enabled_languages: newVal, free_languages: filteredFree });
+                }}
+                placeholderSelect={isRtl ? "اختر لغة لإضافتها..." : "Select language to add..."}
+              />
+
+              <TagSelector
+                label={t('admin.platform_config.free_languages') || "Free languages"}
+                items={form.free_languages}
+                predefinedOptions={form.enabled_languages}
+                onChange={(newVal) => setForm({ ...form, free_languages: newVal })}
+                placeholderSelect={isRtl ? "اختر لغة مجانية..." : "Select free language..."}
+              />
+
+              <TagSelector
+                label={t('admin.platform_config.enabled_course_types') || "Enabled course types"}
+                items={form.enabled_course_types}
+                predefinedOptions={predefinedCourseTypes}
+                onChange={(newVal) => {
+                  const filteredFree = form.free_course_types.filter(t_type => newVal.includes(t_type));
+                  setForm({ ...form, enabled_course_types: newVal, free_course_types: filteredFree });
+                }}
+                placeholderSelect={isRtl ? "اختر نوع كورس لإضافته..." : "Select course type to add..."}
+              />
+
+              <TagSelector
+                label={t('admin.platform_config.free_course_types') || "Free course types"}
+                items={form.free_course_types}
+                predefinedOptions={form.enabled_course_types}
+                onChange={(newVal) => setForm({ ...form, free_course_types: newVal })}
+                placeholderSelect={isRtl ? "اختر نوع كورس مجاني..." : "Select free course type..."}
+              />
+
+              <TagSelector
+                label={t('admin.platform_config.enabled_levels') || "Enabled complexity levels"}
+                items={form.enabled_levels}
+                predefinedOptions={predefinedLevels}
+                onChange={(newVal) => {
+                  const filteredFree = form.free_levels.filter(lvl => newVal.includes(lvl));
+                  setForm({ ...form, enabled_levels: newVal, free_levels: filteredFree });
+                }}
+                placeholderSelect={isRtl ? "اختر مستوى لإضافته..." : "Select complexity level to add..."}
+              />
+
+              <TagSelector
+                label={t('admin.platform_config.free_levels') || "Free complexity levels"}
+                items={form.free_levels}
+                predefinedOptions={form.enabled_levels}
+                onChange={(newVal) => setForm({ ...form, free_levels: newVal })}
+                placeholderSelect={isRtl ? "اختر مستوى مجاني..." : "Select free complexity level..."}
+              />
+
+              <TagSelector
+                label={t('admin.platform_config.enabled_depths') || "Enabled depths (number of lessons)"}
+                items={form.enabled_depths}
+                predefinedOptions={predefinedDepths}
+                onChange={(newVal) => setForm({ ...form, enabled_depths: newVal })}
+                placeholderSelect={isRtl ? "اختر عمق الكورس لإضافته..." : "Select depth to add..."}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Tab 5: Payments & Visibility */}
+        {activeTab === 'payments' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <Card className="p-4 sm:p-6 space-y-6">
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
+                {isRtl ? 'الاشتراكات والتشغيل التجاري' : 'Pricing & Subscription Flow'}
+              </h3>
+              
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 gap-3">
+                <div>
+                  <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+                    {isRtl ? 'عرض خطط الأسعار والترقية' : 'Display checkout/pricing tables'}
+                  </h4>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {isRtl ? 'إظهار شاشات الترقية والدفع للعملاء' : 'Toggle pricing/upgrade options visibility across clients'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggle('payment_methods_visible')}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${form.payment_methods_visible ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
+                >
+                  <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form.payment_methods_visible ? (isRtl ? '-translate-x-5' : 'translate-x-5') : 'translate-x-0'}`} />
+                </button>
+              </div>
+            </Card>
+
+            <Card className="p-4 sm:p-6 space-y-6">
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
+                {isRtl ? 'تعليمات الدفع اليدوي / الأوفلاين' : 'Offline Payment instructions'}
+              </h3>
+              
+              <div className="grid grid-cols-1 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Instructions (English)</label>
+                  <textarea
+                    value={form.offline_payment_instructions_en}
+                    onChange={(e) => setForm({ ...form, offline_payment_instructions_en: e.target.value })}
+                    className="w-full min-h-[100px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">تعليمات الدفع (العربية)</label>
+                  <textarea
+                    value={form.offline_payment_instructions_ar}
+                    onChange={(e) => setForm({ ...form, offline_payment_instructions_ar: e.target.value })}
+                    className="w-full min-h-[100px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    dir="rtl"
+                  />
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Tab 6: Feature Flags */}
+        {activeTab === 'features' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <Card className="p-4 sm:p-6 space-y-6">
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
+                {isRtl ? 'مفاتيح تفعيل وتعطيل ميزات المنصة' : 'Interactive Feature Flags'}
+              </h3>
+              
+              <div className="grid grid-cols-1 gap-4">
+                {[
+                  { key: 'feature_pdf_export_enabled', title: isRtl ? 'تصدير PDF' : 'PDF Export', desc: isRtl ? 'السماح بتنزيل الكورسات كملف PDF' : 'Allow exporting curriculum to PDF files' },
+                  { key: 'feature_ppt_export_enabled', title: isRtl ? 'تصدير PPT' : 'PPT Slides Export', desc: isRtl ? 'تنزيل الكورسات كشرائح PowerPoint' : 'Allow exporting curriculum to PowerPoint files' },
+                  { key: 'feature_notes_enabled', title: isRtl ? 'الملاحظات الدراسية' : 'Personal Notes', desc: isRtl ? 'تمكين دفتر الملاحظات للدروس' : 'Allow taking private notes inside lesson screen' },
+                  { key: 'feature_quiz_enabled', title: isRtl ? 'الاختبارات الذكية' : 'Curriculum Quizzes', desc: isRtl ? 'توليد اختبارات لتقييم فهم الدرس' : 'Allow generating interactive quizzes for modules' },
+                  { key: 'feature_chat_enabled', title: isRtl ? 'المعلم الذكي (شات)' : 'AI Learning Coach Chat', desc: isRtl ? 'تمكين المحادثة الفورية مع الروبوت' : 'Allow chatting with AI bot inside course player' },
+                  { key: 'feature_audio_courses_enabled', title: isRtl ? 'الكورسات الصوتية' : 'Audio Book courses', desc: isRtl ? 'توليد وسماع الكورس صوتياً' : 'Allow listening to modular generated text-to-speech courses' },
+                ].map((item) => (
+                  <div 
+                    key={item.key} 
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 gap-3"
+                  >
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-white">{item.title}</h4>
+                      <p className="text-xs text-gray-400 mt-0.5">{item.desc}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggle(item.key)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${form[item.key] ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
+                    >
+                      <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form[item.key] ? (isRtl ? '-translate-x-5' : 'translate-x-5') : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Tab 7: SEO & Socials */}
+        {activeTab === 'seo' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <Card className="p-4 sm:p-6 space-y-6">
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
+                {isRtl ? 'إعدادات محركات البحث والـ SEO' : 'SEO Optimization'}
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Meta Title (English)</label>
+                  <input
+                    type="text"
+                    value={form.seo_meta_title_en}
+                    onChange={(e) => setForm({ ...form, seo_meta_title_en: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">عنوان الميتا (العربية)</label>
+                  <input
+                    type="text"
+                    value={form.seo_meta_title_ar}
+                    onChange={(e) => setForm({ ...form, seo_meta_title_ar: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    dir="rtl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Meta Description (English)</label>
+                  <textarea
+                    value={form.seo_meta_description_en}
+                    onChange={(e) => setForm({ ...form, seo_meta_description_en: e.target.value })}
+                    className="w-full min-h-[80px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">وصف الميتا (العربية)</label>
+                  <textarea
+                    value={form.seo_meta_description_ar}
+                    onChange={(e) => setForm({ ...form, seo_meta_description_ar: e.target.value })}
+                    className="w-full min-h-[80px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    dir="rtl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Meta Keywords (English)</label>
+                  <input
+                    type="text"
+                    value={form.seo_meta_keywords_en}
+                    onChange={(e) => setForm({ ...form, seo_meta_keywords_en: e.target.value })}
+                    placeholder="ai, courses, learning"
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">الكلمات الدلالية للميتا (العربية)</label>
+                  <input
+                    type="text"
+                    value={form.seo_meta_keywords_ar}
+                    onChange={(e) => setForm({ ...form, seo_meta_keywords_ar: e.target.value })}
+                    placeholder="تعليم, ذكاء اصطناعي, دورات"
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    dir="rtl"
+                  />
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Tab 8: Apps Download */}
+        {activeTab === 'apps' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
             <Card className="p-4 sm:p-6 space-y-4">
               <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
                 {isRtl ? 'تعديل نصوص صفحة التثبيت والتحميل' : 'Download Page Content Customizer'}
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                {/* Title */}
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Download Title (English)</label>
                   <input
@@ -537,8 +852,6 @@ const PlatformSettings = () => {
                     dir="rtl"
                   />
                 </div>
-
-                {/* Description */}
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Download Description (English)</label>
                   <textarea
@@ -556,38 +869,31 @@ const PlatformSettings = () => {
                     dir="rtl"
                   />
                 </div>
-
               </div>
             </Card>
 
-            {/* Binary Installers uploaders */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
-              {/* Windows .exe installer */}
-              <BinaryFileUploader
+              <FileUploaderCard
                 label={isRtl ? 'تطبيق الويندوز (Windows Client .exe)' : 'Windows Client Application (.exe)'}
-                accept=".exe"
                 fileUrl={form.windows_download_url}
                 onUploadSuccess={(url) => setForm({ ...form, windows_download_url: url })}
+                accept=".exe"
                 t={t}
               />
-
-              {/* Mobile .apk bundle */}
-              <BinaryFileUploader
-                label={isRtl ? 'تطبيق الموبايل للأندرويد (Android Client .apk)' : 'Android Mobile Application (.apk)'}
-                accept=".apk"
+              <FileUploaderCard
+                label={isRtl ? 'تطبيق الموبايل (Android Client .apk)' : 'Android Mobile Application (.apk)'}
                 fileUrl={form.mobile_download_url}
                 onUploadSuccess={(url) => setForm({ ...form, mobile_download_url: url })}
+                accept=".apk"
                 t={t}
               />
-
             </div>
           </div>
         )}
       </div>
 
-      {/* Responsive Floating Save Bar */}
-      <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-white/5">
+      {/* Floating Save Bar with keyboard-safe margins */}
+      <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-white/5 pb-10">
         <Button onClick={save} disabled={saving} className="w-full sm:w-auto px-8 py-3 font-bold text-sm shadow-xl shadow-blue-500/10">
           {saving ? (t('admin.platform_config.saving') || 'Saving...') : (t('admin.platform_config.save_btn') || 'Save platform settings')}
         </Button>
@@ -617,7 +923,6 @@ const TagSelector = ({ label, items, predefinedOptions, onChange, placeholderSel
       <div>
         <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">{label}</label>
         
-        {/* Badges list */}
         <div className="flex flex-wrap gap-1.5 mb-3 min-h-[44px] p-2 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/5 items-center">
           {currentItems.length > 0 ? (
             currentItems.map((item, idx) => (
@@ -662,8 +967,8 @@ const TagSelector = ({ label, items, predefinedOptions, onChange, placeholderSel
   );
 };
 
-// Binary Uploader for apk and exe installer versions
-const BinaryFileUploader = ({ label, accept, fileUrl, onUploadSuccess, t }) => {
+// FileUploaderCard
+const FileUploaderCard = ({ label, fileUrl, onUploadSuccess, accept, t }) => {
   const [uploading, setUploading] = useState(false);
 
   const handleUpload = async (e) => {
@@ -672,7 +977,7 @@ const BinaryFileUploader = ({ label, accept, fileUrl, onUploadSuccess, t }) => {
 
     setUploading(true);
     const formData = new FormData();
-    formData.append('file', file); // API expects 'file' parameter
+    formData.append('file', file);
 
     try {
       const token = localStorage.getItem('token');
@@ -684,17 +989,17 @@ const BinaryFileUploader = ({ label, accept, fileUrl, onUploadSuccess, t }) => {
       });
       if (res.data && res.data.url) {
         onUploadSuccess(res.data.url);
-        toast.success(t('admin.platform_config.media_uploaded') || 'Binary uploaded successfully');
+        toast.success(t('admin.platform_config.media_uploaded') || 'File uploaded successfully');
       }
     } catch (err) {
-      toast.error('Upload failed. Ensure file is within size limits.');
+      toast.error('Upload failed. Ensure file format and size is within server limits.');
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <Card className="p-5 space-y-4 flex flex-col justify-between h-full">
+    <Card className="p-4 sm:p-5 space-y-4 flex flex-col justify-between h-full min-h-[160px]">
       <div>
         <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">{label}</label>
         {fileUrl ? (
@@ -710,273 +1015,18 @@ const BinaryFileUploader = ({ label, accept, fileUrl, onUploadSuccess, t }) => {
           </div>
         ) : (
           <div className="p-3 bg-gray-100 dark:bg-white/5 border border-dashed border-gray-200 dark:border-white/5 text-gray-400 rounded-xl text-xs italic">
-            No binary file uploaded yet
+            No media file selected
           </div>
         )}
       </div>
 
       <div className="flex items-center justify-center w-full mt-3">
-        <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-2xl cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition p-2 text-center">
+        <label className="flex flex-col items-center justify-center w-full h-16 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-2xl cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition p-2 text-center">
           <span className="text-xs text-blue-500 font-bold">
-            {uploading ? 'Uploading...' : 'Upload Binary File'}
+            {uploading ? 'Uploading...' : 'Upload File'}
           </span>
           <input type="file" className="hidden" accept={accept} onChange={handleUpload} disabled={uploading} />
         </label>
-      </div>
-    </Card>
-  );
-};
-
-// HeroMediaSettings Component
-const HeroMediaSettings = ({ 
-  mediaType, 
-  mediaUrl, 
-  mediaMuted, 
-  mediaLoop, 
-  mediaPoster,
-  onSaveMedia, 
-  onSaveParam,
-  t, 
-  isRtl 
-}) => {
-  const [type, setType] = useState(mediaType || 'image');
-  const [url, setUrl] = useState(mediaUrl || '');
-  const [uploading, setUploading] = useState(false);
-  const [method, setMethod] = useState('upload'); // 'upload' | 'url'
-
-  useEffect(() => {
-    setType(mediaType);
-    setUrl(mediaUrl);
-  }, [mediaType, mediaUrl]);
-
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setUploading(true);
-    const formData = new FormData();
-    formData.append('file', file); // API expects 'file' parameter
-
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.post(`${serverURL}/admin/media/upload`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      if (res.data && res.data.url) {
-        setUrl(res.data.url);
-        onSaveMedia(type, res.data.url);
-        toast.success(t('admin.platform_config.media_uploaded') || 'Media uploaded successfully');
-      }
-    } catch (err) {
-      toast.error('Failed to upload file');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleUrlChange = (newUrl) => {
-    setUrl(newUrl);
-    onSaveMedia(type, newUrl);
-  };
-
-  const handleTypeChange = (newType) => {
-    setType(newType);
-    onSaveMedia(newType, url);
-  };
-
-  return (
-    <Card className="p-4 sm:p-6 space-y-4">
-      <h3 className="block text-sm font-black uppercase tracking-widest text-gray-400 mb-2">
-        {t('admin.platform_config.hero_media_title') || "Landing Page Preview Media"}
-      </h3>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        {/* Form Controls */}
-        <div className="space-y-4">
-          
-          {/* Toggle Type (Image/Video) */}
-          <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Media Format</label>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                ['image', t('admin.platform_config.image') || 'Image'],
-                ['video', t('admin.platform_config.video') || 'Video'],
-              ].map(([k, label]) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => handleTypeChange(k)}
-                  className={`py-2 rounded-xl text-xs font-bold transition border cursor-pointer ${type === k ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300' : 'border-gray-200 bg-white text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-gray-300'}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {type === 'video' && (
-            <div className="space-y-3 p-3 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5">
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider">Video Options</label>
-              
-              {/* Muted toggle */}
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-gray-600 dark:text-gray-300">Play with sound</span>
-                <button
-                  type="button"
-                  onClick={() => onSaveParam('hero_media_muted', !mediaMuted)}
-                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none 
-                    ${!mediaMuted ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
-                      ${!mediaMuted ? (isRtl ? '-translate-x-4' : 'translate-x-4') : 'translate-x-0'}`}
-                  />
-                </button>
-              </div>
-
-              {/* Loop toggle */}
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-gray-600 dark:text-gray-300">Loop video infinitely</span>
-                <button
-                  type="button"
-                  onClick={() => onSaveParam('hero_media_loop', !mediaLoop)}
-                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none 
-                    ${mediaLoop ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
-                      ${mediaLoop ? (isRtl ? '-translate-x-4' : 'translate-x-4') : 'translate-x-0'}`}
-                  />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {type === 'video' && (
-            <div className="space-y-2">
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Video Poster (Placeholder Image)</label>
-              {mediaPoster ? (
-                <div className="p-2 bg-green-500/10 text-green-600 dark:text-green-300 dark:bg-green-950/20 border border-green-500/20 rounded-xl text-xs flex items-center justify-between gap-3">
-                  <span className="font-bold truncate break-all">{mediaPoster}</span>
-                  <button
-                    type="button"
-                    onClick={() => onSaveParam('hero_media_poster', '')}
-                    className="text-red-500 font-extrabold hover:underline"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center w-full">
-                  <label className="flex flex-col items-center justify-center w-full h-16 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-2xl cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition p-2 text-center">
-                    <span className="text-xs text-blue-500 font-bold">Select poster image</span>
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="image/*"
-                      onChange={async (e) => {
-                        const file = e.target.files[0];
-                        if (!file) return;
-                        const formData = new FormData();
-                        formData.append('file', file);
-                        try {
-                          const token = localStorage.getItem('token');
-                          const res = await axios.post(`${serverURL}/admin/media/upload`, formData, {
-                            headers: {
-                              Authorization: `Bearer ${token}`,
-                              'Content-Type': 'multipart/form-data',
-                            },
-                          });
-                          if (res.data && res.data.url) {
-                            onSaveParam('hero_media_poster', res.data.url);
-                            toast.success('Poster uploaded successfully');
-                          }
-                        } catch (err) {
-                          toast.error('Failed to upload poster image');
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Toggle Method (Upload/URL) */}
-          <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Source Method</label>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                ['upload', t('admin.platform_config.upload_file') || 'Upload File'],
-                ['url', t('admin.platform_config.web_link') || 'Web Link (URL)'],
-              ].map(([m, label]) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setMethod(m)}
-                  className={`py-2 rounded-xl text-xs font-bold transition border cursor-pointer ${method === m ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300' : 'border-gray-200 bg-white text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-gray-300'}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {method === 'upload' ? (
-            <div className="space-y-2">
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">File Uploader</label>
-              <div className="flex items-center justify-center w-full">
-                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-2xl cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition p-3 text-center">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 font-bold break-all">
-                    Click to select {type} file
-                  </span>
-                  <input type="file" className="hidden" accept={type === 'video' ? 'video/*' : 'image/*'} onChange={handleFileUpload} />
-                </label>
-              </div>
-              {uploading && <div className="text-center text-xs text-blue-500 animate-pulse">Uploading file...</div>}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Web Link (URL)</label>
-              <input
-                type="text"
-                value={url}
-                onChange={(e) => handleUrlChange(e.target.value)}
-                placeholder="https://example.com/media-file"
-                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Preview box */}
-        <div className="flex flex-col justify-center">
-          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Live Preview</label>
-          <div className="border border-gray-200 dark:border-white/10 rounded-2xl overflow-hidden bg-gray-50 dark:bg-white/5 h-44 flex items-center justify-center relative">
-            {url ? (
-              type === 'video' ? (
-                <video
-                  src={url.startsWith('http') ? url : `${serverURL.replace('/api', '')}${url}`}
-                  controls
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <img
-                  src={url.startsWith('http') ? url : `${serverURL.replace('/api', '')}${url}`}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                />
-              )
-            ) : (
-              <span className="text-xs text-gray-400 italic">No media preview available</span>
-            )}
-          </div>
-        </div>
-
       </div>
     </Card>
   );
