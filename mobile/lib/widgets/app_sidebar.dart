@@ -23,6 +23,7 @@ class AppSidebar extends ConsumerWidget {
     final showThemeToggle = !configAsync.hasValue ||
         (configAsync.value!.systemThemeMode != 'light_only' &&
             configAsync.value!.systemThemeMode != 'dark_only');
+    const Radius edgeRadius = Radius.circular(16);
 
     return Drawer(
       width: drawerWidth,

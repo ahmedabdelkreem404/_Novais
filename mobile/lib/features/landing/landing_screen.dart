@@ -2,11 +2,14 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:video_player/video_player.dart';
 import '../../core/api/endpoints.dart';
 import '../../core/api/platform_config_provider.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/widgets.dart';
+import '../../core/api/api_client.dart';
+import '../../models/platform_config.dart';
 
 // ─── Plans Provider ───────────────────────────────────────────────────────────
 
@@ -601,45 +604,54 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
   // ─── App Preview ─────────────────────────────────────────────────────────────
 
   Widget _buildPreview(bool isDark) {
+    final configAsync = ref.watch(platformConfigProvider);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 60),
       child: SizedBox(
         height: 260,
         child: Stack(
           children: [
-            // Main screenshot
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Image.asset(
-                'assets/images/slideOne.png',
-                width: double.infinity,
-                height: 240,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  width: double.infinity,
-                  height: 240,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.primary.withAlpha(40),
-                        AppColors.gradientEnd.withAlpha(40),
-                      ],
+            // Main media preview container
+            SizedBox(
+              width: double.infinity,
+              height: 240,
+              child: configAsync.maybeWhen(
+                data: (config) => _HeroMediaWidget(config: config, isDark: isDark),
+                orElse: () => ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.asset(
+                    'assets/images/slideOne.png',
+                    width: double.infinity,
+                    height: 240,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: double.infinity,
+                      height: 240,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primary.withAlpha(40),
+                            AppColors.gradientEnd.withAlpha(40),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color: isDark ? Colors.white10 : Colors.black12),
+                      ),
+                      child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.laptop_mac,
+                                size: 48, color: AppColors.primary.withAlpha(150)),
+                            const SizedBox(height: 8),
+                            Text('NOVAIS Platform Preview',
+                                style: TextStyle(
+                                    color: AppColors.primary.withAlpha(180),
+                                    fontWeight: FontWeight.w600)),
+                          ]),
                     ),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                        color: isDark ? Colors.white10 : Colors.black12),
                   ),
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.laptop_mac,
-                            size: 48, color: AppColors.primary.withAlpha(150)),
-                        const SizedBox(height: 8),
-                        Text('NOVAIS Platform Preview',
-                            style: TextStyle(
-                                color: AppColors.primary.withAlpha(180),
-                                fontWeight: FontWeight.w600)),
-                      ]),
                 ),
               ),
             ),
@@ -1730,6 +1742,210 @@ class _PlanCard extends StatelessWidget {
                     ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroMediaWidget extends StatefulWidget {
+  final PlatformConfig config;
+  final bool isDark;
+
+  const _HeroMediaWidget({
+    required this.config,
+    required this.isDark,
+  });
+
+  @override
+  State<_HeroMediaWidget> createState() => _HeroMediaWidgetState();
+}
+
+class _HeroMediaWidgetState extends State<_HeroMediaWidget> {
+  VideoPlayerController? _controller;
+  bool _isInitialized = false;
+  bool _videoEnded = false;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeVideo();
+  }
+
+  void _initializeVideo() {
+    final config = widget.config;
+    final isVideo = config.heroMediaType == 'video' &&
+        config.heroVideoEnabled &&
+        config.heroMediaUrl != null &&
+        (config.heroVideoDisplayTarget == 'both' ||
+            config.heroVideoDisplayTarget == 'mobile_only');
+
+    if (!isVideo) return;
+
+    final resolvedUrl = ApiClient.resolveMediaUrl(config.heroMediaUrl!);
+
+    _controller = VideoPlayerController.networkUrl(Uri.parse(resolvedUrl))
+      ..initialize().then((_) {
+        if (!mounted) return;
+        setState(() {
+          _isInitialized = true;
+        });
+        if (config.heroVideoAutoplay) {
+          _controller!.play();
+        }
+        if (config.heroVideoLoopMode == 'loop_forever') {
+          _controller!.setLooping(true);
+        } else {
+          _controller!.addListener(_videoListener);
+        }
+        _controller!.setVolume(config.heroMediaMuted ? 0.0 : 1.0);
+      }).catchError((error) {
+        debugPrint('Error initializing hero video: $error');
+        if (mounted) {
+          setState(() {
+            _hasError = true;
+          });
+        }
+      });
+  }
+
+  void _videoListener() {
+    if (_controller == null || !mounted) return;
+    final value = _controller!.value;
+    if (value.position >= value.duration && value.duration > Duration.zero) {
+      if (widget.config.heroVideoLoopMode == 'play_once_then_image') {
+        setState(() {
+          _videoEnded = true;
+        });
+        _controller!.removeListener(_videoListener);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_controller != null) {
+      _controller!.removeListener(_videoListener);
+      _controller!.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final config = widget.config;
+
+    final isVideo = config.heroMediaType == 'video' &&
+        config.heroVideoEnabled &&
+        config.heroMediaUrl != null &&
+        (config.heroVideoDisplayTarget == 'both' ||
+            config.heroVideoDisplayTarget == 'mobile_only') &&
+        !_videoEnded &&
+        !_hasError;
+
+    if (isVideo && _controller != null) {
+      if (_isInitialized) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: AspectRatio(
+            aspectRatio: _controller!.value.aspectRatio,
+            child: VideoPlayer(_controller!),
+          ),
+        );
+      } else {
+        if (config.heroVideoPoster != null) {
+          final posterUrl = ApiClient.resolveMediaUrl(config.heroVideoPoster!);
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.network(
+              posterUrl,
+              width: double.infinity,
+              height: 240,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _fallbackPlaceholder(),
+            ),
+          );
+        }
+        return _fallbackPlaceholder();
+      }
+    }
+
+    final hasImage =
+        config.heroMediaUrl != null && config.heroMediaType == 'image';
+    if (hasImage) {
+      final imageUrl = ApiClient.resolveMediaUrl(config.heroMediaUrl!);
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Image.network(
+          imageUrl,
+          width: double.infinity,
+          height: 240,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _fallbackPlaceholder(),
+        ),
+      );
+    }
+
+    if (_videoEnded && config.heroVideoFallbackImage != null) {
+      final fallbackUrl =
+          ApiClient.resolveMediaUrl(config.heroVideoFallbackImage!);
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Image.network(
+          fallbackUrl,
+          width: double.infinity,
+          height: 240,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _fallbackPlaceholder(),
+        ),
+      );
+    }
+
+    return _fallbackPlaceholder();
+  }
+
+  Widget _fallbackPlaceholder() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Image.asset(
+        'assets/images/slideOne.png',
+        width: double.infinity,
+        height: 240,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          width: double.infinity,
+          height: 240,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.primary.withAlpha(40),
+                AppColors.gradientEnd.withAlpha(40),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: widget.isDark ? Colors.white10 : Colors.black12,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.laptop_mac,
+                size: 48,
+                color: AppColors.primary.withAlpha(150),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'NOVAIS Platform Preview',
+                style: TextStyle(
+                  color: AppColors.primary.withAlpha(180),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

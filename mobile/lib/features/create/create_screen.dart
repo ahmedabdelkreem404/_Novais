@@ -152,13 +152,21 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
 
     // Verify current selection is still in the active list
     String selectedLanguage = _language;
-    if (!languages.contains(selectedLanguage)) {
-      selectedLanguage = languages.contains('English') ? 'English' : languages.first;
+    if (languages.isNotEmpty) {
+      if (!languages.contains(selectedLanguage)) {
+        selectedLanguage = languages.contains('English') ? 'English' : languages.first;
+      }
+    } else {
+      selectedLanguage = 'English';
     }
 
     String selectedType = _type;
-    if (!courseTypes.contains(selectedType)) {
-      selectedType = courseTypes.first;
+    if (courseTypes.isNotEmpty) {
+      if (!courseTypes.contains(selectedType)) {
+        selectedType = courseTypes.first;
+      }
+    } else {
+      selectedType = 'Theory & Image Course';
     }
 
     return Material(

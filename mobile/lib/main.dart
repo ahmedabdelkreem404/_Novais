@@ -31,6 +31,8 @@ class NovaisApp extends ConsumerWidget {
         activeThemeMode = ThemeMode.dark;
       } else if (config.systemThemeMode == 'system_default') {
         activeThemeMode = ThemeMode.system;
+      } else if (themeMode == ThemeMode.system) {
+        activeThemeMode = config.themeDefaultMode == 'light' ? ThemeMode.light : ThemeMode.dark;
       }
     }
 
