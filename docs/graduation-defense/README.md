@@ -2,7 +2,10 @@
 
 This folder contains standalone RTL HTML study guides for the graduation defense.
 They are written in Egyptian Arabic and based on the current NOVAIS repository
-state inspected on 2026-06-30.
+state inspected on 2026-06-30. The guides are intentionally detailed for a
+strict graduation defense: they include route maps, database explanations,
+relationships, UML-style notes, sequence diagrams, responsive/UI visual boards,
+methodology notes, testing evidence, and honest limitations.
 
 ## Files
 
@@ -33,3 +36,12 @@ state inspected on 2026-06-30.
   structure but cannot guarantee perfect content.
 - The current worktree has non-documentation changes outside this folder; this
   folder documents the inspected state without modifying those files.
+
+## Methodology Note
+
+The safest wording for the defense is that NOVAIS was built with an
+iterative/incremental approach. It is not pure Waterfall because features evolved
+in stages, and it is not a full DevOps project unless a real production CI/CD
+pipeline is added and demonstrated. The repository does contain build/test
+verification commands and readiness documentation, which are DevOps-like
+engineering practices.

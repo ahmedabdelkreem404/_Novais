@@ -158,6 +158,80 @@
     <div class="qa"><b>24. ليه التناسق مهم في NOVAIS؟</b><br>لأن المستخدم ينتقل بين صفحات كثيرة ولو labels مختلفة هيتوه.</div>
     <div class="qa"><b>25. إيه أكبر مساهمة؟</b><br>تحويل النظام لتجربة قابلة للاستخدام والاختبار على web وdesktop.</div>
     <div class="qa"><b>26. لو الدكتور قال فيه نص قديم؟</b><br>نقول بصراحة فيه PR draft لتحسين terminology ولسه محتاج مراجعة شاملة قبل release.</div>
+    <h2>تفاصيل مملة مهمة للـ UI وElectron</h2>
+    <div class="card">
+      <h3>طريقة الشغل: Waterfall ولا DevOps؟</h3>
+      <p>في UI/testing نقول: "اشتغلنا incremental verification". كل feature ليها build/test/smoke. مش Waterfall لأن UI اتغير مع features زي blueprints وoffline payments. ومش DevOps كامل لأن مفيش pipeline deployment ثابت، لكن فيه DevOps mindset في توثيق أوامر build والاختبارات.</p>
+    </div>
+    <div class="card">
+      <h3>Responsive Mockup صورة توضيحية</h3>
+      <svg viewBox="0 0 980 460" role="img" aria-label="Responsive UI mockup" style="width:100%;height:auto;border:1px solid #dde5f0;border-radius:14px;background:#fff">
+        <rect x="45" y="40" width="560" height="340" rx="20" fill="#f8fafc" stroke="#94a3b8" stroke-width="3"/>
+        <rect x="65" y="70" width="120" height="280" rx="14" fill="#0f766e"/><rect x="210" y="75" width="360" height="50" rx="12" fill="#e0f2fe"/><rect x="210" y="150" width="165" height="90" rx="14" fill="#fff" stroke="#dbe3ef"/><rect x="405" y="150" width="165" height="90" rx="14" fill="#fff" stroke="#dbe3ef"/><rect x="210" y="265" width="360" height="65" rx="14" fill="#fff" stroke="#dbe3ef"/>
+        <text x="325" y="410" text-anchor="middle" style="font:18px Tahoma;fill:#111827">Desktop: sidebar + cards + wide content</text>
+        <rect x="700" y="40" width="185" height="340" rx="28" fill="#f8fafc" stroke="#94a3b8" stroke-width="3"/>
+        <rect x="725" y="75" width="135" height="42" rx="12" fill="#e0f2fe"/><rect x="725" y="135" width="135" height="75" rx="14" fill="#fff" stroke="#dbe3ef"/><rect x="725" y="225" width="135" height="75" rx="14" fill="#fff" stroke="#dbe3ef"/><rect x="725" y="320" width="135" height="35" rx="12" fill="#0f766e"/>
+        <text x="793" y="410" text-anchor="middle" style="font:18px Tahoma;fill:#111827">Mobile: stacked flow</text>
+      </svg>
+    </div>
+    <div class="card">
+      <h3>Electron Runtime Diagram</h3>
+      <svg viewBox="0 0 980 390" role="img" aria-label="Electron desktop architecture" style="width:100%;height:auto;border:1px solid #dde5f0;border-radius:14px;background:#fff">
+        <defs><style>.a{fill:#ecfeff;stroke:#0f766e;stroke-width:2}.b{fill:#fff1f2;stroke:#dc2626;stroke-width:2}.c{fill:#eff6ff;stroke:#2563eb;stroke-width:2}.tx{font:16px Tahoma;fill:#111827}.sm{font:13px Tahoma;fill:#64748b}.ln{stroke:#334155;stroke-width:2;marker-end:url(#e)}</style><marker id="e" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#334155"/></marker></defs>
+        <rect x="60" y="80" width="210" height="110" rx="16" class="a"/><text x="165" y="120" text-anchor="middle" class="tx">Main Process</text><text x="165" y="150" text-anchor="middle" class="sm">public/electron.js</text><text x="165" y="172" text-anchor="middle" class="sm">BrowserWindow + security</text>
+        <rect x="380" y="80" width="210" height="110" rx="16" class="b"/><text x="485" y="120" text-anchor="middle" class="tx">Preload</text><text x="485" y="150" text-anchor="middle" class="sm">public/preload.js</text><text x="485" y="172" text-anchor="middle" class="sm">limited bridge</text>
+        <rect x="700" y="80" width="210" height="110" rx="16" class="c"/><text x="805" y="120" text-anchor="middle" class="tx">React Renderer</text><text x="805" y="150" text-anchor="middle" class="sm">build/index.html</text><text x="805" y="172" text-anchor="middle" class="sm">same web UI</text>
+        <rect x="380" y="260" width="210" height="70" rx="16" class="c"/><text x="485" y="292" text-anchor="middle" class="tx">Laravel API</text><text x="485" y="315" text-anchor="middle" class="sm">network requests</text>
+        <line x1="270" y1="135" x2="380" y2="135" class="ln"/><line x1="590" y1="135" x2="700" y2="135" class="ln"/><line x1="805" y1="190" x2="535" y2="260" class="ln"/>
+      </svg>
+    </div>
+    <div class="card">
+      <h3>Electron Security Checklist</h3>
+      <table><tr><th>إعداد</th><th>موجود فين؟</th><th>ليه مهم؟</th></tr>
+        <tr><td class="file">nodeIntegration:false</td><td class="file">public/electron.js</td><td>يمنع صفحة React من استخدام fs/process مباشرة.</td></tr>
+        <tr><td class="file">contextIsolation:true</td><td class="file">public/electron.js</td><td>يعزل عالم preload عن عالم الصفحة.</td></tr>
+        <tr><td class="file">preload.js</td><td class="file">public/preload.js</td><td>يفتح دوال محدودة فقط زي Google login.</td></tr>
+        <tr><td>منع new windows</td><td>window open handler</td><td>يقلل فتح صفحات غير متوقعة داخل التطبيق.</td></tr>
+        <tr><td>External browser</td><td>shell.openExternal</td><td>روابط http/https تفتح في browser النظام.</td></tr>
+        <tr><td>DevTools dev فقط</td><td>isDev flag</td><td>يقلل سطح الفحص في production.</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Testing Matrix</h3>
+      <table><tr><th>الطبقة</th><th>الأمر/الدليل</th><th>بيغطي إيه؟</th><th>لا يغطي إيه؟</th></tr>
+        <tr><td>Backend</td><td class="file">php artisan test</td><td>business logic، auth، payments، blueprints.</td><td>شكل UI أو تجربة المستخدم.</td></tr>
+        <tr><td>Web</td><td class="file">CI=true npm run build</td><td>compilation وproduction bundle.</td><td>مش proof إن كل click اتجرب.</td></tr>
+        <tr><td>Mobile</td><td class="file">flutter analyze/test/build</td><td>static analysis، tests، APK build.</td><td>مش proof لكل جهاز حقيقي.</td></tr>
+        <tr><td>Desktop</td><td class="file">npm run electron:build</td><td>بناء تطبيق Windows.</td><td>مش اختبار كل flow بعد التثبيت.</td></tr>
+        <tr><td>Manual Smoke</td><td class="file">docs/final-readiness-check.md</td><td>تشغيل سريع موثق.</td><td>لا يغني عن QA matrix كاملة.</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>UI Inventory: إيه العناصر الموجودة؟</h3>
+      <table><tr><th>العنصر</th><th>أمثلة ملفات</th><th>وظيفته في التجربة</th></tr>
+        <tr><td>Navigation</td><td class="file">UserLayout, AdminLayout, Sidebar</td><td>ينقل المستخدم بين dashboard/create/profile/admin.</td></tr>
+        <tr><td>Forms</td><td class="file">create.js, platformsettings.js, contentblueprints.js</td><td>إدخال بيانات مع validation ورسائل.</td></tr>
+        <tr><td>Cards</td><td>create/product cards, pricing cards</td><td>تقسيم الاختيارات بشكل واضح.</td></tr>
+        <tr><td>Tables</td><td>users, courses, offline payments</td><td>إدارة بيانات كثيرة للأدمن.</td></tr>
+        <tr><td>Modals</td><td class="file">ExportModal.js</td><td>اختيار export بدون مغادرة viewer.</td></tr>
+        <tr><td>Loading/Error</td><td class="file">generating.js</td><td>feedback في العمليات الطويلة.</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Sequence: Google Login على Desktop</h3>
+      <ol>
+        <li>React يستدعي <span class="file">window.novaisElectron.startGoogleLogin(url)</span>.</li>
+        <li>preload يتأكد إن الرابط http/https ثم يرسل IPC للmain process.</li>
+        <li>Electron يفتح modal BrowserWindow للـ OAuth.</li>
+        <li>main process يراقب redirect URL وفيه <span class="file">token=</span>.</li>
+        <li>يبعت <span class="file">google-login-success</span> للrenderer.</li>
+        <li>React يخزن token ويتعامل مع المستخدم زي الويب.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>DB من زاوية UI</h3>
+      <p>الـ UI ما بتتعاملش مع الداتابيز مباشرة، لكن لازم تعرفي mapping: شاشة المستخدم تقرأ <span class="file">courses</span> و<span class="file">lessons</span>، شاشة الأدمن للمدفوعات تقرأ <span class="file">payments</span> و<span class="file">offline_payment_requests</span>، شاشة notifications تقرأ <span class="file">app_notifications</span>، وشاشة content blueprints تقرأ <span class="file">content_blueprints</span>. ده مهم لو الدكتور سأل: "الشاشة دي بياناتها منين؟"</p>
+    </div>
     <h2>Common Mistakes</h2>
     <ul><li>ما تقوليش "اختبرنا كل شاشة بسكرينشوت" لو الدليل مش موجود.</li><li>ما تنسيش تذكري Electron security flags.</li><li>ما تعتبريش build مساوي لاختبار كل business flow.</li><li>ما تقولي إن native push جاهز بالكامل بدون Firebase.</li></ul>
   </section>
