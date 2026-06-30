@@ -100,7 +100,7 @@ const mergeSavedLessonsIntoMetadata = (metadata, lessons = []) => {
 };
 
 const Course = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const { courseId: urlCourseId } = useParams();
     const { state } = useLocation();
@@ -117,6 +117,66 @@ const Course = () => {
     const [dbCourseId, setDbCourseId] = useState(null);
     const [chatHistory, setChatHistory] = useState([]);
     const [quizResult, setQuizResult] = useState(null);
+    const [blueprintSlug, setBlueprintSlug] = useState('normal-course');
+
+    const getDynamicLabel = (key) => {
+        const lang = i18n.language?.startsWith('ar') ? 'ar' : 'en';
+        
+        const labels = {
+            progress: {
+                'normal-course': lang === 'ar' ? 'تقدم الدورة' : 'Course Progress',
+                'leveled-course': lang === 'ar' ? 'تقدم الدورة' : 'Course Progress',
+                'book': lang === 'ar' ? 'تقدم الكتاب' : 'Book Progress',
+                'exam': lang === 'ar' ? 'تقدم الامتحان' : 'Exam Progress',
+                'research-paper': lang === 'ar' ? 'تقدم البحث' : 'Research Progress',
+                'graduation-project': lang === 'ar' ? 'تقدم المشروع' : 'Project Progress',
+                'academic-lecture': lang === 'ar' ? 'تقدم المحاضرة' : 'Lecture Progress',
+                default: lang === 'ar' ? 'تقدم الدورة' : 'Course Progress'
+            },
+            layer: {
+                'normal-course': lang === 'ar' ? 'الدرس' : 'Lesson',
+                'leveled-course': lang === 'ar' ? 'الدرس' : 'Lesson',
+                'book': lang === 'ar' ? 'الفصل' : 'Chapter',
+                'exam': lang === 'ar' ? 'السؤال' : 'Question',
+                'research-paper': lang === 'ar' ? 'القسم' : 'Section',
+                'graduation-project': lang === 'ar' ? 'المرحلة' : 'Phase',
+                'academic-lecture': lang === 'ar' ? 'القسم' : 'Section',
+                default: lang === 'ar' ? 'المستوى' : 'Level'
+            },
+            prev: {
+                'normal-course': lang === 'ar' ? 'الدرس السابق' : 'Previous Lesson',
+                'leveled-course': lang === 'ar' ? 'الدرس السابق' : 'Previous Lesson',
+                'book': lang === 'ar' ? 'الفصل السابق' : 'Previous Chapter',
+                'exam': lang === 'ar' ? 'السؤال السابق' : 'Previous Question',
+                'research-paper': lang === 'ar' ? 'القسم السابق' : 'Previous Section',
+                'graduation-project': lang === 'ar' ? 'المرحلة السابقة' : 'Previous Phase',
+                'academic-lecture': lang === 'ar' ? 'القسم السابق' : 'Previous Section',
+                default: lang === 'ar' ? 'السابق' : 'Previous'
+            },
+            next: {
+                'normal-course': lang === 'ar' ? 'الدرس التالي' : 'Next Lesson',
+                'leveled-course': lang === 'ar' ? 'الدرس التالي' : 'Next Lesson',
+                'book': lang === 'ar' ? 'الفصل التالي' : 'Next Chapter',
+                'exam': lang === 'ar' ? 'السؤال التالي' : 'Next Question',
+                'research-paper': lang === 'ar' ? 'القسم التالي' : 'Next Section',
+                'graduation-project': lang === 'ar' ? 'المرحلة التالية' : 'Next Phase',
+                'academic-lecture': lang === 'ar' ? 'القسم التالي' : 'Next Section',
+                default: lang === 'ar' ? 'التالي' : 'Next'
+            },
+            exam_btn: {
+                'normal-course': lang === 'ar' ? 'بدء الاختبار النهائي' : 'Start Final Exam',
+                'leveled-course': lang === 'ar' ? 'بدء الاختبار النهائي' : 'Start Final Exam',
+                'book': lang === 'ar' ? 'بدء التقييم النهائي' : 'Start Final Assessment',
+                'exam': lang === 'ar' ? 'تقديم الامتحان' : 'Submit Exam',
+                'research-paper': lang === 'ar' ? 'بدء التقييم النهائي' : 'Start Final Assessment',
+                'graduation-project': lang === 'ar' ? 'بدء التقييم النهائي' : 'Start Final Assessment',
+                'academic-lecture': lang === 'ar' ? 'بدء التقييم النهائي' : 'Start Final Assessment',
+                default: lang === 'ar' ? 'بدء الاختبار' : 'Start Exam'
+            }
+        };
+
+        return labels[key]?.[blueprintSlug] || labels[key]?.default || t(`sidebar.${key}`) || key;
+    };
 
     const [selectedSubtopic, setSelectedSubtopic] = useState('');
     const [showPrepButton, setShowPrepButton] = useState(false);
@@ -440,12 +500,13 @@ const Course = () => {
                     }
 
                     if (meta) {
-          meta = mergeSavedLessonsIntoMetadata(normalizeObject(meta), data.lessons || []);
+                        meta = mergeSavedLessonsIntoMetadata(normalizeObject(meta), data.lessons || []);
                         setDbCourseId(data.id);
                         setJsonData(meta);
                         setMainTopic(data.title);
                         setChatHistory(meta.chatHistory || []);
                         setQuizResult(meta.quizResult || null);
+                        setBlueprintSlug(data.blueprint_slug || meta.blueprint_slug || 'normal-course');
                         localStorage.setItem('jsonData', JSON.stringify(meta));
                         localStorage.setItem('courseId', courseId);
                     }
@@ -612,9 +673,9 @@ const Course = () => {
                 >
                     {/* Fixed Sidebar Header: Layer Indicator */}
                     <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-white/95 dark:bg-[#0f0f0f]/95 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between shadow-sm">
-                        <span className="text-[11px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500">{t('sidebar.progress')}</span>
+                        <span className="text-[11px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500">{getDynamicLabel('progress')}</span>
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-[11px] font-bold uppercase tracking-wider border border-blue-100 dark:border-blue-900/30">
-                            {t('sidebar.layer')} {currentIndex + 1} <span className="text-blue-300 dark:text-blue-600">/</span> {flatTopics.length}
+                            {getDynamicLabel('layer')} {currentIndex + 1} <span className="text-blue-300 dark:text-blue-600">/</span> {flatTopics.length}
                         </div>
                     </div>
 
@@ -697,7 +758,7 @@ const Course = () => {
                                         : 'bg-white dark:bg-white/5 text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-white/5 cursor-not-allowed'}`}
                             >
                                 <LuBookOpen size={18} />
-                                <span>{t('footer.exam_btn')}</span>
+                                <span>{getDynamicLabel('exam_btn')}</span>
                             </button>
                         </div>
                     </div>
@@ -982,7 +1043,7 @@ const Course = () => {
                                             text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10"
                                     >
                                         <LuChevronLeft size={18} />
-                                        <span>{t('sidebar.prev_lesson')}</span>
+                                        <span>{getDynamicLabel('prev')}</span>
                                     </button>
 
                                     {currentIndex === flatTopics.length - 1 ? (
@@ -994,7 +1055,7 @@ const Course = () => {
                                             className="w-full md:w-auto px-10 py-4 bg-gray-900 dark:bg-white text-white dark:text-black rounded-xl font-black text-[15px] tracking-wide hover:shadow-2xl hover:shadow-gray-900/20 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                                         >
                                             <LuAward size={20} />
-                                            <span>{t('sidebar.start_exam')}</span>
+                                            <span>{getDynamicLabel('exam_btn')}</span>
                                         </motion.button>
                                     ) : (
                                         <button
@@ -1002,7 +1063,7 @@ const Course = () => {
                                             onClick={handleNext}
                                             className="w-full md:w-auto px-10 py-4 bg-blue-600 text-white rounded-xl font-black text-[15px] tracking-wide shadow-xl shadow-blue-600/20 hover:bg-blue-700 hover:shadow-blue-600/30 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                                         >
-                                            <span>{t('sidebar.next_lesson')}</span>
+                                            <span>{getDynamicLabel('next')}</span>
                                             <LuChevronRight size={18} />
                                         </button>
                                     )}

@@ -189,6 +189,9 @@ class AppLocalizations {
       'features_title': 'Why NOVAIS?',
       'disabled_warning':
           'Course generation is temporarily disabled by the administrator.',
+      'content_blueprint': 'Content Blueprint',
+      'details': 'Details',
+      'required': 'Required',
     },
     'ar': {
       'app_name': 'نوفايس',
@@ -361,6 +364,9 @@ class AppLocalizations {
       'feature_lang_body': 'أنشئ دورات بأكثر من 15 لغة بما في ذلك العربية.',
       'features_title': 'لماذا NOVAIS؟',
       'disabled_warning': 'إنشاء الدورات معطل مؤقتاً من قبل المسؤول.',
+      'content_blueprint': 'مخطط المحتوى',
+      'details': 'التفاصيل',
+      'required': 'مطلوب',
     },
   };
 

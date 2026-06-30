@@ -37,6 +37,58 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
   bool _preparingLesson = false;
   final Set<String> _requestedLessons = {};
 
+  String _getDynamicLabel(String key, String? blueprintSlug, bool isAr) {
+    if (key == 'lessons') {
+      switch (blueprintSlug) {
+        case 'book':
+          return isAr ? 'فصول' : 'Chapters';
+        case 'exam':
+          return isAr ? 'أسئلة' : 'Questions';
+        case 'research-paper':
+          return isAr ? 'أقسام' : 'Sections';
+        case 'graduation-project':
+          return isAr ? 'مراحل' : 'Phases';
+        case 'academic-lecture':
+          return isAr ? 'أقسام' : 'Sections';
+        default:
+          return isAr ? 'دروس' : 'Lessons';
+      }
+    }
+    if (key == 'previous') {
+      switch (blueprintSlug) {
+        case 'book':
+          return isAr ? 'الفصل السابق' : 'Previous Chapter';
+        case 'exam':
+          return isAr ? 'السؤال السابق' : 'Previous Question';
+        case 'research-paper':
+          return isAr ? 'القسم السابق' : 'Previous Section';
+        case 'graduation-project':
+          return isAr ? 'المرحلة السابقة' : 'Previous Phase';
+        case 'academic-lecture':
+          return isAr ? 'القسم السابق' : 'Previous Section';
+        default:
+          return isAr ? 'الدرس السابق' : 'Previous Lesson';
+      }
+    }
+    if (key == 'next') {
+      switch (blueprintSlug) {
+        case 'book':
+          return isAr ? 'الفصل التالي' : 'Next Chapter';
+        case 'exam':
+          return isAr ? 'السؤال التالي' : 'Next Question';
+        case 'research-paper':
+          return isAr ? 'القسم التالي' : 'Next Section';
+        case 'graduation-project':
+          return isAr ? 'المرحلة التالية' : 'Next Phase';
+        case 'academic-lecture':
+          return isAr ? 'القسم التالي' : 'Next Section';
+        default:
+          return isAr ? 'الدرس التالي' : 'Next Lesson';
+      }
+    }
+    return key;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -108,7 +160,7 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
         bottom: TabBar(
           controller: _tabCtrl,
           tabs: [
-            Tab(text: l10n.t('lessons')),
+            Tab(text: _getDynamicLabel('lessons', course.blueprintSlug, l10n.isAr)),
             Tab(text: l10n.t('chat')),
             Tab(text: l10n.t('notes_tab')),
           ],
@@ -219,7 +271,7 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                                 ? () => setState(() => _currentLesson--)
                                 : null,
                             icon: const Icon(Icons.arrow_back, size: 16),
-                            label: Text(l10n.t('previous')),
+                            label: Text(_getDynamicLabel('previous', course.blueprintSlug, l10n.isAr)),
                           ),
                         ),
                         Padding(
@@ -234,7 +286,7 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                                 ? () => setState(() => _currentLesson++)
                                 : null,
                             icon: const Icon(Icons.arrow_forward, size: 16),
-                            label: Text(l10n.t('next')),
+                            label: Text(_getDynamicLabel('next', course.blueprintSlug, l10n.isAr)),
                           ),
                         ),
                       ]),
@@ -272,7 +324,7 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(l10n.t('lessons'),
+                            Text(_getDynamicLabel('lessons', course.blueprintSlug, l10n.isAr),
                                 style: Theme.of(context).textTheme.titleLarge),
                             IconButton(
                               icon: const Icon(Icons.close),

@@ -561,7 +561,7 @@ const CreateCourse = () => {
                         {blueprints.length > 0 && (
                             <div>
                                 <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block uppercase tracking-wide flex items-center gap-2">
-                                    <LuLayoutTemplate className="text-blue-500" /> Content Blueprint
+                                    <LuLayoutTemplate className="text-blue-500" /> {t('create_page.blueprint_label')}
                                 </label>
                                 <select
                                     value={selectedBlueprint}
@@ -583,7 +583,7 @@ const CreateCourse = () => {
                         {activeBlueprintFields.length > 0 && (
                             <div>
                                 <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block uppercase tracking-wide flex items-center gap-2">
-                                    <LuSettings2 className="text-blue-500" /> {getBilingualValue(activeBlueprint?.name, i18n.language?.startsWith('ar') ? 'ar' : 'en')} Details
+                                    <LuSettings2 className="text-blue-500" /> {getBilingualValue(activeBlueprint?.name, i18n.language?.startsWith('ar') ? 'ar' : 'en')} {t('create_page.details_suffix')}
                                 </label>
                                 <div className="grid grid-cols-1 gap-3">
                                     {activeBlueprintFields.map((field) => (
@@ -592,7 +592,7 @@ const CreateCourse = () => {
                                                 <span className="text-xs font-bold text-gray-600 dark:text-gray-300">
                                                     {getFieldLabel(field, i18n.language?.startsWith('ar') ? 'ar' : 'en')}
                                                 </span>
-                                                {field.required && <span className="text-[10px] font-black uppercase text-blue-500">Required</span>}
+                                                {field.required && <span className="text-[10px] font-black uppercase text-blue-500">{t('create_page.required_badge')}</span>}
                                             </div>
                                             {renderBlueprintField(field)}
                                         </div>

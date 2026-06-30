@@ -485,7 +485,10 @@
             "subtitle": "Access all features with a Premium upgrade.",
             "btn_upgrade": "Upgrade Now",
             "btn_later": "Maybe Later"
-        }
+        },
+        "blueprint_label": "Content Blueprint",
+        "details_suffix": "Details",
+        "required_badge": "Required"
     },
     "admin": {
         "welcome": "Welcome back, {{name}}",

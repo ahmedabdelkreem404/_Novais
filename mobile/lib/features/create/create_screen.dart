@@ -200,7 +200,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
         onChanged: (next) => _blueprintFields[field.keyName] = next,
         validator: field.required
             ? (next) =>
-                (next == null || next.trim().isEmpty) ? 'Required' : null
+                (next == null || next.trim().isEmpty) ? AppLocalizations.of(context).t('required') : null
             : null,
       );
     } else if (field.type == 'number') {
@@ -211,7 +211,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
         onChanged: (next) => _blueprintFields[field.keyName] = next,
         validator: field.required
             ? (next) =>
-                (next == null || next.trim().isEmpty) ? 'Required' : null
+                (next == null || next.trim().isEmpty) ? AppLocalizations.of(context).t('required') : null
             : null,
       );
     } else if (field.type == 'select') {
@@ -235,7 +235,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
             .toList(),
         onChanged: (next) => _setBlueprintField(field.keyName, next ?? ''),
         validator: field.required
-            ? (next) => (next == null || next.isEmpty) ? 'Required' : null
+            ? (next) => (next == null || next.isEmpty) ? AppLocalizations.of(context).t('required') : null
             : null,
       );
     } else if (field.type == 'multiselect') {
@@ -283,7 +283,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
         onChanged: (next) => _blueprintFields[field.keyName] = next,
         validator: field.required
             ? (next) =>
-                (next == null || next.trim().isEmpty) ? 'Required' : null
+                (next == null || next.trim().isEmpty) ? AppLocalizations.of(context).t('required') : null
             : null,
       );
     }
@@ -301,9 +301,9 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
               ),
             ),
             if (field.required)
-              const Text(
-                'Required',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context).t('required'),
+                style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                   color: AppColors.primary,
@@ -544,8 +544,8 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
 
                   // Language
                   if (blueprints.isNotEmpty) ...[
-                    const _SectionHeader(
-                        label: 'CONTENT BLUEPRINT',
+                    _SectionHeader(
+                        label: l10n.t('content_blueprint').toUpperCase(),
                         icon: Icons.dashboard_customize_outlined),
                     DropdownButtonFormField<String>(
                       value:
@@ -592,7 +592,8 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
 
                   if (activeBlueprintFields.isNotEmpty) ...[
                     _SectionHeader(
-                      label: '${activeBlueprint?.nameFor(languageCode) ?? 'Blueprint'} DETAILS',
+                      label: '${activeBlueprint?.nameFor(languageCode) ?? 'Blueprint'} ${l10n.t('details')}'
+                          .toUpperCase(),
                       icon: Icons.tune_outlined,
                     ),
                     ...activeBlueprintFields.map(

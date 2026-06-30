@@ -487,7 +487,10 @@
             "subtitle": "استمتع بجميع الميزات مع الترقية للنسخة المميزة.",
             "btn_upgrade": "رقي الآن",
             "btn_later": "ربما لاحقاً"
-        }
+        },
+        "blueprint_label": "مخطط المحتوى",
+        "details_suffix": "تفاصيل",
+        "required_badge": "مطلوب"
     },
     "admin": {
         "welcome": "أهلاً بك مجدداً، {{name}}",
