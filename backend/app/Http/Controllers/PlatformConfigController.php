@@ -105,7 +105,13 @@ class PlatformConfigController extends Controller
             'seo_meta_description_ar' => 'sometimes|string',
             'seo_meta_keywords_en' => 'sometimes|string',
             'seo_meta_keywords_ar' => 'sometimes|string',
+
+            // Landing Custom Lists
+            'landing_features_list' => 'sometimes|array',
+            'landing_steps_list' => 'sometimes|array',
+            'landing_reviews_list' => 'sometimes|array',
         ]);
+
 
         return response()->json(PlatformSetting::updateConfig($data));
     }

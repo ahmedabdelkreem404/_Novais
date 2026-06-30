@@ -12,8 +12,23 @@ import {
   LuCreditCard, 
   LuFlag, 
   LuSearch, 
-  LuDownload 
+  LuDownload,
+  LuSparkles,
+  LuChartBar,
+  LuCircleCheck,
+  LuLanguages,
+  LuMessageSquare,
+  LuArrowRight,
+  LuTrash2,
+  LuPencil,
+  LuChevronUp,
+
+
+  LuChevronDown,
+  LuPlus,
+  LuCloudUpload
 } from 'react-icons/lu';
+
 
 
 const PlatformSettings = () => {
@@ -21,11 +36,6 @@ const PlatformSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('identity'); 
-  
-  const [featuresJson, setFeaturesJson] = useState('');
-  const [stepsJson, setStepsJson] = useState('');
-  const [reviewsJson, setReviewsJson] = useState('');
-  const [jsonErrors, setJsonErrors] = useState({ features: '', steps: '', reviews: '' });
   
   const [form, setForm] = useState({
     course_creation_enabled: true,
@@ -153,9 +163,6 @@ const PlatformSettings = () => {
         landing_steps_list: Array.isArray(res.data.landing_steps_list) ? res.data.landing_steps_list : [],
         landing_reviews_list: Array.isArray(res.data.landing_reviews_list) ? res.data.landing_reviews_list : [],
       }));
-      setFeaturesJson(JSON.stringify(res.data.landing_features_list || [], null, 2));
-      setStepsJson(JSON.stringify(res.data.landing_steps_list || [], null, 2));
-      setReviewsJson(JSON.stringify(res.data.landing_reviews_list || [], null, 2));
     } catch (error) {
       toast.error(t('admin.platform_config.load_fail') || 'Failed to load platform settings');
     } finally {
@@ -188,16 +195,6 @@ const PlatformSettings = () => {
     }
   };
 
-  const updateJson = (key, setVal, rawText) => {
-    setVal(rawText);
-    try {
-      const parsed = JSON.parse(rawText);
-      setForm(prev => ({ ...prev, [key]: parsed }));
-      setJsonErrors(prev => ({ ...prev, [key]: '' }));
-    } catch (e) {
-      setJsonErrors(prev => ({ ...prev, [key]: e.message }));
-    }
-  };
 
   if (loading) {
     return <div className="p-8 text-center text-gray-400 animate-pulse">{t('admin.platform_config.loading') || 'Loading platform settings...'}</div>;
@@ -623,16 +620,13 @@ const PlatformSettings = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
-                  Features List (JSON Array)
-                  {jsonErrors.features && <span className="text-red-500 ml-2 font-bold">{jsonErrors.features}</span>}
-                </label>
-                <textarea
-                  value={featuresJson}
-                  onChange={(e) => updateJson('landing_features_list', setFeaturesJson, e.target.value)}
-                  placeholder="[{}]"
-                  className="w-full min-h-[220px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs font-mono text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+              <div className="pt-4 border-t border-gray-100 dark:border-white/5">
+                <ListEditor
+                  title={isRtl ? 'قائمة عناصر قسم المميزات' : 'Features Section Items'}
+                  items={form.landing_features_list || []}
+                  onChange={(newList) => setForm({ ...form, landing_features_list: newList })}
+                  schema={featuresSchema}
+                  isRtl={isRtl}
                 />
               </div>
             </Card>
@@ -683,16 +677,13 @@ const PlatformSettings = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
-                  Steps List (JSON Array)
-                  {jsonErrors.steps && <span className="text-red-500 ml-2 font-bold">{jsonErrors.steps}</span>}
-                </label>
-                <textarea
-                  value={stepsJson}
-                  onChange={(e) => updateJson('landing_steps_list', setStepsJson, e.target.value)}
-                  placeholder="[{}]"
-                  className="w-full min-h-[220px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs font-mono text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+              <div className="pt-4 border-t border-gray-100 dark:border-white/5">
+                <ListEditor
+                  title={isRtl ? 'قائمة عناصر خطوات العمل' : 'How it Works Items'}
+                  items={form.landing_steps_list || []}
+                  onChange={(newList) => setForm({ ...form, landing_steps_list: newList })}
+                  schema={stepsSchema}
+                  isRtl={isRtl}
                 />
               </div>
             </Card>
@@ -743,16 +734,13 @@ const PlatformSettings = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
-                  Reviews List (JSON Array)
-                  {jsonErrors.reviews && <span className="text-red-500 ml-2 font-bold">{jsonErrors.reviews}</span>}
-                </label>
-                <textarea
-                  value={reviewsJson}
-                  onChange={(e) => updateJson('landing_reviews_list', setReviewsJson, e.target.value)}
-                  placeholder="[{}]"
-                  className="w-full min-h-[220px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs font-mono text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+              <div className="pt-4 border-t border-gray-100 dark:border-white/5">
+                <ListEditor
+                  title={isRtl ? 'آراء وتقييمات العملاء والطلاب' : 'Student & Educator Testimonials'}
+                  items={form.landing_reviews_list || []}
+                  onChange={(newList) => setForm({ ...form, landing_reviews_list: newList })}
+                  schema={reviewsSchema}
+                  isRtl={isRtl}
                 />
               </div>
             </Card>
@@ -822,6 +810,7 @@ const PlatformSettings = () => {
             </Card>
           </div>
         )}
+
 
 
         {/* Tab: Payments & Visibility */}
@@ -1068,13 +1057,263 @@ const PlatformSettings = () => {
   );
 };
 
-// FileUploaderCard
+// Schemas for ListEditor
+const featuresSchema = [
+  { key: 'icon', label: 'Icon / الأيقونة', type: 'select', options: [
+    { value: 'LuSparkles', label: 'Sparkles (بريق)' },
+    { value: 'LuChartBar', label: 'Chart Bar (مخطط)' },
+    { value: 'LuCircleCheck', label: 'Circle Check (تحقق)' },
+    { value: 'LuLanguages', label: 'Languages (لغات)' },
+    { value: 'LuMessageSquare', label: 'Message (رسائل)' },
+    { value: 'LuDownload', label: 'Download (تحميل)' },
+    { value: 'LuArrowRight', label: 'Arrow Right (سهم يمين)' }
+  ], defaultValue: 'LuSparkles' },
+  { key: 'title_en', label: 'Title (English)', type: 'text' },
+  { key: 'title_ar', label: 'العنوان بالعربية', type: 'text', dir: 'rtl' },
+  { key: 'desc_en', label: 'Description (English)', type: 'textarea' },
+  { key: 'desc_ar', label: 'الوصف بالعربية', type: 'textarea', dir: 'rtl' }
+];
 
+const stepsSchema = [
+  { key: 'icon', label: 'Icon / الأيقونة', type: 'select', options: [
+    { value: 'LuSparkles', label: 'Sparkles (بريق)' },
+    { value: 'LuChartBar', label: 'Chart Bar (مخطط)' },
+    { value: 'LuCircleCheck', label: 'Circle Check (تحقق)' },
+    { value: 'LuLanguages', label: 'Languages (لغات)' },
+    { value: 'LuMessageSquare', label: 'Message (رسائل)' },
+    { value: 'LuDownload', label: 'Download (تحميل)' },
+    { value: 'LuArrowRight', label: 'Arrow Right (سهم يمين)' }
+  ], defaultValue: 'LuSparkles' },
+  { key: 'title_en', label: 'Title (English)', type: 'text' },
+  { key: 'title_ar', label: 'العنوان بالعربية', type: 'text', dir: 'rtl' },
+  { key: 'desc_en', label: 'Description (English)', type: 'textarea' },
+  { key: 'desc_ar', label: 'الوصف بالعربية', type: 'textarea', dir: 'rtl' }
+];
+
+const reviewsSchema = [
+  { key: 'name', label: 'Author Name / الاسم', type: 'text' },
+  { key: 'avatar', label: 'Initials / الحروف الأولى', type: 'text', defaultValue: 'SA' },
+  { key: 'role_en', label: 'Role (English)', type: 'text' },
+  { key: 'role_ar', label: 'الوظيفة بالعربية', type: 'text', dir: 'rtl' },
+  { key: 'quote_en', label: 'Quote (English)', type: 'textarea' },
+  { key: 'quote_ar', label: 'الرأي بالعربية', type: 'textarea', dir: 'rtl' }
+];
+
+// Interactive ListEditor Component (Replaces JSON Array Textareas)
+const ListEditor = ({ title, items, onChange, schema, isRtl }) => {
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  const handleAdd = () => {
+    const newItem = {};
+    schema.forEach(field => {
+      newItem[field.key] = field.defaultValue || '';
+    });
+    newItem.key = 'item_' + Date.now();
+    const updated = [...items, newItem];
+    onChange(updated);
+    setEditingIndex(updated.length - 1);
+    setEditForm(newItem);
+  };
+
+  const handleEdit = (index) => {
+    setEditingIndex(index);
+    setEditForm({ ...items[index] });
+  };
+
+  const handleSave = () => {
+    if (editingIndex === null) return;
+    const updated = [...items];
+    updated[editingIndex] = editForm;
+    onChange(updated);
+    setEditingIndex(null);
+    setEditForm({});
+  };
+
+  const handleDelete = (index) => {
+    const updated = items.filter((_, i) => i !== index);
+    onChange(updated);
+    if (editingIndex === index) {
+      setEditingIndex(null);
+      setEditForm({});
+    }
+  };
+
+  const handleMove = (index, direction) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= items.length) return;
+    const updated = [...items];
+    const temp = updated[index];
+    updated[index] = updated[nextIndex];
+    updated[nextIndex] = temp;
+    onChange(updated);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center pb-2 border-b border-gray-100 dark:border-white/5">
+        <label className="text-[11px] font-black uppercase tracking-widest text-gray-400">{title}</label>
+        <button
+          type="button"
+          onClick={handleAdd}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition cursor-pointer shadow-lg shadow-blue-500/10 active:scale-95"
+        >
+          <LuPlus size={14} />
+          <span>{isRtl ? 'إضافة عنصر' : 'Add Item'}</span>
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        {items.map((item, idx) => (
+          <div key={item.key || idx} className="p-4 rounded-2xl bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 transition hover:border-gray-200 dark:hover:border-white/10">
+            {editingIndex === idx ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {schema.map((field) => (
+                    <div key={field.key} className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">{field.label}</label>
+                      {field.type === 'select' ? (
+                        <select
+                          value={editForm[field.key] || ''}
+                          onChange={(e) => setEditForm({ ...editForm, [field.key]: e.target.value })}
+                          className="w-full text-xs rounded-xl border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-white cursor-pointer"
+                        >
+                          {field.options.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      ) : field.type === 'textarea' ? (
+                        <textarea
+                          value={editForm[field.key] || ''}
+                          onChange={(e) => setEditForm({ ...editForm, [field.key]: e.target.value })}
+                          className="w-full min-h-[70px] text-xs rounded-xl border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
+                          dir={field.dir}
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          value={editForm[field.key] || ''}
+                          onChange={(e) => setEditForm({ ...editForm, [field.key]: e.target.value })}
+                          className="w-full text-xs rounded-xl border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
+                          dir={field.dir}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-end gap-2 pt-3 border-t border-gray-200/50 dark:border-white/5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingIndex(null);
+                      setEditForm({});
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition cursor-pointer"
+                  >
+                    {isRtl ? 'إلغاء' : 'Cancel'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-green-600 hover:bg-green-700 text-white transition cursor-pointer"
+                  >
+                    {isRtl ? 'حفظ العنصر' : 'Save Item'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    {item.icon && (
+                      <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 text-sm flex items-center justify-center shrink-0">
+                        {item.icon === 'LuSparkles' && <LuSparkles size={14} />}
+                        {item.icon === 'LuChartBar' && <LuChartBar size={14} />}
+                        {item.icon === 'LuCircleCheck' && <LuCircleCheck size={14} />}
+                        {item.icon === 'LuLanguages' && <LuLanguages size={14} />}
+                        {item.icon === 'LuMessageSquare' && <LuMessageSquare size={14} />}
+                        {item.icon === 'LuDownload' && <LuDownload size={14} />}
+                        {item.icon === 'LuArrowRight' && <LuArrowRight size={14} />}
+                        {!['LuSparkles','LuChartBar','LuCircleCheck','LuLanguages','LuMessageSquare','LuDownload','LuArrowRight'].includes(item.icon) && '🏷️'}
+                      </span>
+                    )}
+                    {item.avatar && (
+                      <span className="w-6 h-6 rounded-full bg-blue-500/10 text-blue-500 text-[10px] font-black flex items-center justify-center shrink-0">
+                        {item.avatar}
+                      </span>
+                    )}
+                    <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                      {isRtl ? (item.title_ar || item.title_en || item.name) : (item.title_en || item.title_ar || item.name)}
+                      {item.role_en && (
+                        <span className="text-[10px] text-gray-400 font-bold ml-2 dark:text-gray-500">
+                          — {isRtl ? (item.role_ar || item.role_en) : (item.role_en || item.role_ar)}
+                        </span>
+                      )}
+                    </h4>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">
+                    {isRtl ? (item.desc_ar || item.desc_en || item.quote_ar || item.quote_en) : (item.desc_en || item.desc_ar || item.quote_en || item.quote_ar)}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                  <button
+                    type="button"
+                    onClick={() => handleMove(idx, -1)}
+                    disabled={idx === 0}
+                    className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-500 hover:text-gray-950 dark:hover:text-white disabled:opacity-30 cursor-pointer"
+                    title={isRtl ? 'تحريك لأعلى' : 'Move Up'}
+                  >
+                    <LuChevronUp size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMove(idx, 1)}
+                    disabled={idx === items.length - 1}
+                    className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-500 hover:text-gray-950 dark:hover:text-white disabled:opacity-30 cursor-pointer"
+                    title={isRtl ? 'تحريك لأسفل' : 'Move Down'}
+                  >
+                    <LuChevronDown size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleEdit(idx)}
+                    className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20 transition cursor-pointer"
+                    title={isRtl ? 'تعديل' : 'Edit'}
+                  >
+                    <LuPencil size={14} />
+                  </button>
+
+
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(idx)}
+                    className="p-1.5 rounded-lg text-red-600 hover:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 transition cursor-pointer"
+                    title={isRtl ? 'حذف' : 'Delete'}
+                  >
+                    <LuTrash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+        {items.length === 0 && (
+          <div className="text-center py-6 text-gray-400 text-xs italic border border-dashed border-gray-200 dark:border-white/5 rounded-2xl">
+            {isRtl ? 'لا توجد عناصر مضافة بعد.' : 'No items added yet.'}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Redesigned FileUploaderCard (Premium Drag & Drop + Direct Live Preview)
 const FileUploaderCard = ({ label, fileUrl, onUploadSuccess, accept, t }) => {
   const [uploading, setUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
 
-  const handleUpload = async (e) => {
-    const file = e.target.files[0];
+  const handleUpload = async (file) => {
     if (!file) return;
 
     setUploading(true);
@@ -1100,34 +1339,112 @@ const FileUploaderCard = ({ label, fileUrl, onUploadSuccess, accept, t }) => {
     }
   };
 
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleUpload(e.dataTransfer.files[0]);
+    }
+  };
+
+  const fileAbsoluteUrl = fileUrl 
+    ? (fileUrl.startsWith('http') ? fileUrl : `${serverURL.replace('/api', '')}${fileUrl}`)
+    : '';
+
+  const isImage = fileUrl && (
+    fileUrl.match(/\.(jpeg|jpg|gif|png|webp|svg|ico)$/i) || 
+    accept.includes('image')
+  );
+
+  const isVideo = fileUrl && (
+    fileUrl.match(/\.(mp4|webm|ogg|mov|avi)$/i) || 
+    accept.includes('video')
+  );
+
   return (
-    <Card className="p-4 sm:p-5 space-y-4 flex flex-col justify-between h-full min-h-[160px]">
+    <Card 
+      className={`p-5 flex flex-col justify-between transition-all duration-300 border-2 ${
+        isDragOver 
+          ? 'border-blue-500 bg-blue-500/5' 
+          : 'border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20'
+      }`}
+      onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+      onDragLeave={() => setIsDragOver(false)}
+      onDrop={handleDrop}
+    >
       <div>
-        <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">{label}</label>
-        {fileUrl ? (
-          <div className="p-3 bg-green-500/10 text-green-600 dark:text-green-300 dark:bg-green-950/20 border border-green-500/20 rounded-xl text-xs flex items-center justify-between gap-3">
-            <span className="font-bold truncate break-all">{fileUrl}</span>
-            <a 
-              href={fileUrl.startsWith('http') ? fileUrl : `${serverURL.replace('/api', '')}${fileUrl}`} 
-              download 
-              className="shrink-0 text-blue-500 font-extrabold hover:underline"
+        <div className="flex justify-between items-center mb-3">
+          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">{label}</label>
+          {fileUrl && (
+            <button
+              type="button"
+              onClick={() => onUploadSuccess('')}
+              className="text-[10px] font-bold text-red-500 hover:text-red-700 hover:underline cursor-pointer"
             >
-              Download
-            </a>
+              Clear
+            </button>
+          )}
+        </div>
+
+        {/* Live Preview Area */}
+        {fileUrl ? (
+          <div className="rounded-xl overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 p-2 mb-4">
+            {isImage ? (
+              <img 
+                src={fileAbsoluteUrl} 
+                alt={label} 
+                className="max-h-36 w-full object-contain rounded-lg"
+              />
+            ) : isVideo ? (
+              <video 
+                src={fileAbsoluteUrl} 
+                controls 
+                className="max-h-36 w-full object-contain rounded-lg"
+              />
+            ) : (
+              <div className="p-3 text-xs text-gray-600 dark:text-gray-300 truncate font-mono">
+                {fileUrl}
+              </div>
+            )}
+            <div className="mt-2 flex items-center justify-between text-[10px] text-gray-400 px-1">
+              <span className="truncate max-w-[70%]">{fileUrl}</span>
+              <a 
+                href={fileAbsoluteUrl} 
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-500 font-bold hover:underline"
+              >
+                View full
+              </a>
+            </div>
           </div>
         ) : (
-          <div className="p-3 bg-gray-100 dark:bg-white/5 border border-dashed border-gray-200 dark:border-white/5 text-gray-400 rounded-xl text-xs italic">
-            No media file selected
+          <div className="py-6 flex flex-col items-center justify-center bg-gray-50/50 dark:bg-white/[0.02] border border-dashed border-gray-200 dark:border-white/10 rounded-xl text-center text-xs text-gray-400 italic mb-4">
+            <span className="text-xl mb-1"><LuCloudUpload size={24} className="text-gray-400" /></span>
+            <span>Drag file here or choose from device</span>
           </div>
         )}
       </div>
 
-      <div className="flex items-center justify-center w-full mt-3">
-        <label className="flex flex-col items-center justify-center w-full h-16 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-2xl cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition p-2 text-center">
-          <span className="text-xs text-blue-500 font-bold">
-            {uploading ? 'Uploading...' : 'Upload File'}
+      <div className="w-full">
+        <label className="flex flex-col items-center justify-center w-full h-12 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition cursor-pointer text-xs font-bold shadow-lg shadow-blue-500/10">
+          <span>
+            {uploading ? (
+              <span className="flex items-center gap-2">
+                <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Uploading...
+              </span>
+            ) : (
+              'Choose File'
+            )}
           </span>
-          <input type="file" className="hidden" accept={accept} onChange={handleUpload} disabled={uploading} />
+          <input 
+            type="file" 
+            className="hidden" 
+            accept={accept} 
+            onChange={(e) => handleUpload(e.target.files[0])} 
+            disabled={uploading} 
+          />
         </label>
       </div>
     </Card>
