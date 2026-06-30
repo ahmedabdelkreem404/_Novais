@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NOVAIS Graduation Defense Guide - Ahmed Backend Database AI</title>
+  <style>
+    :root{--blue:#1d4ed8;--accent:#0f766e;--ink:#0f172a;--muted:#64748b;--bg:#f8fafc;--card:#fff;--line:#dbe3ef;--soft:#eef6ff}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.85}
+    .wrap{max-width:1160px;margin:auto;padding:22px}.hero{background:linear-gradient(135deg,var(--blue),var(--accent));color:#fff;border-radius:22px;padding:28px;margin:14px 0 20px}
+    h1,h2,h3{margin:0 0 10px}h2{border-right:5px solid var(--accent);padding-right:10px;margin-top:26px}.muted{color:var(--muted)}.hero .muted{color:#dbeafe}
+    .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.badge{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.32);border-radius:999px;padding:5px 10px}
+    .card,.toc,.qa,.say,.ask,.warn,.ok{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:17px;margin:14px 0;box-shadow:0 10px 24px rgba(15,23,42,.05)}
+    .toc a{display:inline-block;margin:4px 0 4px 12px;color:var(--blue);text-decoration:none}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+    .file{direction:ltr;unicode-bidi:embed;font-family:Consolas,monospace;background:#eef2ff;border-radius:7px;padding:2px 6px;white-space:nowrap}
+    table{width:100%;border-collapse:collapse;background:#fff}th,td{border:1px solid var(--line);padding:9px;vertical-align:top}th{background:var(--soft)}.qa b{color:var(--blue)}
+    ul{padding-right:22px}.ltr{direction:ltr;text-align:left}.pill{display:inline-block;background:#ecfeff;border:1px solid #a5f3fc;border-radius:999px;padding:2px 9px;margin:2px}
+    @media(max-width:700px){.wrap{padding:12px}.hero{border-radius:14px;padding:18px}.file{white-space:normal}}@media print{body{background:#fff}.card,.toc,.qa,.say,.ask,.warn,.ok{box-shadow:none;break-inside:avoid}.hero{background:#fff;color:#000;border:1px solid #bbb}.hero .muted{color:#333}.toc a{color:#000}}
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <section class="hero">
+    <h1>NOVAIS Graduation Defense Guide</h1>
+    <h2 style="border:0;padding:0;margin-top:8px">Ahmed Abdelkarim - Backend, Database, AI</h2>
+    <p class="muted">دليل مذاكرة سريع ومركز للدفاع: تقول إيه، الدكتور ممكن يسأل إيه، وإزاي تربط كلامك بالكود الحقيقي في NOVAIS.</p>
+    <div class="badges"><span class="badge">Laravel API</span><span class="badge">Database</span><span class="badge">DeepSeek AI</span><span class="badge">Payments</span><span class="badge">Admin</span><span class="badge">Security</span></div>
+  </section>
+
+  <nav class="toc" id="toc">
+    <h2>الفهرس</h2>
+    <a href="#role">1. دورك</a><a href="#project">2. فكرة المشروع</a><a href="#architecture">3. المعمارية</a><a href="#stack">4. التقنيات</a><a href="#dataflow">5. تدفق البيانات</a><a href="#db">6. الداتابيز</a><a href="#api">7. الـ APIs</a><a href="#auth">8. الأمان</a><a href="#ai">9. الذكاء الاصطناعي</a><a href="#payments">10. الدفع</a><a href="#admin">11. الأدمن</a><a href="#exports">12. التصدير</a><a href="#testing">13. الاختبارات</a><a href="#files">14. ملفات مهمة</a><a href="#defense">15. الدفاع والأسئلة</a>
+  </nav>
+
+  <section id="role" class="card">
+    <h2>1. دورك في المشروع</h2>
+    <p>دورك الأساسي إنك ماسك قلب NOVAIS: Laravel API، تصميم الجداول والعلاقات، توليد المحتوى بالـ AI، صلاحيات المستخدمين والأدمن، الدفع، الإشعارات، والتصدير. يعني أي شاشة في الويب أو الموبايل بتكلم الباك غالبا بتعدي على شغل أحمد.</p>
+    <div class="say"><b>What to say in defense:</b> "أنا مسؤول عن الباك إند والداتابيز والـ AI integration. ركزت إن نفس الـ API يخدم الويب والموبايل والديسكتوب، وإن المحتوى يتولد بشكل منظم حسب blueprint مش مجرد نص عشوائي."</div>
+  </section>
+
+  <section id="project" class="card">
+    <h2>2. فكرة NOVAIS</h2>
+    <p>NOVAIS منصة تعليمية بتستخدم AI لتوليد منتجات تعليمية مختلفة: كورسات، كتب، بنك أسئلة، امتحانات، مراجعات، خطط دروس، ومشروع تخرج. المستخدم يختار النوع واللغة والمستوى، والباك يطبق قواعد النوع ويولد outline ثم دروس/محتوى عند الطلب.</p>
+    <ul><li>الويب والموبايل والديسكتوب كلهم عملاء لنفس Laravel API.</li><li>الأدمن يغير إعدادات المنصة والـ blueprints من الداشبورد.</li><li>الدفع مدعوم عن طريق Paymob وطلبات دفع Offline.</li></ul>
+  </section>
+
+  <section id="architecture" class="card">
+    <h2>3. المعمارية العامة</h2>
+    <div class="grid">
+      <div><h3>Clients</h3><p>React web، Flutter mobile، و Electron desktop wrapper. كلهم بيبعتوا requests للـ API.</p></div>
+      <div><h3>API Layer</h3><p>Routes في <span class="file">backend/routes/api.php</span> بتقسم public/auth/admin/user endpoints.</p></div>
+      <div><h3>Domain Services</h3><p><span class="file">CourseService</span> و <span class="file">DeepSeekService</span> و <span class="file">PaymobService</span> شايلين المنطق الثقيل.</p></div>
+      <div><h3>Database</h3><p>Models ومigrations للعلاقات: users, courses, lessons, payments, subscriptions, blueprints, settings.</p></div>
+    </div>
+  </section>
+
+  <section id="stack" class="card">
+    <h2>4. التقنيات المستخدمة</h2>
+    <table><tr><th>جزء</th><th>تقنية</th><th>سبب الاختيار</th></tr>
+      <tr><td>Backend</td><td>Laravel 12 / PHP 8.2</td><td>Routes, validation, migrations, middleware, tests بسرعة وتنظيم.</td></tr>
+      <tr><td>Auth</td><td>JWT Auth + Socialite</td><td>Token واحد يخدم Web/Mobile/Desktop، مع Google login.</td></tr>
+      <tr><td>AI</td><td>DeepSeek chat completions</td><td>توليد JSON structured outlines ودروس، مع retry وvalidation.</td></tr>
+      <tr><td>PDF</td><td>Laravel DomPDF</td><td>تصدير PDF وفواتير الدفع.</td></tr>
+      <tr><td>Payments</td><td>Paymob + Offline payment requests</td><td>دفع أونلاين ومحلي يناسب السوق المصري.</td></tr>
+    </table>
+  </section>
+
+  <section id="dataflow" class="card">
+    <h2>5. تدفق البيانات من أول الضغط لحد المحتوى</h2>
+    <ol>
+      <li>العميل يجيب <span class="file">/platform-settings</span> و <span class="file">/content-blueprints</span>.</li>
+      <li>المستخدم يختار blueprint ويدخل fields زي topic/language/level.</li>
+      <li>الويب أو الموبايل يبعت <span class="file">POST /generate-course</span>.</li>
+      <li><span class="file">CourseService</span> يتحقق من الاشتراك، اللغة، السلامة، والـ blueprint.</li>
+      <li><span class="file">DeepSeekService</span> يبني prompt ويرجع JSON.</li>
+      <li><span class="file">CurriculumValidator</span> يطبع ويصلح structure لو ناقص.</li>
+      <li>المستخدم يراجع outline ثم يحفظ عن طريق <span class="file">POST /courses</span>.</li>
+      <li>الدروس التفصيلية تتولد lazy عند فتح lesson endpoint.</li>
+    </ol>
+  </section>
+
+  <section id="db" class="card">
+    <h2>6. الداتابيز والعلاقات</h2>
+    <p>الداتابيز مش جدول courses وخلاص. في طبقات تمثل المستخدم، الاشتراك، المحتوى، الدفع، الإشعارات، والإعدادات.</p>
+    <div class="grid">
+      <div><h3>Learning</h3><p><span class="file">courses</span>, <span class="file">lessons</span>, <span class="file">quizzes</span>, <span class="file">quiz_questions</span>, <span class="file">certificates</span>.</p></div>
+      <div><h3>Business</h3><p><span class="file">plans</span>, <span class="file">payments</span>, <span class="file">subscriptions</span>, <span class="file">offline_payment_requests</span>.</p></div>
+      <div><h3>Configuration</h3><p><span class="file">platform_settings</span>, <span class="file">content_blueprints</span>, CMS pages/blogs/social links.</p></div>
+      <div><h3>Engagement</h3><p><span class="file">app_notifications</span>, <span class="file">notification_devices</span>, notes, chat history, shares.</p></div>
+    </div>
+    <div class="ask"><b>Doctor may ask:</b> ليه خزنت blueprint metadata جوه course؟ عشان المنتج يفضل عارف نوعه وعناوينه حتى لو إعدادات الأدمن اتغيرت بعدين.</div>
+  </section>
+
+  <section id="api" class="card">
+    <h2>7. أهم الـ APIs</h2>
+    <table><tr><th>المجموعة</th><th>Endpoints</th><th>الملاحظات</th></tr>
+      <tr><td>Auth</td><td class="ltr">/auth/login, /auth/register, /auth/user-profile, /auth/logout, /auth/google/*</td><td>JWT + device headers + email flows.</td></tr>
+      <tr><td>Content</td><td class="ltr">/generate-course, /courses, /courses/{id}/lessons/{lessonId}, /courses/{id}/quiz</td><td>نفس flow للويب والموبايل.</td></tr>
+      <tr><td>Public config</td><td class="ltr">/platform-settings, /platform-config, /content-blueprints</td><td>public sanitized values فقط.</td></tr>
+      <tr><td>Payments</td><td class="ltr">/payments/*, /offline-payments/*</td><td>Paymob webhook HMAC وoffline approval.</td></tr>
+      <tr><td>Admin</td><td class="ltr">/admin/users, /admin/courses, /admin/platform-settings, /admin/content-blueprints</td><td>محمية بـ auth و is_admin.</td></tr>
+    </table>
+  </section>
+
+  <section id="auth" class="card">
+    <h2>8. الأمان والصلاحيات</h2>
+    <ul>
+      <li><span class="pill">JWT</span> كل protected endpoint تحت <span class="file">auth:api</span>.</li>
+      <li><span class="pill">Admin Middleware</span> routes الأدمن تحت <span class="file">is_admin</span>.</li>
+      <li><span class="pill">Ownership</span> المستخدم ميقدرش يفتح كورس/إشعار/طلب دفع مش بتاعه.</li>
+      <li><span class="pill">Paymob HMAC</span> webhook بيتحقق بتوقيع قبل تفعيل الاشتراك.</li>
+      <li><span class="pill">Validation</span> كل store/update فيه Laravel validation.</li>
+      <li><span class="pill">Public Sanitization</span> public settings ما بتطلعش secrets أو admin-only keys.</li>
+    </ul>
+  </section>
+
+  <section id="ai" class="card">
+    <h2>9. الذكاء الاصطناعي والـ Blueprints</h2>
+    <p><span class="file">DeepSeekService</span> بيبني prompts حسب نوع المنتج. لو blueprint موجود، prompt بياخد schema وتعليمات النوع بدل template واحد للكورسات. الخدمة بتعمل retries، parsing للـ JSON حتى لو AI رجعه جوه code fence، وبتسجل usage/logs.</p>
+    <div class="ok"><b>نقطة قوة:</b> المشروع بقى content-product platform مش course generator بس. <span class="file">ContentBlueprint</span> فيه defaults لأنواع زي normal course, academic course, question bank, exam builder, book, story, graduation project.</div>
+    <div class="warn"><b>حدود مهمة:</b> AI output محتاج مراجعة بشرية. الكود بيحاول يطبع structure ويمنع محتوى خطر، لكنه مش ضمان أكاديمي مطلق.</div>
+  </section>
+
+  <section id="payments" class="card">
+    <h2>10. الدفع والاشتراكات</h2>
+    <div class="grid">
+      <div><h3>Paymob Online</h3><p><span class="file">PaymentController</span> يبدأ checkout، و <span class="file">PaymobService</span> يتعامل مع auth/order/payment key. التفعيل الحقيقي يتم من webhook بعد HMAC ومطابقة amount/order.</p></div>
+      <div><h3>Offline Payments</h3><p>Vodafone Cash/InstaPay request مع رقم العملية أو صورة proof. الأدمن يوافق أو يرفض، والموافقة تعمل subscription وتحدث user role.</p></div>
+    </div>
+    <div class="ask"><b>Doctor may ask:</b> ليه callback مش كفاية؟ لأن callback ممكن يتزور من المتصفح. القرار النهائي لازم webhook موقع من Paymob.</div>
+  </section>
+
+  <section id="admin" class="card">
+    <h2>11. لوحة الأدمن</h2>
+    <p>الأدمن يقدر يدير users, courses, paid users, plans, offline payments, CMS pages/blogs, platform settings, content blueprints, notifications, media. الباك عامل routes منفصلة للأدمن ومحمية بصلاحيات.</p>
+  </section>
+
+  <section id="exports" class="card">
+    <h2>12. التصدير والفواتير</h2>
+    <p>المشروع يستخدم DomPDF لتصدير PDF وفواتير الدفع. يوجد endpoints للتصدير للـ PDF/PPT في الويب، والموبايل يعرف endpoints التصدير في الكود. في worktree الحالي فيه شغل غير مكمت على document export view، لذلك في الدفاع نقول: "التصدير موجود، وفي تحسينات جارية لتفريق شكل المستندات عن الكورسات".</p>
+  </section>
+
+  <section id="testing" class="card">
+    <h2>13. الاختبارات والتحقق</h2>
+    <ul>
+      <li>Backend tests مذكور في docs إنها مرت: 93 tests / 300 assertions.</li>
+      <li>اختبارات مهمة: auth, authorization, payments security, offline payments, platform config, blueprints, notifications.</li>
+      <li>React build و Flutter analyze/test/build و Electron build مذكورين كناجحين في readiness docs.</li>
+      <li>Composer audit بدون advisories حسب docs/الفحص السابق، بينما npm عنده moderate advisories لا توقف build.</li>
+    </ul>
+  </section>
+
+  <section id="files" class="card">
+    <h2>14. ملفات لازم تبقى حافظها</h2>
+    <div class="grid">
+      <div><h3>Routes/Controllers</h3><p><span class="file">backend/routes/api.php</span><br><span class="file">PaymentController.php</span><br><span class="file">OfflinePaymentController.php</span><br><span class="file">NotificationController.php</span><br><span class="file">ExportController.php</span></p></div>
+      <div><h3>Services</h3><p><span class="file">CourseService.php</span><br><span class="file">DeepSeekService.php</span><br><span class="file">PaymobService.php</span><br><span class="file">CurriculumValidator.php</span></p></div>
+      <div><h3>Models</h3><p><span class="file">User.php</span><br><span class="file">Course.php</span><br><span class="file">ContentBlueprint.php</span><br><span class="file">PlatformSetting.php</span><br><span class="file">Payment.php</span></p></div>
+      <div><h3>Docs/Config</h3><p><span class="file">docs/api-inventory.md</span><br><span class="file">docs/final-readiness-check.md</span><br><span class="file">backend/config/services.php</span><br><span class="file">backend/composer.json</span></p></div>
+    </div>
+  </section>
+
+  <section id="defense" class="card">
+    <h2>15. What To Say In Defense</h2>
+    <div class="say">"NOVAIS backend معمول كـ API-first architecture. نفس Laravel API بيخدم React web وFlutter mobile وElectron desktop. ركزت على إن الـ AI يرجع structured data مش كلام حر، وإن كل business flow له validation وصلاحيات واختبارات."</div>
+    <h2>Doctor May Ask</h2>
+    <div class="qa"><b>1. المشروع ده course generator بس؟</b><br>لا. دلوقتي فيه content blueprints لأنواع تعليمية متعددة، والكورس مجرد نوع منهم.</div>
+    <div class="qa"><b>2. فين نقطة دخول الـ API؟</b><br><span class="file">backend/routes/api.php</span>، ومنه routes بتروح للcontrollers والخدمات.</div>
+    <div class="qa"><b>3. ليه استخدمت Services؟</b><br>عشان controller يفضل خفيف، والمنطق زي AI/payments/course generation يبقى قابل للاختبار والصيانة.</div>
+    <div class="qa"><b>4. إزاي بتحمي admin routes؟</b><br>بتحتاج JWT ثم middleware <span class="file">is_admin</span> يتحقق من دور المستخدم.</div>
+    <div class="qa"><b>5. إزاي تمنع user يشوف كورس غيره؟</b><br>الcontrollers بتفلتر حسب user_id أو تتحقق من ownership قبل إرجاع البيانات.</div>
+    <div class="qa"><b>6. ليه JWT؟</b><br>مناسب لـ API يخدم web/mobile/desktop بدون session server-side تقليدية.</div>
+    <div class="qa"><b>7. إزاي Google login داخل في السيستم؟</b><br>باستخدام Socialite وroutes خاصة بـ Google OAuth، وبعد النجاح بنرجع token.</div>
+    <div class="qa"><b>8. إيه وظيفة CheckDevice؟</b><br>يبعت ويتابع device id لتقليل إساءة الاستخدام وربط بعض flows بالجهاز.</div>
+    <div class="qa"><b>9. إزاي الـ AI بيرجع JSON؟</b><br>prompt صارم + parser ينضف code fences/trailing commas + validator يطبع structure.</div>
+    <div class="qa"><b>10. لو AI رجع ناقص؟</b><br><span class="file">CurriculumValidator</span> يحاول normalize ويكمل fallback lessons/sections عند الحاجة.</div>
+    <div class="qa"><b>11. إيه content blueprint؟</b><br>تعريف لنوع محتوى: اسمه، schema الحقول، prompt instructions، display terms، والـ output sections.</div>
+    <div class="qa"><b>12. ليه blueprints في الداتابيز؟</b><br>عشان الأدمن يغير الأنواع والتعليمات بدون تعديل كود ونشر جديد.</div>
+    <div class="qa"><b>13. إزاي بتحمي prompt instructions؟</b><br>public endpoint بيرجع نسخة sanitized؛ الأدمن فقط يرى full config/instructions.</div>
+    <div class="qa"><b>14. إيه safety validation؟</b><br>فلترة محلية لكلمات خطرة + AI moderation قبل generation حسب الإعدادات.</div>
+    <div class="qa"><b>15. هل safety perfect؟</b><br>لا، هي طبقة دفاع. لازم نقول إنها تقلل المخاطر وليست ضمان مطلق.</div>
+    <div class="qa"><b>16. إيه Paymob flow؟</b><br>create pending payment، طلب checkout، ثم webhook موقّع يفعّل الاشتراك.</div>
+    <div class="qa"><b>17. ليه تتحقق من amount في webhook؟</b><br>عشان مايتفعلش اشتراك بسعر غلط أو order مختلف.</div>
+    <div class="qa"><b>18. إيه HMAC؟</b><br>توقيع من Paymob بنحسبه بنفس السر ونقارنه بـ <span class="file">hash_equals</span>.</div>
+    <div class="qa"><b>19. إيه offline payment؟</b><br>طلب دفع محلي برقم عملية أو صورة إثبات، والأدمن يراجعه ويوافق/يرفض.</div>
+    <div class="qa"><b>20. إزاي تمنع duplicate offline requests؟</b><br>الكود يمنع pending duplicate لنفس user/plan/cycle/method.</div>
+    <div class="qa"><b>21. إيه platform settings؟</b><br>إعدادات عامة للمنصة: branding، features، payments visibility، export flags، وغيرها.</div>
+    <div class="qa"><b>22. ليه public settings sanitized؟</b><br>عشان frontend يحتاج إعدادات، لكن مش لازم ياخد secrets/admin keys.</div>
+    <div class="qa"><b>23. إيه notification devices؟</b><br>تسجيل أجهزة المستخدمين مع optional push token. حاليا in-app جاهز، FCM native محتاج إعداد Firebase.</div>
+    <div class="qa"><b>24. هل desktop له backend مختلف؟</b><br>لا، Electron يشغل نفس React bundle ويكلم نفس API.</div>
+    <div class="qa"><b>25. إيه أهم اختبار payment؟</b><br>اختبارات security/webhook/offline approval لأنها تحمي money flow.</div>
+    <div class="qa"><b>26. إزاي بتتعامل مع أخطاء AI؟</b><br>timeouts/retries/logging ورسائل خطأ مناسبة، ولو JSON بايظ بنحاول parse/repair.</div>
+    <div class="qa"><b>27. ليه lazy lesson generation؟</b><br>عشان نقلل وقت وتكلفة إنشاء outline كامل، ونولد التفاصيل لما المستخدم يفتح الدرس.</div>
+    <div class="qa"><b>28. إيه role بتاع subscription؟</b><br>بيحدد plan limits وpremium role والمدة والسعر، ويمنع إنشاء محتوى فوق الحد.</div>
+    <div class="qa"><b>29. إزاي الفواتير بتتعمل؟</b><br>بعد payment success بيتولد invoice PDF ويتبعت email، مع logging لو الإيميل فشل.</div>
+    <div class="qa"><b>30. إيه أهم limitation؟</b><br>الـ AI محتاج مراجعة، وPR الحالي draft، وnative push/live Paymob production مش مثبتين بالاختبارات.</div>
+    <div class="qa"><b>31. ليه Laravel validation مهم؟</b><br>بيمنع inputs ناقصة أو مضرة قبل الوصول للbusiness logic.</div>
+    <div class="qa"><b>32. إزاي course مربوط بالlessons؟</b><br>Course model له lessons، والـ save flow ينشئ placeholders ثم المحتوى يتولد عند الطلب.</div>
+    <div class="qa"><b>33. إيه chat endpoint؟</b><br>مساعد داخل الكورس يستخدم history والرسالة ويرجع رد من AI.</div>
+    <div class="qa"><b>34. إزاي share links؟</b><br>backend يعمل token public share، وendpoint public يعرض المحتوى المسموح.</div>
+    <div class="qa"><b>35. إيه الفرق بين platform-config وplatform-settings؟</b><br>الاتنين يخدموا configuration للعميل، مع تركيز على public sanitized config للfrontends.</div>
+    <div class="qa"><b>36. إزاي تعرف إن الباك شغال؟</b><br>من tests، migration readiness، API inventory، وتجارب clients اللي بتبني على نفس endpoints.</div>
+    <div class="qa"><b>37. إيه file لازم تفتحه لو route مش شغال؟</b><br>ابدأ بـ <span class="file">routes/api.php</span> ثم controller ثم service ثم test.</div>
+    <div class="qa"><b>38. هل في caching؟</b><br>نعم settings/config public cached، والموبايل عنده GET cache client-side.</div>
+    <div class="qa"><b>39. إيه سبب وجود AIProviderInterface؟</b><br>عشان نفصل التطبيق عن مزود AI ونقدر نبدل DeepSeek أو نضيف provider لاحقا.</div>
+    <div class="qa"><b>40. لو الدكتور قال المحتوى غلط أكاديميا؟</b><br>نوضح إن النظام بيولد draft structured، والـ human review جزء من الاستخدام المسؤول.</div>
+    <div class="qa"><b>41. إزاي تتكلم عن PR #6؟</b><br>بصراحة: PR draft فيه تحسينات blueprints/product terminology، ولسه محتاج مراجعة نهائية قبل merge.</div>
+    <div class="qa"><b>42. إيه أكبر contribution ليك؟</b><br>تحويل الفكرة من صفحات بتطلب AI لنظام backend منظم فيه صلاحيات، بيانات، دفع، AI، وadmin control.</div>
+    <h2>Common Mistakes</h2>
+    <ul><li>ما تقولش "AI مضمون 100%"؛ قول structured + validated + needs review.</li><li>ما تقولش "Paymob production tested" لو مفيش دليل live production.</li><li>ما تخلطش بين callback وwebhook.</li><li>ما تنساش تقول إن public blueprints لا تكشف prompt instructions الكاملة.</li></ul>
+  </section>
+</main>
+</body>
+</html>

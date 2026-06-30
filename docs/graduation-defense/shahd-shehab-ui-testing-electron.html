@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NOVAIS Graduation Defense Guide - Shahd UI Testing Electron</title>
+  <style>
+    :root{--blue:#0f766e;--accent:#dc2626;--ink:#111827;--muted:#64748b;--bg:#f8fafc;--card:#fff;--line:#dde5f0;--soft:#fff1f2}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.85}
+    .wrap{max-width:1140px;margin:auto;padding:22px}.hero{background:linear-gradient(135deg,var(--blue),var(--accent));color:#fff;border-radius:22px;padding:28px;margin:14px 0 20px}
+    h1,h2,h3{margin:0 0 10px}h2{border-right:5px solid var(--accent);padding-right:10px;margin-top:26px}.muted{color:var(--muted)}.hero .muted{color:#fee2e2}
+    .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.badge{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.32);border-radius:999px;padding:5px 10px}
+    .card,.toc,.qa,.say,.ask,.warn,.ok{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:17px;margin:14px 0;box-shadow:0 10px 24px rgba(15,23,42,.05)}
+    .toc a{display:inline-block;margin:4px 0 4px 12px;color:var(--blue);text-decoration:none}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+    .file{direction:ltr;unicode-bidi:embed;font-family:Consolas,monospace;background:#eef2ff;border-radius:7px;padding:2px 6px;white-space:nowrap}
+    table{width:100%;border-collapse:collapse;background:#fff}th,td{border:1px solid var(--line);padding:9px;vertical-align:top}th{background:var(--soft)}.qa b{color:var(--blue)}
+    ul{padding-right:22px}.ltr{direction:ltr;text-align:left}.pill{display:inline-block;background:#fef2f2;border:1px solid #fecaca;border-radius:999px;padding:2px 9px;margin:2px}
+    @media(max-width:700px){.wrap{padding:12px}.hero{border-radius:14px;padding:18px}.file{white-space:normal}}@media print{body{background:#fff}.card,.toc,.qa,.say,.ask,.warn,.ok{box-shadow:none;break-inside:avoid}.hero{background:#fff;color:#000;border:1px solid #bbb}.hero .muted{color:#333}.toc a{color:#000}}
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <section class="hero">
+    <h1>NOVAIS Graduation Defense Guide</h1>
+    <h2 style="border:0;padding:0;margin-top:8px">Shahd Shehab - UI, Testing, Electron</h2>
+    <p class="muted">دليل دفاع يركز على جودة الواجهة، responsive behavior، evidence of testing، ونسخة الديسكتوب المبنية بـ Electron.</p>
+    <div class="badges"><span class="badge">UI/UX</span><span class="badge">Testing</span><span class="badge">Electron</span><span class="badge">Build Evidence</span><span class="badge">Desktop Security</span></div>
+  </section>
+
+  <nav class="toc">
+    <h2>الفهرس</h2>
+    <a href="#role">1. دورك</a><a href="#project">2. هدف الواجهة</a><a href="#architecture">3. UI Architecture</a><a href="#stack">4. أدواتك</a><a href="#responsive">5. Responsive</a><a href="#electron">6. Electron</a><a href="#security">7. Desktop Security</a><a href="#testing">8. Testing Strategy</a><a href="#evidence">9. Evidence</a><a href="#bugs">10. Bug Handling</a><a href="#access">11. Usability</a><a href="#admin">12. Admin UX</a><a href="#limits">13. حدود صريحة</a><a href="#files">14. ملفات مهمة</a><a href="#defense">15. الدفاع والأسئلة</a>
+  </nav>
+
+  <section id="role" class="card">
+    <h2>1. دورك في المشروع</h2>
+    <p>دورك إنك تضمن إن NOVAIS مش API شغال وخلاص، لكن تجربة مستخدم مفهومة على الويب والديسكتوب: layout، responsiveness، loading/error states، توحيد الشكل، وتجهيز أدلة الاختبار والبناء.</p>
+    <div class="say"><b>What to say in defense:</b> "أنا ركزت على UI consistency وتجربة المستخدم، ومعايا جزء اختبار وتجهيز نسخة Electron desktop. هدفي إن نفس المنتج يشتغل بشكل محترم على browser وعلى Windows app."</div>
+  </section>
+
+  <section id="project" class="card">
+    <h2>2. هدف الواجهة</h2>
+    <p>واجهة NOVAIS لازم تخدم نوعين مستخدمين: طالب/مستخدم بيولد محتوى ويتعلم، وأدمن بيدير المنصة. التصميم محتاج يكون واضح، responsive، ويدعم flow طويل من login لحد generation والحفظ والتصدير.</p>
+  </section>
+
+  <section id="architecture" class="card">
+    <h2>3. UI Architecture</h2>
+    <div class="grid">
+      <div><h3>Layouts</h3><p>Public layout، user dashboard layout، admin layout، standalone course routes.</p></div>
+      <div><h3>Reusable Components</h3><p>Sidebar, ExportModal, dropdowns, ChatBot, NotesSidebar, cards/forms.</p></div>
+      <div><h3>Pages</h3><p>Create, Generating, Topics, Course, Payment, Profile, Admin screens.</p></div>
+      <div><h3>Desktop Wrapper</h3><p>Electron يشغل نفس React build مع preload API محدود.</p></div>
+    </div>
+  </section>
+
+  <section id="stack" class="card">
+    <h2>4. الأدوات والتقنيات</h2>
+    <table><tr><th>أداة</th><th>دورها</th></tr>
+      <tr><td>React/CSS</td><td>بناء صفحات وتفاعل SPA.</td></tr>
+      <tr><td>Material UI</td><td>بعض components وخاصة admin/forms.</td></tr>
+      <tr><td>Electron</td><td>تحويل web app لتطبيق Windows desktop.</td></tr>
+      <tr><td>electron-builder</td><td>بناء installer/desktop package.</td></tr>
+      <tr><td>Readiness docs</td><td>توثيق أوامر الاختبار والبناء والنتائج.</td></tr>
+    </table>
+  </section>
+
+  <section id="responsive" class="card">
+    <h2>5. Responsive Design</h2>
+    <p>الواجهة فيها صفحات كثيرة: landing, dashboard, course viewer, admin tables. المهم في الدفاع تقول إن responsive مش شكل بس؛ هو إن flow المستخدم يفضل قابل للاستخدام على شاشات مختلفة، وإن النصوص والأزرار والcards ما تكسرش layout.</p>
+    <ul><li>Dashboard/sidebar للويب.</li><li>صفحات forms قابلة للتمرير.</li><li>Course viewer يعرض modules/lessons وcontent.</li><li>Admin screens تعتمد على tables/forms واضحة.</li></ul>
+  </section>
+
+  <section id="electron" class="card">
+    <h2>6. Electron Desktop</h2>
+    <p>نسخة الديسكتوب موجودة في <span class="file">public/electron.js</span> و <span class="file">public/preload.js</span>. في development تحمل localhost، وفي production تحمل React build من الملف. package script يبني React ثم electron-builder.</p>
+    <div class="ok"><b>نقطة دفاع قوية:</b> Desktop app مش backend جديد؛ هو shell آمن لنفس React app، وده يقلل duplication ويخلي fixes تظهر في الويب والديسكتوب.</div>
+  </section>
+
+  <section id="security" class="card">
+    <h2>7. Desktop Security</h2>
+    <ul>
+      <li><span class="pill">nodeIntegration:false</span> يمنع React من الوصول المباشر لـ Node APIs.</li>
+      <li><span class="pill">contextIsolation:true</span> يعزل preload عن صفحة الويب.</li>
+      <li><span class="pill">preload محدود</span> expose API صغير لـ Google login فقط.</li>
+      <li><span class="pill">external links</span> http/https links تفتح في browser النظام بدل windows عشوائية.</li>
+      <li><span class="pill">devTools</span> متاحة في dev فقط.</li>
+    </ul>
+  </section>
+
+  <section id="testing" class="card">
+    <h2>8. Testing Strategy</h2>
+    <p>الاختبار في NOVAIS مش نوع واحد. في backend tests للbusiness logic، React build للواجهة، Flutter analyze/test للموبايل، Electron build للديسكتوب، وmanual smoke checks موثقة. دورك تربطي جودة UI بالدليل مش بالكلام العام.</p>
+    <table><tr><th>اختبار</th><th>يثبت إيه</th></tr>
+      <tr><td class="ltr">php artisan test</td><td>منطق الباك: auth, payments, blueprints, notifications.</td></tr>
+      <tr><td class="ltr">CI=true npm run build</td><td>React يترجم production بدون أخطاء build.</td></tr>
+      <tr><td class="ltr">flutter analyze/test/build</td><td>الموبايل static analysis/tests/APK.</td></tr>
+      <tr><td class="ltr">npm run electron:build</td><td>desktop package يطلع من React build.</td></tr>
+    </table>
+  </section>
+
+  <section id="evidence" class="card">
+    <h2>9. Evidence موجود في الريبو</h2>
+    <p><span class="file">docs/final-readiness-check.md</span> و <span class="file">docs/verification-notifications.md</span> فيهم نتائج تحقق مسجلة: backend tests، web build، Flutter checks، Electron build، وWindows launch smoke check. استخدميهم كدليل، لكن ما تزوديش ادعاءات خارج المكتوب.</p>
+  </section>
+
+  <section id="bugs" class="card">
+    <h2>10. Bug Handling</h2>
+    <p>أمثلة مهمة: زرار go_back كان ظاهر كمفتاح ترجمة بدل نص مفهوم، وده نوع bug UI/localization لازم يتصلح لأنه يبان للمستخدم. كمان أي تغير في terminology لازم يتراجع في الشاشات كلها عشان المنتج ما يبقاش بيقول course لما هو book أو graduation project.</p>
+  </section>
+
+  <section id="access" class="card">
+    <h2>11. Usability</h2>
+    <ul><li>Loading states في generation.</li><li>Error handling يرجع المستخدم بمعلوماته.</li><li>Admin navigation واضح.</li><li>Dark mode وlanguage headers.</li><li>Desktop Google login عبر modal آمن نسبيا.</li></ul>
+  </section>
+
+  <section id="admin" class="card">
+    <h2>12. Admin UX</h2>
+    <p>لو اتسألتي عن الأدمن: الواجهة فيها screens لإدارة platform settings, content blueprints, plans, offline payments, notifications, CMS. مهم توضحي إن admin UX أصعب لأنه forms طويلة وبيانات حساسة، فلازم feedback/validation يكون واضح.</p>
+  </section>
+
+  <section id="limits" class="card">
+    <h2>13. حدود صريحة</h2>
+    <div class="warn"><b>قوليها بصراحة:</b> PR الحالي draft، وفيه أدلة build واختبار، لكن مفيش fresh screenshot matrix لكل شاشة في آخر update. Native push notifications مش fully enabled بدون Firebase. وAI content نفسه لازم مراجعة بشرية.</div>
+  </section>
+
+  <section id="files" class="card">
+    <h2>14. ملفات لازم تبقي حافظاها</h2>
+    <p><span class="file">src/App.js</span>، <span class="file">src/pages/course.js</span>، <span class="file">src/pages/create.js</span>، <span class="file">src/pages/admin/AdminLayout.js</span>، <span class="file">src/components/ExportModal.js</span>، <span class="file">public/electron.js</span>، <span class="file">public/preload.js</span>، <span class="file">package.json</span>، <span class="file">electron-before-build.js</span>، <span class="file">docs/final-readiness-check.md</span>.</p>
+  </section>
+
+  <section id="defense" class="card">
+    <h2>15. What To Say In Defense</h2>
+    <div class="say">"اشتغلت على جودة تجربة المستخدم والتحقق منها. NOVAIS عنده flows طويلة، فركزت إن الواجهة تكون مفهومة، responsive، وتتعامل مع loading/errors، وكمان جهزنا نسخة desktop مبنية على نفس React app باستخدام Electron بإعدادات أمان مناسبة."</div>
+    <h2>Doctor May Ask</h2>
+    <div class="qa"><b>1. إيه دور UI في مشروع AI؟</b><br>يحول AI backend لتجربة مفهومة: form، loading، review، save، view.</div>
+    <div class="qa"><b>2. إزاي تعرفي إن الواجهة بتبني؟</b><br>من <span class="file">CI=true npm run build</span> الموثق في readiness docs.</div>
+    <div class="qa"><b>3. إيه Electron؟</b><br>Framework يشغل web app داخل desktop shell.</div>
+    <div class="qa"><b>4. ليه مش عملنا desktop native من الصفر؟</b><br>عشان نستخدم نفس React app ونقلل التكرار والصيانة.</div>
+    <div class="qa"><b>5. فين ملف Electron الرئيسي؟</b><br><span class="file">public/electron.js</span>.</div>
+    <div class="qa"><b>6. فين preload؟</b><br><span class="file">public/preload.js</span> وبي expose API محدود.</div>
+    <div class="qa"><b>7. ليه nodeIntegration false؟</b><br>عشان صفحة React مايبقاش عندها وصول مباشر لـ Node.</div>
+    <div class="qa"><b>8. ليه contextIsolation true؟</b><br>لعزل سياق preload عن سياق الصفحة وتحسين الأمان.</div>
+    <div class="qa"><b>9. إزاي Google login في desktop؟</b><br>Electron يفتح modal OAuth ويراقب redirect فيه token ثم يبعت event للواجهة.</div>
+    <div class="qa"><b>10. external links بتفتح إزاي؟</b><br>في browser النظام باستخدام shell، بدل نوافذ داخل التطبيق.</div>
+    <div class="qa"><b>11. إيه أهم UI flow؟</b><br>create -> generating -> topics -> course viewer.</div>
+    <div class="qa"><b>12. إزاي تتعاملي مع loading؟</b><br>تعرضي حالة انتظار واضحة، خصوصا لأن AI generation ممكن يطول.</div>
+    <div class="qa"><b>13. لو generation فشل؟</b><br>المستخدم يرجع للform والداتا ما تضيعش.</div>
+    <div class="qa"><b>14. إيه responsive testing؟</b><br>مراجعة الشاشات على أحجام مختلفة والتأكد إن النصوص/الأزرار لا تتداخل.</div>
+    <div class="qa"><b>15. هل عندنا automated UI screenshots؟</b><br>الدليل الحالي يوثق builds/smoke، لكن آخر update لا يدعي screenshot matrix كاملة.</div>
+    <div class="qa"><b>16. إيه دور readiness docs؟</b><br>توثيق commands والنتائج عشان الدفاع يبقى بدليل.</div>
+    <div class="qa"><b>17. إزاي تختبري admin UI؟</b><br>login كadmin، فتح pages، تجربة forms/tables، والتأكد من API responses.</div>
+    <div class="qa"><b>18. إزاي تعرفي إن غير الأدمن ممنوع؟</b><br>AdminLayout والbackend admin middleware يمنعوا الوصول.</div>
+    <div class="qa"><b>19. إيه bug localization؟</b><br>لما يظهر key زي go_back بدل النص الحقيقي، وده لازم يتراجع في locales.</div>
+    <div class="qa"><b>20. هل UI يضمن security؟</b><br>لا. UI يساعد، لكن backend هو مصدر الصلاحيات الحقيقي.</div>
+    <div class="qa"><b>21. إيه أهم limitation في desktop؟</b><br>هو يعتمد على نفس API والإنترنت؛ مش تطبيق offline كامل.</div>
+    <div class="qa"><b>22. إيه build command للديسكتوب؟</b><br><span class="file">npm run electron:build</span>.</div>
+    <div class="qa"><b>23. إيه دور electron-builder؟</b><br>تجهيز package/installer لWindows.</div>
+    <div class="qa"><b>24. ليه التناسق مهم في NOVAIS؟</b><br>لأن المستخدم ينتقل بين صفحات كثيرة ولو labels مختلفة هيتوه.</div>
+    <div class="qa"><b>25. إيه أكبر مساهمة؟</b><br>تحويل النظام لتجربة قابلة للاستخدام والاختبار على web وdesktop.</div>
+    <div class="qa"><b>26. لو الدكتور قال فيه نص قديم؟</b><br>نقول بصراحة فيه PR draft لتحسين terminology ولسه محتاج مراجعة شاملة قبل release.</div>
+    <h2>Common Mistakes</h2>
+    <ul><li>ما تقوليش "اختبرنا كل شاشة بسكرينشوت" لو الدليل مش موجود.</li><li>ما تنسيش تذكري Electron security flags.</li><li>ما تعتبريش build مساوي لاختبار كل business flow.</li><li>ما تقولي إن native push جاهز بالكامل بدون Firebase.</li></ul>
+  </section>
+</main>
+</body>
+</html>

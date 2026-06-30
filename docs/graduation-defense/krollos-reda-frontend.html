@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NOVAIS Graduation Defense Guide - Krollos Frontend</title>
+  <style>
+    :root{--blue:#2563eb;--accent:#7c3aed;--ink:#111827;--muted:#64748b;--bg:#f8fafc;--card:#fff;--line:#dde5f0;--soft:#f3f4ff}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.85}
+    .wrap{max-width:1140px;margin:auto;padding:22px}.hero{background:linear-gradient(135deg,var(--blue),var(--accent));color:#fff;border-radius:22px;padding:28px;margin:14px 0 20px}
+    h1,h2,h3{margin:0 0 10px}h2{border-right:5px solid var(--accent);padding-right:10px;margin-top:26px}.muted{color:var(--muted)}.hero .muted{color:#ede9fe}
+    .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.badge{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.32);border-radius:999px;padding:5px 10px}
+    .card,.toc,.qa,.say,.ask,.warn,.ok{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:17px;margin:14px 0;box-shadow:0 10px 24px rgba(15,23,42,.05)}
+    .toc a{display:inline-block;margin:4px 0 4px 12px;color:var(--blue);text-decoration:none}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+    .file{direction:ltr;unicode-bidi:embed;font-family:Consolas,monospace;background:#eef2ff;border-radius:7px;padding:2px 6px;white-space:nowrap}
+    table{width:100%;border-collapse:collapse;background:#fff}th,td{border:1px solid var(--line);padding:9px;vertical-align:top}th{background:var(--soft)}.qa b{color:var(--blue)}
+    ul{padding-right:22px}.ltr{direction:ltr;text-align:left}.pill{display:inline-block;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:999px;padding:2px 9px;margin:2px}
+    @media(max-width:700px){.wrap{padding:12px}.hero{border-radius:14px;padding:18px}.file{white-space:normal}}@media print{body{background:#fff}.card,.toc,.qa,.say,.ask,.warn,.ok{box-shadow:none;break-inside:avoid}.hero{background:#fff;color:#000;border:1px solid #bbb}.hero .muted{color:#333}.toc a{color:#000}}
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <section class="hero">
+    <h1>NOVAIS Graduation Defense Guide</h1>
+    <h2 style="border:0;padding:0;margin-top:8px">Krollos Reda - Frontend Web</h2>
+    <p class="muted">دليل دفاع للـ React frontend: routing، state، API integration، admin pages، وتجربة إنشاء المحتوى.</p>
+    <div class="badges"><span class="badge">React 18</span><span class="badge">React Router</span><span class="badge">Axios</span><span class="badge">Admin UI</span><span class="badge">Responsive</span></div>
+  </section>
+
+  <nav class="toc">
+    <h2>الفهرس</h2>
+    <a href="#role">1. دورك</a><a href="#project">2. فكرة الويب</a><a href="#architecture">3. معمارية الفرونت</a><a href="#stack">4. التقنيات</a><a href="#routing">5. Routing</a><a href="#state">6. State</a><a href="#api">7. API Integration</a><a href="#create">8. Create Flow</a><a href="#viewer">9. Course/Document Viewer</a><a href="#admin">10. Admin UI</a><a href="#ux">11. UX</a><a href="#errors">12. Errors</a><a href="#testing">13. Build/Test</a><a href="#files">14. ملفات مهمة</a><a href="#defense">15. الدفاع والأسئلة</a>
+  </nav>
+
+  <section id="role" class="card">
+    <h2>1. دورك في المشروع</h2>
+    <p>دورك إنك حولت Laravel API لتجربة ويب واضحة: صفحات عامة، dashboard، إنشاء محتوى، شاشة مراجعة topics، viewer، payments، profile، admin dashboard، وربط كل ده بالـ API والـ local state.</p>
+    <div class="say"><b>What to say in defense:</b> "أنا مسؤول عن React web app وتجربة المستخدم الأساسية. عملت routing وحماية صفحات، ربطت API، وعملت flow إنشاء المحتوى من اختيار blueprint لحد حفظ وفتح المحتوى."</div>
+  </section>
+
+  <section id="project" class="card">
+    <h2>2. فكرة الويب في NOVAIS</h2>
+    <p>الويب هو الواجهة الأساسية للمستخدم والأدمن. المستخدم يختار نوع المنتج التعليمي، يدخل البيانات، يتابع generation، يراجع outline، يحفظ المحتوى، ثم يفتح الدروس أو المستند. الأدمن من نفس الويب يغير الإعدادات والـ blueprints والخطط والمدفوعات.</p>
+  </section>
+
+  <section id="architecture" class="card">
+    <h2>3. معمارية الفرونت</h2>
+    <div class="grid">
+      <div><h3>App Shell</h3><p><span class="file">src/App.js</span> يحدد Router، Layouts، interceptors، والثيم العام.</p></div>
+      <div><h3>Pages</h3><p>كل flow له page: create, generating, topics, course, payment, admin pages.</p></div>
+      <div><h3>Components</h3><p>Sidebar, ExportModal, NotesSidebar, ChatBot, dropdowns, shared UI.</p></div>
+      <div><h3>Services</h3><p><span class="file">FingerprintService</span> يعمل device id ويتضاف في headers.</p></div>
+    </div>
+  </section>
+
+  <section id="stack" class="card">
+    <h2>4. التقنيات المستخدمة</h2>
+    <table><tr><th>تقنية</th><th>استخدامها</th></tr>
+      <tr><td>React 18</td><td>SPA components وpages.</td></tr>
+      <tr><td>React Router</td><td>Public/user/admin routes، ومع Electron يتم استخدام HashRouter.</td></tr>
+      <tr><td>Axios</td><td>API calls مع JWT, Accept-Language, X-Device-ID interceptors.</td></tr>
+      <tr><td>Material UI + CSS</td><td>بعض عناصر الإدارة والـ UI components.</td></tr>
+      <tr><td>localStorage/sessionStorage</td><td>token, role, theme, device id, generation draft.</td></tr>
+    </table>
+  </section>
+
+  <section id="routing" class="card">
+    <h2>5. Routing</h2>
+    <p><span class="file">src/App.js</span> فيه تقسيم واضح: public layout للـ landing/auth/pages، user layout للـ dashboard/create/profile/payment، admin layout للوحة الإدارة، وstandalone routes للـ course viewer والquiz/certificate/share.</p>
+    <div class="ask"><b>Doctor may ask:</b> ليه HashRouter في Electron؟ عشان production build بيتفتح من file system، والـ BrowserRouter ممكن يكسر refresh/navigation.</div>
+  </section>
+
+  <section id="state" class="card">
+    <h2>6. State Management</h2>
+    <ul>
+      <li><span class="pill">Auth</span> token والrole في localStorage.</li>
+      <li><span class="pill">Theme</span> darkMode وtheme mode من platform settings.</li>
+      <li><span class="pill">Generation Draft</span> draft بيتحفظ لو generation فشل أو المستخدم رجع.</li>
+      <li><span class="pill">Course Data</span> outline/course id بتتنقل بين generating/topics/course.</li>
+      <li><span class="pill">Language</span> Accept-Language header من اختيار المستخدم.</li>
+    </ul>
+  </section>
+
+  <section id="api" class="card">
+    <h2>7. API Integration</h2>
+    <p>Axios interceptor يضيف JWT لو موجود، وdevice id، وAccept-Language. لو حصل 401 يتم تنظيف localStorage والرجوع للـ login. ده يخلي حماية الواجهات متسقة مع الباك.</p>
+    <table><tr><th>Frontend</th><th>Backend endpoint</th></tr>
+      <tr><td>Create</td><td class="ltr">GET /platform-settings, GET /content-blueprints, POST /generate-course</td></tr>
+      <tr><td>Topics</td><td class="ltr">POST /courses, POST /generate-course للadjust</td></tr>
+      <tr><td>Viewer</td><td class="ltr">GET /courses/{id}, POST /generate-lesson, export/share endpoints</td></tr>
+      <tr><td>Admin</td><td class="ltr">/admin/platform-settings, /admin/content-blueprints, /admin/offline-payments</td></tr>
+    </table>
+  </section>
+
+  <section id="create" class="card">
+    <h2>8. Create Flow</h2>
+    <ol>
+      <li><span class="file">src/pages/create.js</span> يجيب blueprints والإعدادات.</li>
+      <li>يعرض cards/schema حسب نوع المحتوى.</li>
+      <li>يتحقق من required fields وplan limitations.</li>
+      <li>يرسل state إلى <span class="file">generating.js</span>.</li>
+      <li><span class="file">generating.js</span> يبعت request للباك ويتعامل مع failure/back.</li>
+      <li><span class="file">topics.js</span> يعرض outline للمراجعة ثم يحفظ course.</li>
+    </ol>
+    <div class="ok"><b>نقطة قوة:</b> الواجهة مش hardcoded على course فقط؛ هي بتقرأ content blueprints وبتعرض fields ديناميكية.</div>
+  </section>
+
+  <section id="viewer" class="card">
+    <h2>9. Course/Document Viewer</h2>
+    <p><span class="file">src/pages/course.js</span> يعرض المحتوى، يولد الدروس lazy، يفتح export modal، يشارك الرابط، ويستخدم display terms حسب blueprint عشان العناوين متبقاش كلها "course" في كل منتج.</p>
+    <div class="warn"><b>حدود صريحة:</b> لسه ممكن تلاقي صفحات أو نصوص قديمة فيها terminology عامة للكورسات. PR الحالي في حالة draft وفيه تحسينات ongoing.</div>
+  </section>
+
+  <section id="admin" class="card">
+    <h2>10. Admin UI</h2>
+    <div class="grid">
+      <div><h3>Platform Settings</h3><p><span class="file">src/pages/admin/platformsettings.js</span> لإعدادات المنصة، branding، payments، exports.</p></div>
+      <div><h3>Content Blueprints</h3><p><span class="file">src/pages/admin/contentblueprints.js</span> لإدارة أنواع المحتوى والـ forms والتعليمات.</p></div>
+      <div><h3>Payments</h3><p><span class="file">offlinepayments.js</span> و <span class="file">plans.js</span> لإدارة الطلبات والخطط.</p></div>
+      <div><h3>Users/CMS</h3><p>users, paid users, admins, blogs, pages, contacts, notifications.</p></div>
+    </div>
+  </section>
+
+  <section id="ux" class="card">
+    <h2>11. UX وResponsive</h2>
+    <p>الواجهة فيها dashboard، sidebar، صفحات public، صفحات admin، loading states، error handling، export modal، dark mode، ودعم RTL/لغة عبر headers/locales. الهدف إن المستخدم يمشي flow كامل من غير ما يفهم تفاصيل الباك.</p>
+  </section>
+
+  <section id="errors" class="card">
+    <h2>12. التعامل مع الأخطاء</h2>
+    <ul><li>401 ينظف token ويرجع login.</li><li>فشل generation يرجع المستخدم للـ create ومعاه draft بدل ما يضيع البيانات.</li><li>صفحات payment فيها success/failed/pending.</li><li>admin layout يمنع غير الأدمن من الدخول.</li></ul>
+  </section>
+
+  <section id="testing" class="card">
+    <h2>13. Build/Test Evidence</h2>
+    <p>التحقق الأساسي للفرونت هو <span class="file">CI=true npm run build</span>، ومذكور في readiness docs إنه عدى. Electron build كمان مرتبط بالويب لأنه يبني نفس React bundle. يوجد تحذير npm moderate advisories في packages قديمة مثل react-scripts/quill، لكنه لا يمنع build حسب الفحص.</p>
+  </section>
+
+  <section id="files" class="card">
+    <h2>14. ملفات لازم تبقى حافظها</h2>
+    <p><span class="file">src/App.js</span>، <span class="file">src/pages/create.js</span>، <span class="file">src/pages/generating.js</span>، <span class="file">src/pages/topics.js</span>، <span class="file">src/pages/course.js</span>، <span class="file">src/components/ExportModal.js</span>، <span class="file">src/pages/admin/platformsettings.js</span>، <span class="file">src/pages/admin/contentblueprints.js</span>، <span class="file">src/pages/admin/AdminLayout.js</span>، <span class="file">src/services/FingerprintService.js</span>.</p>
+  </section>
+
+  <section id="defense" class="card">
+    <h2>15. What To Say In Defense</h2>
+    <div class="say">"أنا عملت واجهة ويب API-driven. الواجهة بتقرأ إعدادات وأنواع المحتوى من الباك، تعرض forms ديناميكية، وتحافظ على draft وتجربة المستخدم في حالة الأخطاء. نفس الويب كمان هو أساس نسخة الديسكتوب عن طريق Electron."</div>
+    <h2>Doctor May Ask</h2>
+    <div class="qa"><b>1. فين main entry للفرونت؟</b><br><span class="file">src/App.js</span> لأنه بيحدد routes والlayouts والinterceptors.</div>
+    <div class="qa"><b>2. إزاي بتحمي صفحات المستخدم؟</b><br>بالتحقق من token/role في الواجهة، والباك برضه يحمي endpoints.</div>
+    <div class="qa"><b>3. هل حماية الفرونت كفاية؟</b><br>لا. هي UX فقط. الأمان الحقيقي في backend middleware.</div>
+    <div class="qa"><b>4. ليه استخدمت Axios interceptor؟</b><br>عشان كل request ياخد token/language/device id بشكل موحد.</div>
+    <div class="qa"><b>5. إيه X-Device-ID؟</b><br>معرف جهاز يتولد في المتصفح ويروح للباك لدعم device-aware flows.</div>
+    <div class="qa"><b>6. إزاي create page ديناميكية؟</b><br>بتقرأ <span class="file">/content-blueprints</span> وتبني fields حسب schema.</div>
+    <div class="qa"><b>7. ليه في topics page قبل الحفظ؟</b><br>عشان المستخدم يراجع outline قبل ما يتحفظ كcourse/document دائم.</div>
+    <div class="qa"><b>8. لو generation فشل؟</b><br>نرجع للcreate ومعانا draft بدل فقدان المدخلات.</div>
+    <div class="qa"><b>9. إيه الفرق بين create وgenerating؟</b><br>create يجمع البيانات، generating يتعامل مع request/loading/error.</div>
+    <div class="qa"><b>10. إزاي تعرض أنواع محتوى غير course؟</b><br>باستخدام display terms القادمة من blueprint والmetadata المحفوظة.</div>
+    <div class="qa"><b>11. فين export؟</b><br><span class="file">ExportModal.js</span> يطلب PDF/PPT blob من backend ويحمله.</div>
+    <div class="qa"><b>12. إزاي share بيشتغل؟</b><br>الفرونت يطلب share link من الباك ويعرض رابط public route.</div>
+    <div class="qa"><b>13. ليه Electron يستخدم نفس الويب؟</b><br>عشان نقلل duplication ونخلي الديسكتوب يستفيد من نفس React UI.</div>
+    <div class="qa"><b>14. ليه HashRouter للديسكتوب؟</b><br>لأن file protocol لا يدعم server-side fallback زي dev server.</div>
+    <div class="qa"><b>15. إزاي بتتعامل مع dark mode؟</b><br>من platform settings/localStorage وتطبيق class/theme على الواجهة.</div>
+    <div class="qa"><b>16. فين admin routes؟</b><br>داخل nested admin layout في <span class="file">App.js</span>.</div>
+    <div class="qa"><b>17. لو غير أدمن فتح admin؟</b><br><span class="file">AdminLayout</span> يتحقق من profile ويرجع المستخدم.</div>
+    <div class="qa"><b>18. إيه platform settings UI؟</b><br>واجهة للأدمن لتغيير branding/features/payments/exports بدون تعديل كود.</div>
+    <div class="qa"><b>19. إيه content blueprints UI؟</b><br>واجهة للأدمن لإدارة أنواع المنتجات التعليمية وحقولها وتعليماتها.</div>
+    <div class="qa"><b>20. إزاي payment UI مربوط؟</b><br>صفحات payment/pricing/success/failed تتكلم مع payment endpoints وتعرض الحالة.</div>
+    <div class="qa"><b>21. هل في legacy نصوص؟</b><br>نعم ممكن بقايا "course" في أجزاء قديمة، والتحسينات في PR draft.</div>
+    <div class="qa"><b>22. إيه أهم build command؟</b><br><span class="file">CI=true npm run build</span>.</div>
+    <div class="qa"><b>23. لو API رجع 401؟</b><br>interceptor يمسح بيانات auth ويعيد التوجيه للlogin.</div>
+    <div class="qa"><b>24. هل الويب وحده يقرر plan limits؟</b><br>لا. الويب يعرض UX، والباك يطبق limit فعليا.</div>
+    <div class="qa"><b>25. إيه أكبر challenge؟</b><br>ربط UI واحد بأنواع محتوى متعددة بدون hardcoding زائد.</div>
+    <div class="qa"><b>26. إزاي تشرح contribution بتاعك؟</b><br>ربطت المستخدم بالـ AI backend في flow كامل قابل للاستخدام والإدارة.</div>
+    <h2>Common Mistakes</h2>
+    <ul><li>ما تقولش إن الفرونت هو مصدر الأمان؛ هو طبقة عرض فقط.</li><li>ما تنساش تذكر draft recovery في generation flow.</li><li>ما تخلطش بين public user routes وadmin nested routes.</li><li>لو اتسألت عن terminology، قول إن فيه تحسينات product-aware ولسه PR draft.</li></ul>
+  </section>
+</main>
+</body>
+</html>

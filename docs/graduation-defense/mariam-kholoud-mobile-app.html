@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NOVAIS Graduation Defense Guide - Mariam Kholoud Mobile App</title>
+  <style>
+    :root{--blue:#0284c7;--accent:#16a34a;--ink:#111827;--muted:#64748b;--bg:#f8fafc;--card:#fff;--line:#dde5f0;--soft:#ecfdf5}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.85}
+    .wrap{max-width:1140px;margin:auto;padding:22px}.hero{background:linear-gradient(135deg,var(--blue),var(--accent));color:#fff;border-radius:22px;padding:28px;margin:14px 0 20px}
+    h1,h2,h3{margin:0 0 10px}h2{border-right:5px solid var(--accent);padding-right:10px;margin-top:26px}.muted{color:var(--muted)}.hero .muted{color:#dcfce7}
+    .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.badge{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.32);border-radius:999px;padding:5px 10px}
+    .card,.toc,.qa,.say,.ask,.warn,.ok{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:17px;margin:14px 0;box-shadow:0 10px 24px rgba(15,23,42,.05)}
+    .toc a{display:inline-block;margin:4px 0 4px 12px;color:var(--blue);text-decoration:none}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+    .file{direction:ltr;unicode-bidi:embed;font-family:Consolas,monospace;background:#eef2ff;border-radius:7px;padding:2px 6px;white-space:nowrap}
+    table{width:100%;border-collapse:collapse;background:#fff}th,td{border:1px solid var(--line);padding:9px;vertical-align:top}th{background:var(--soft)}.qa b{color:var(--blue)}
+    ul{padding-right:22px}.ltr{direction:ltr;text-align:left}.pill{display:inline-block;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:999px;padding:2px 9px;margin:2px}
+    @media(max-width:700px){.wrap{padding:12px}.hero{border-radius:14px;padding:18px}.file{white-space:normal}}@media print{body{background:#fff}.card,.toc,.qa,.say,.ask,.warn,.ok{box-shadow:none;break-inside:avoid}.hero{background:#fff;color:#000;border:1px solid #bbb}.hero .muted{color:#333}.toc a{color:#000}}
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <section class="hero">
+    <h1>NOVAIS Graduation Defense Guide</h1>
+    <h2 style="border:0;padding:0;margin-top:8px">Mariam &amp; Kholoud - Mobile App</h2>
+    <p class="muted">دليل دفاع لتطبيق Flutter: architecture، API client، auth، generation، payments، notifications، cache، والاختبارات.</p>
+    <div class="badges"><span class="badge">Flutter</span><span class="badge">Riverpod</span><span class="badge">GoRouter</span><span class="badge">Dio</span><span class="badge">Secure Storage</span><span class="badge">Mobile Parity</span></div>
+  </section>
+
+  <nav class="toc">
+    <h2>الفهرس</h2>
+    <a href="#role">1. دوركم</a><a href="#project">2. هدف الموبايل</a><a href="#architecture">3. Architecture</a><a href="#stack">4. التقنيات</a><a href="#routing">5. Navigation</a><a href="#api">6. API Client</a><a href="#auth">7. Auth</a><a href="#cache">8. Cache</a><a href="#create">9. Generation Flow</a><a href="#course">10. Course Viewer</a><a href="#payments">11. Payments</a><a href="#notifications">12. Notifications</a><a href="#testing">13. Tests/Build</a><a href="#files">14. ملفات مهمة</a><a href="#defense">15. الدفاع والأسئلة</a>
+  </nav>
+
+  <section id="role" class="card">
+    <h2>1. دوركم في المشروع</h2>
+    <p>دوركم بناء تطبيق Flutter يخدم نفس فكرة NOVAIS على الموبايل: login/register، dashboard، إنشاء محتوى، مشاهدة المحتوى، payment، notifications، profile، وتجربة قريبة من الويب لكن مناسبة للشاشة الصغيرة.</p>
+    <div class="say"><b>What to say in defense:</b> "إحنا مسؤولين عن mobile client. استخدمنا Flutter مع Riverpod وGoRouter وDio عشان نعمل app منظم، متصل بنفس Laravel API، ويدعم auth/cache/generation/payment/notifications."</div>
+  </section>
+
+  <section id="project" class="card">
+    <h2>2. هدف الموبايل</h2>
+    <p>الموبايل مش نسخة عرض فقط. هو client كامل لنفس الـ API: يجيب platform config والblueprints، ينشئ content، يحفظ course/document، يعرض المحتوى، يفتح payment checkout، ويعرض notifications.</p>
+  </section>
+
+  <section id="architecture" class="card">
+    <h2>3. Architecture</h2>
+    <div class="grid">
+      <div><h3>Entry</h3><p><span class="file">mobile/lib/main.dart</span> يبدأ ProviderScope وNovaisApp.</p></div>
+      <div><h3>Core</h3><p>API client، auth provider، router، cache، models، platform config.</p></div>
+      <div><h3>Features</h3><p>create, course, payment, notifications, auth, dashboard.</p></div>
+      <div><h3>Tests</h3><p>widget tests، platform parity، API cache tests.</p></div>
+    </div>
+  </section>
+
+  <section id="stack" class="card">
+    <h2>4. التقنيات المستخدمة</h2>
+    <table><tr><th>تقنية</th><th>الدور</th></tr>
+      <tr><td>Flutter</td><td>تطبيق cross-platform بشاشة واحدة للكود.</td></tr>
+      <tr><td>Riverpod</td><td>State management للauth/config/notifications.</td></tr>
+      <tr><td>GoRouter</td><td>تعريف routes وguards.</td></tr>
+      <tr><td>Dio</td><td>HTTP client مع interceptors.</td></tr>
+      <tr><td>Flutter Secure Storage</td><td>تخزين JWT/device/user id بشكل أنسب للموبايل.</td></tr>
+      <tr><td>SharedPreferences</td><td>theme/locale/cache lightweight.</td></tr>
+    </table>
+  </section>
+
+  <section id="routing" class="card">
+    <h2>5. Navigation</h2>
+    <p><span class="file">mobile/lib/core/router/app_router.dart</span> يعرف routes زي login, dashboard, create, generating, course, quiz, certificate, payment, notifications. فيه redirect logic يحمي صفحات logged-in ويمنع دخول غير مصرح.</p>
+  </section>
+
+  <section id="api" class="card">
+    <h2>6. API Client</h2>
+    <p><span class="file">mobile/lib/core/api/api_client.dart</span> هو نقطة الاتصال بالباك. Base URL الافتراضي <span class="file">http://10.0.2.2:8000/api</span> مناسب لـ Android emulator. Dio يضيف interceptors للauth/device/cache.</p>
+    <ul><li>Auth interceptor يضيف Bearer token وAccept-Language.</li><li>Device interceptor يولد UUID ويرسله في <span class="file">X-Device-ID</span>.</li><li>GET cache interceptor يخزن GET responses ويرجع cache عند فشل الشبكة.</li><li><span class="file">resolveMediaUrl</span> يحول paths نسبية لروابط كاملة.</li></ul>
+  </section>
+
+  <section id="auth" class="card">
+    <h2>7. Auth</h2>
+    <p><span class="file">mobile/lib/core/auth/auth_provider.dart</span> يدير login/register/logout/bootstrap. التوكن في secure storage، والauth state يحدد router redirects. لو API رجع 401، interceptor يمسح JWT.</p>
+  </section>
+
+  <section id="cache" class="card">
+    <h2>8. Cache</h2>
+    <p><span class="file">mobile/lib/core/cache/api_cache.dart</span> يستخدم SharedPreferences لتخزين JSON GET responses per user. ده يساعد التطبيق يعرض بيانات محفوظة لو النت قطع، خصوصا في موبايل.</p>
+  </section>
+
+  <section id="create" class="card">
+    <h2>9. Generation Flow</h2>
+    <ol>
+      <li><span class="file">create_screen.dart</span> يعرض types/blueprints وfields.</li>
+      <li>المستخدم يختار topic/language/level/options.</li>
+      <li><span class="file">generating_screen.dart</span> يبعت <span class="file">POST /generate-course</span>.</li>
+      <li>لو رجع outline بدون id، الموبايل يحفظه عبر <span class="file">POST /courses</span>.</li>
+      <li>بعد الحفظ يفتح <span class="file">/course/:courseId</span>.</li>
+    </ol>
+    <div class="ok"><b>نقطة قوة:</b> الموبايل بيستخدم نفس endpoints والblueprints الموجودة في الويب، وده يقلل اختلاف السلوك بين المنصات.</div>
+  </section>
+
+  <section id="course" class="card">
+    <h2>10. Course/Content Viewer</h2>
+    <p><span class="file">course_screen.dart</span> يعرض المحتوى المحفوظ، modules/lessons، ويفتح التفاصيل حسب بيانات الباك. الموبايل عنده models مثل <span class="file">course.dart</span> للتعامل مع JSON بشكل typed.</p>
+  </section>
+
+  <section id="payments" class="card">
+    <h2>11. Payments</h2>
+    <p>الموبايل يعرف endpoints للـ payment checkout وoffline payments. Paymob checkout يظهر غالبا داخل WebView، والoffline flow يتيح طلب دفع يدوي. التفعيل النهائي يحصل في backend عن طريق webhook أو موافقة الأدمن، مش من الموبايل نفسه.</p>
+  </section>
+
+  <section id="notifications" class="card">
+    <h2>12. Notifications</h2>
+    <p>في mobile providers/screens للإشعارات، والباك يدعم in-app notifications وتسجيل device. لازم نقول بصراحة إن native Android push عبر Firebase/FCM غير مكتمل بدون إعداد Firebase credentials/config، لكن inbox/in-app flow موجود.</p>
+  </section>
+
+  <section id="testing" class="card">
+    <h2>13. Tests/Build</h2>
+    <table><tr><th>Command</th><th>معناه</th></tr>
+      <tr><td class="ltr">flutter pub get</td><td>تحميل dependencies.</td></tr>
+      <tr><td class="ltr">flutter analyze</td><td>Static analysis للأخطاء والتحذيرات.</td></tr>
+      <tr><td class="ltr">flutter test</td><td>تشغيل tests، منها flow وcache/parity.</td></tr>
+      <tr><td class="ltr">flutter build apk --debug</td><td>إثبات إن APK بيتبني.</td></tr>
+    </table>
+  </section>
+
+  <section id="files" class="card">
+    <h2>14. ملفات لازم تبقوا حافظينها</h2>
+    <p><span class="file">mobile/pubspec.yaml</span>، <span class="file">mobile/lib/main.dart</span>، <span class="file">core/api/api_client.dart</span>، <span class="file">core/api/endpoints.dart</span>، <span class="file">core/auth/auth_provider.dart</span>، <span class="file">core/router/app_router.dart</span>، <span class="file">core/cache/api_cache.dart</span>، <span class="file">features/create/create_screen.dart</span>، <span class="file">features/create/generating_screen.dart</span>، <span class="file">features/course/course_screen.dart</span>، <span class="file">features/payment/pricing_screen.dart</span>، <span class="file">features/notifications/notifications_screen.dart</span>، <span class="file">mobile/test</span>.</p>
+  </section>
+
+  <section id="defense" class="card">
+    <h2>15. What To Say In Defense</h2>
+    <div class="say">"الموبايل معمول كـ client كامل لنفس Laravel API. استخدمنا Riverpod للstate، GoRouter للnavigation، Dio للrequests مع token/device/cache interceptors، وSecure Storage لحفظ التوكن. التطبيق يقدر يعمل login، يولد محتوى، يحفظه، يعرضه، ويتعامل مع payments/notifications."</div>
+    <h2>Doctor May Ask</h2>
+    <div class="qa"><b>1. ليه Flutter؟</b><br>عشان cross-platform وسريع في بناء UI متسق للموبايل.</div>
+    <div class="qa"><b>2. ليه Riverpod؟</b><br>ينظم state/providers ويخلي auth/config/notifications قابلة للاختبار.</div>
+    <div class="qa"><b>3. فين entry point؟</b><br><span class="file">mobile/lib/main.dart</span>.</div>
+    <div class="qa"><b>4. فين routes؟</b><br><span class="file">core/router/app_router.dart</span>.</div>
+    <div class="qa"><b>5. إزاي بتحموا routes؟</b><br>redirect logic يعتمد على auth state والتوكن.</div>
+    <div class="qa"><b>6. فين API base URL؟</b><br>في <span class="file">ApiClient</span>، وافتراضي emulator هو <span class="file">10.0.2.2:8000/api</span>.</div>
+    <div class="qa"><b>7. ليه 10.0.2.2؟</b><br>Android emulator يستخدمها للوصول إلى localhost على جهاز التطوير.</div>
+    <div class="qa"><b>8. إزاي token بيتبعت؟</b><br>Auth interceptor يقرأ JWT من secure storage ويضيف Bearer header.</div>
+    <div class="qa"><b>9. لو API رجع 401؟</b><br>interceptor يمسح JWT، والapp state يعيد المستخدم للlogin.</div>
+    <div class="qa"><b>10. إيه X-Device-ID؟</b><br>UUID محفوظ في secure storage ويتبعت للباك للتعرف على الجهاز.</div>
+    <div class="qa"><b>11. إيه GET cache؟</b><br>تخزين responses للـ GET واستخدامها عند فشل الشبكة.</div>
+    <div class="qa"><b>12. هل التطبيق offline كامل؟</b><br>لا. فيه cache لبعض GET responses، لكن generation/payment يحتاجوا API.</div>
+    <div class="qa"><b>13. إزاي generation في الموبايل؟</b><br>create screen تجمع البيانات، generating screen تبعت للباك، ثم course screen تعرض الناتج.</div>
+    <div class="qa"><b>14. هل الموبايل يستخدم API مختلفة؟</b><br>لا. نفس Laravel API المستخدم في الويب والديسكتوب.</div>
+    <div class="qa"><b>15. إزاي blueprints بتوصل للموبايل؟</b><br>provider يطلب <span class="file">/content-blueprints</span> ويبني UI/choices منها.</div>
+    <div class="qa"><b>16. فين models؟</b><br><span class="file">mobile/lib/models</span> مثل course, user, app_notification, platform_config.</div>
+    <div class="qa"><b>17. إزاي payment بيشتغل؟</b><br>الموبايل يبدأ checkout/offline request، لكن backend هو اللي يفعّل subscription.</div>
+    <div class="qa"><b>18. ليه التفعيل مش من الموبايل؟</b><br>عشان الأمان. الدفع يتأكد من webhook أو موافقة الأدمن في الباك.</div>
+    <div class="qa"><b>19. هل Firebase push شغال؟</b><br>In-app notifications موجودة، لكن native push يحتاج Firebase setup غير مكتمل في docs.</div>
+    <div class="qa"><b>20. إيه command للتحليل؟</b><br><span class="file">flutter analyze</span>.</div>
+    <div class="qa"><b>21. إيه command للاختبارات؟</b><br><span class="file">flutter test</span>.</div>
+    <div class="qa"><b>22. إيه command لبناء APK؟</b><br><span class="file">flutter build apk --debug</span> أو target محدد حسب البيئة.</div>
+    <div class="qa"><b>23. إيه platform parity tests؟</b><br>اختبارات تتأكد إن الموبايل متوافق مع endpoints/flows الموجودة في المنصات الأخرى.</div>
+    <div class="qa"><b>24. إيه Safe JSON؟</b><br>الـ Dio transformer يستخدم decoder آمن للتعامل مع JSON راجع من الباك.</div>
+    <div class="qa"><b>25. إزاي media URLs بتتعالج؟</b><br><span class="file">resolveMediaUrl</span> يحول path نسبي إلى URL كامل بناء على API origin.</div>
+    <div class="qa"><b>26. إيه أكبر limitation؟</b><br>بعض المصطلحات القديمة قد تظهر، وnative push/live payment production يحتاجوا إعداد/دليل إضافي.</div>
+    <div class="qa"><b>27. إزاي تشرحوا contribution؟</b><br>عملنا client موبايل متكامل يستهلك نفس API ويقدم core flows بشكل مناسب للموبايل.</div>
+    <h2>Common Mistakes</h2>
+    <ul><li>ما تقولوش إن التطبيق offline بالكامل؛ قولوا فيه GET cache فقط.</li><li>ما تقولوش إن Firebase push جاهز بدون credentials.</li><li>ما تخلطوش بين WebView checkout وبين تفعيل الاشتراك النهائي.</li><li>احفظوا الفرق بين Secure Storage وSharedPreferences.</li></ul>
+  </section>
+</main>
+</body>
+</html>
