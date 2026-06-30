@@ -57,4 +57,23 @@ const BlogDetail = () => {
                 <header className="mb-10 text-center">
                     <div className="flex items-center justify-center gap-4 text-sm text-gray-500 mb-4">
                         <span className="flex items-center gap-1.5 bg-gray-100 dark:bg-white/5 px-3 py-1 rounded-full">
+                            <LuCalendar size={14} />
+                            {new Date(blog.created_at).toLocaleDateString(i18n.language)}
+                        </span>
+                    </div>
+                    <h1 className="text-3xl md:text-5xl font-black text-gray-900 dark:text-white leading-tight mb-6">
+                        {isRtl ? (blog.title_ar || blog.title) : blog.title}
+                    </h1>
+                </header>
+
+                {/* Main Content */}
+                <div
+                    className="prose prose-lg dark:prose-invert max-w-none prose-img:rounded-2xl prose-a:text-blue-600 hover:prose-a:text-blue-700"
+                    dangerouslySetInnerHTML={{ __html: isRtl ? (blog.content_ar || blog.content) : blog.content }}
+                />
+            </article>
+        </div>
+    );
+};
+
 export default BlogDetail;
