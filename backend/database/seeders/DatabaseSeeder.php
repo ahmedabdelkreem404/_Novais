@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             SocialLinkSeeder::class,
             PageSeeder::class,
             PlatformSettingSeeder::class,
+            BlogSeeder::class,
         ]);
     }
 }

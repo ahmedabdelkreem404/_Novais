@@ -270,10 +270,10 @@
             "email": "Email",
             "phone": "Phone",
             "message": "Message",
-            "placeholder_fname": "John",
-            "placeholder_lname": "Doe",
-            "placeholder_email": "john@example.com",
-            "placeholder_phone": "+1 234 567",
+            "placeholder_fname": "Ahmed",
+            "placeholder_lname": "Abdelkareem",
+            "placeholder_email": "info@inolty.com",
+            "placeholder_phone": "+201095532012",
             "placeholder_msg": "How can we help you?",
             "submit": "Send Message"
         }
