@@ -36,6 +36,9 @@ const PlatformSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('identity'); 
+  const [heroMediaSource, setHeroMediaSource] = useState('upload'); // 'upload' | 'link'
+  const [posterSource, setPosterSource] = useState('upload'); // 'upload' | 'link'
+  const [fallbackSource, setFallbackSource] = useState('upload'); // 'upload' | 'link'
   
   const [form, setForm] = useState({
     course_creation_enabled: true,
@@ -163,12 +166,22 @@ const PlatformSettings = () => {
         landing_steps_list: Array.isArray(res.data.landing_steps_list) ? res.data.landing_steps_list : [],
         landing_reviews_list: Array.isArray(res.data.landing_reviews_list) ? res.data.landing_reviews_list : [],
       }));
+
+      const isHeroUploaded = res.data.hero_media_url && res.data.hero_media_url.startsWith('/storage/');
+      setHeroMediaSource(isHeroUploaded || !res.data.hero_media_url ? 'upload' : 'link');
+
+      const isPosterUploaded = res.data.hero_media_poster && res.data.hero_media_poster.startsWith('/storage/');
+      setPosterSource(isPosterUploaded || !res.data.hero_media_poster ? 'upload' : 'link');
+
+      const isFallbackUploaded = res.data.hero_video_fallback_image && res.data.hero_video_fallback_image.startsWith('/storage/');
+      setFallbackSource(isFallbackUploaded || !res.data.hero_video_fallback_image ? 'upload' : 'link');
     } catch (error) {
       toast.error(t('admin.platform_config.load_fail') || 'Failed to load platform settings');
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchConfig();
@@ -430,146 +443,277 @@ const PlatformSettings = () => {
 
             <Card className="p-4 sm:p-6 space-y-6">
               <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
-                {isRtl ? 'مفاتيح وسلوك تشغيل الفيديو' : 'Video Customizer'}
+                {isRtl ? 'تخصيص وسائط الهيرو والواجهة الرئيسية' : 'Hero Section Media Customizer'}
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Media Format</label>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* 1. Media Type & Source Selection */}
+                <div className="space-y-6 lg:col-span-2">
+                  <div className="space-y-4 p-4 bg-gray-50 dark:bg-white/[0.02] border border-gray-200/50 dark:border-white/5 rounded-2xl">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      {isRtl ? 'الخطوة 1: حدد نوع الوسائط' : 'Step 1: Select Media Format'}
+                    </h4>
                     <div className="grid grid-cols-2 gap-3">
-                      {['image', 'video'].map((k) => (
+                      {[
+                        { key: 'image', label: isRtl ? '🖼️ صورة' : '🖼️ Image' },
+                        { key: 'video', label: isRtl ? '🎥 فيديو' : '🎥 Video' }
+                      ].map((item) => (
                         <button
-                          key={k}
+                          key={item.key}
                           type="button"
-                          onClick={() => setForm({ ...form, hero_media_type: k })}
-                          className={`py-2 rounded-xl text-xs font-bold transition border cursor-pointer ${form.hero_media_type === k ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300' : 'border-gray-200 bg-white text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-gray-300'}`}
+                          onClick={() => setForm({ ...form, hero_media_type: item.key })}
+                          className={`py-3 rounded-xl text-xs font-bold transition border cursor-pointer ${form.hero_media_type === item.key ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 shadow-sm' : 'border-gray-200 bg-white text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-gray-300'}`}
                         >
-                          {k.toUpperCase()}
+                          {item.label}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Hero Media URL Link</label>
-                      <input
-                        type="text"
-                        value={form.hero_media_url}
-                        onChange={(e) => setForm({ ...form, hero_media_url: e.target.value })}
-                        placeholder="https://example.com/video.mp4"
-                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
-                      />
+                  <div className="space-y-4 p-4 bg-gray-50 dark:bg-white/[0.02] border border-gray-200/50 dark:border-white/5 rounded-2xl">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      {isRtl ? 'الخطوة 2: حدد مصدر الملف' : 'Step 2: Select Media Source'}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { key: 'upload', label: isRtl ? '💻 رفع من الجهاز' : '💻 Upload from Device' },
+                        { key: 'link', label: isRtl ? '🔗 رابط خارجي (URL)' : '🔗 External Link (URL)' }
+                      ].map((item) => (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => setHeroMediaSource(item.key)}
+                          className={`py-3 rounded-xl text-xs font-bold transition border cursor-pointer ${heroMediaSource === item.key ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 shadow-sm' : 'border-gray-200 bg-white text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-gray-300'}`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
                     </div>
-                    <FileUploaderCard
-                      label={form.hero_media_type === 'video' ? 'Upload Local Video' : 'Upload Local Image'}
-                      fileUrl={form.hero_media_url}
-                      onUploadSuccess={(url) => setForm({ ...form, hero_media_url: url })}
-                      accept={form.hero_media_type === 'video' ? 'video/*' : 'image/*'}
-                      t={t}
-                    />
+
+                    <div className="mt-4 pt-4 border-t border-gray-200/50 dark:border-white/5">
+                      {heroMediaSource === 'upload' ? (
+                        <FileUploaderCard
+                          label={form.hero_media_type === 'video' ? (isRtl ? 'اختر ملف الفيديو من جهازك' : 'Choose Local Video File') : (isRtl ? 'اختر ملف الصورة من جهازك' : 'Choose Local Image File')}
+                          fileUrl={form.hero_media_url}
+                          onUploadSuccess={(url) => setForm({ ...form, hero_media_url: url })}
+                          accept={form.hero_media_type === 'video' ? 'video/*' : 'image/*'}
+                          t={t}
+                        />
+                      ) : (
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                            {isRtl ? 'رابط ملف الوسائط الخارجي (URL)' : 'External Media URL Link'}
+                          </label>
+                          <input
+                            type="text"
+                            value={form.hero_media_url || ''}
+                            onChange={(e) => setForm({ ...form, hero_media_url: e.target.value })}
+                            placeholder={form.hero_media_type === 'video' ? 'https://example.com/video.mp4' : 'https://example.com/image.jpg'}
+                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                          />
+                          <p className="text-[10px] text-gray-400">
+                            {isRtl ? 'أدخل رابطاً مباشراً يبدأ بـ http:// أو https://' : 'Enter a direct media URL starting with http:// or https://'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
+                  {/* Video Options (Shown only if format is Video) */}
                   {form.hero_media_type === 'video' && (
-                    <div className="space-y-3 p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-gray-600 dark:text-gray-300">Autoplay Video</span>
-                        <button
-                          type="button"
-                          onClick={() => toggle('hero_video_autoplay')}
-                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${form.hero_video_autoplay ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
-                        >
-                          <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form.hero_video_autoplay ? (isRtl ? '-translate-x-4' : 'translate-x-4') : 'translate-x-0'}`} />
-                        </button>
-                      </div>
+                    <div className="space-y-4 p-4 bg-gray-50 dark:bg-white/[0.02] border border-gray-200/50 dark:border-white/5 rounded-2xl">
+                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                        {isRtl ? 'التحكم في تشغيل وسلوك الفيديو' : 'Video Playback Controls'}
+                      </h4>
                       
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-gray-600 dark:text-gray-300">Play Muted</span>
-                        <button
-                          type="button"
-                          onClick={() => toggle('hero_media_muted')}
-                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${form.hero_media_muted ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
-                        >
-                          <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form.hero_media_muted ? (isRtl ? '-translate-x-4' : 'translate-x-4') : 'translate-x-0'}`} />
-                        </button>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/5 text-xs">
+                          <span className="font-bold text-gray-600 dark:text-gray-300">{isRtl ? 'تشغيل تلقائي للفيديو' : 'Autoplay Video'}</span>
+                          <button
+                            type="button"
+                            onClick={() => toggle('hero_video_autoplay')}
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${form.hero_video_autoplay ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
+                          >
+                            <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form.hero_video_autoplay ? (isRtl ? '-translate-x-4' : 'translate-x-4') : 'translate-x-0'}`} />
+                          </button>
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/5 text-xs">
+                          <span className="font-bold text-gray-600 dark:text-gray-300">{isRtl ? 'تشغيل مكتوم الصوت' : 'Play Muted'}</span>
+                          <button
+                            type="button"
+                            onClick={() => toggle('hero_media_muted')}
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${form.hero_media_muted ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
+                          >
+                            <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form.hero_media_muted ? (isRtl ? '-translate-x-4' : 'translate-x-4') : 'translate-x-0'}`} />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/5 text-xs">
+                          <span className="font-bold text-gray-600 dark:text-gray-300">{isRtl ? 'إخفاء عناصر التحكم بالفيديو' : 'Hide Controls UI'}</span>
+                          <button
+                            type="button"
+                            onClick={() => toggle('hero_video_controls_hidden')}
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${form.hero_video_controls_hidden ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
+                          >
+                            <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form.hero_video_controls_hidden ? (isRtl ? '-translate-x-4' : 'translate-x-4') : 'translate-x-0'}`} />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/5 text-xs">
+                          <span className="font-bold text-gray-600 dark:text-gray-300">{isRtl ? 'بديل عند ضعف الإنترنت' : 'Fallback on Low Bandwidth'}</span>
+                          <button
+                            type="button"
+                            onClick={() => toggle('hero_video_replace_low_bandwidth')}
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${form.hero_video_replace_low_bandwidth ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
+                          >
+                            <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form.hero_video_replace_low_bandwidth ? (isRtl ? '-translate-x-4' : 'translate-x-4') : 'translate-x-0'}`} />
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-gray-600 dark:text-gray-300">Hide Controls UI</span>
-                        <button
-                          type="button"
-                          onClick={() => toggle('hero_video_controls_hidden')}
-                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${form.hero_video_controls_hidden ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
-                        >
-                          <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form.hero_video_controls_hidden ? (isRtl ? '-translate-x-4' : 'translate-x-4') : 'translate-x-0'}`} />
-                        </button>
-                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+                        <div className="space-y-1">
+                          <span className="font-bold text-xs text-gray-600 dark:text-gray-300 block">{isRtl ? 'وضع التكرار' : 'Loop Mode'}</span>
+                          <select
+                            value={form.hero_video_loop_mode}
+                            onChange={(e) => setForm({ ...form, hero_video_loop_mode: e.target.value })}
+                            className="w-full text-xs rounded-xl border border-gray-200 bg-white p-2 text-gray-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
+                          >
+                            <option className="bg-white dark:bg-slate-900 text-gray-900 dark:text-white" value="loop_forever">{isRtl ? 'تكرار مستمر للأبد' : 'Loop Forever'}</option>
+                            <option className="bg-white dark:bg-slate-900 text-gray-900 dark:text-white" value="play_once">{isRtl ? 'تشغيل مرة واحدة والتوقف' : 'Play Once & Stop'}</option>
+                            <option className="bg-white dark:bg-slate-900 text-gray-900 dark:text-white" value="play_once_then_image">{isRtl ? 'تشغيل مرة واحدة ثم عرض الصورة البديلة' : 'Play Once, then show Fallback'}</option>
+                          </select>
+                        </div>
 
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-gray-600 dark:text-gray-300">Fallback on Low Bandwidth</span>
-                        <button
-                          type="button"
-                          onClick={() => toggle('hero_video_replace_low_bandwidth')}
-                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${form.hero_video_replace_low_bandwidth ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
-                        >
-                          <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form.hero_video_replace_low_bandwidth ? (isRtl ? '-translate-x-4' : 'translate-x-4') : 'translate-x-0'}`} />
-                        </button>
-                      </div>
-
-                      <div className="space-y-1">
-                        <span className="font-bold text-xs text-gray-600 dark:text-gray-300 block">Loop Mode</span>
-                        <select
-                          value={form.hero_video_loop_mode}
-                          onChange={(e) => setForm({ ...form, hero_video_loop_mode: e.target.value })}
-                          className="w-full text-xs rounded-lg border border-gray-200 bg-white p-2 text-gray-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
-                        >
-                          <option value="loop_forever">Loop Forever</option>
-                          <option value="play_once">Play Once & Stop</option>
-                          <option value="play_once_then_image">Play Once, then show Fallback Image</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <span className="font-bold text-xs text-gray-600 dark:text-gray-300 block">Target Client</span>
-                        <select
-                          value={form.hero_video_display_target}
-                          onChange={(e) => setForm({ ...form, hero_video_display_target: e.target.value })}
-                          className="w-full text-xs rounded-lg border border-gray-200 bg-white p-2 text-gray-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
-                        >
-                          <option value="both">Both Web & Mobile</option>
-                          <option value="web_only">Web Client Only</option>
-                          <option value="mobile_only">Mobile Client Only</option>
-                        </select>
+                        <div className="space-y-1">
+                          <span className="font-bold text-xs text-gray-600 dark:text-gray-300 block">{isRtl ? 'العميل المستهدف' : 'Target Client'}</span>
+                          <select
+                            value={form.hero_video_display_target}
+                            onChange={(e) => setForm({ ...form, hero_video_display_target: e.target.value })}
+                            className="w-full text-xs rounded-xl border border-gray-200 bg-white p-2 text-gray-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
+                          >
+                            <option className="bg-white dark:bg-slate-900 text-gray-900 dark:text-white" value="both">{isRtl ? 'الويب والهاتف معاً' : 'Both Web & Mobile'}</option>
+                            <option className="bg-white dark:bg-slate-900 text-gray-900 dark:text-white" value="web_only">{isRtl ? 'الويب فقط' : 'Web Client Only'}</option>
+                            <option className="bg-white dark:bg-slate-900 text-gray-900 dark:text-white" value="mobile_only">{isRtl ? 'الهاتف فقط' : 'Mobile Client Only'}</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
                   )}
                 </div>
 
+                {/* 2. Video Cover / Fallback Images Customizers (Shown only if Video format) */}
                 <div className="space-y-4">
-                  {form.hero_media_type === 'video' && (
+                  {form.hero_media_type === 'video' ? (
                     <>
-                      <FileUploaderCard
-                        label="Video Poster (Loading Image)"
-                        fileUrl={form.hero_media_poster}
-                        onUploadSuccess={(url) => setForm({ ...form, hero_media_poster: url })}
-                        accept="image/*"
-                        t={t}
-                      />
-                      <FileUploaderCard
-                        label="Video Fallback Image"
-                        fileUrl={form.hero_video_fallback_image}
-                        onUploadSuccess={(url) => setForm({ ...form, hero_video_fallback_image: url })}
-                        accept="image/*"
-                        t={t}
-                      />
+                      {/* Video Poster Section */}
+                      <div className="p-4 bg-gray-50 dark:bg-white/[0.02] border border-gray-200/50 dark:border-white/5 rounded-2xl space-y-3">
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                            {isRtl ? 'صورة غلاف الفيديو (أثناء التحميل)' : 'Video Poster (Loading Image)'}
+                          </h4>
+                          <div className="flex gap-1.5 text-[9px] font-bold">
+                            <button
+                              type="button"
+                              onClick={() => setPosterSource('upload')}
+                              className={`px-2 py-0.5 rounded-lg border ${posterSource === 'upload' ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 dark:border-white/10 text-gray-400'}`}
+                            >
+                              {isRtl ? 'جهاز' : 'Device'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPosterSource('link')}
+                              className={`px-2 py-0.5 rounded-lg border ${posterSource === 'link' ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 dark:border-white/10 text-gray-400'}`}
+                            >
+                              {isRtl ? 'رابط' : 'Link'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {posterSource === 'upload' ? (
+                          <FileUploaderCard
+                            label={isRtl ? 'تحميل صورة الغلاف' : 'Upload Poster Image'}
+                            fileUrl={form.hero_media_poster}
+                            onUploadSuccess={(url) => setForm({ ...form, hero_media_poster: url })}
+                            accept="image/*"
+                            t={t}
+                          />
+                        ) : (
+                          <div className="space-y-1">
+                            <input
+                              type="text"
+                              value={form.hero_media_poster || ''}
+                              onChange={(e) => setForm({ ...form, hero_media_poster: e.target.value })}
+                              placeholder="https://example.com/poster.jpg"
+                              className="w-full text-xs rounded-xl border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Video Fallback Section */}
+                      <div className="p-4 bg-gray-50 dark:bg-white/[0.02] border border-gray-200/50 dark:border-white/5 rounded-2xl space-y-3">
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                            {isRtl ? 'الصورة البديلة للفيديو' : 'Video Fallback Image'}
+                          </h4>
+                          <div className="flex gap-1.5 text-[9px] font-bold">
+                            <button
+                              type="button"
+                              onClick={() => setFallbackSource('upload')}
+                              className={`px-2 py-0.5 rounded-lg border ${fallbackSource === 'upload' ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 dark:border-white/10 text-gray-400'}`}
+                            >
+                              {isRtl ? 'جهاز' : 'Device'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFallbackSource('link')}
+                              className={`px-2 py-0.5 rounded-lg border ${fallbackSource === 'link' ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-200 dark:border-white/10 text-gray-400'}`}
+                            >
+                              {isRtl ? 'رابط' : 'Link'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {fallbackSource === 'upload' ? (
+                          <FileUploaderCard
+                            label={isRtl ? 'تحميل الصورة البديلة' : 'Upload Fallback Image'}
+                            fileUrl={form.hero_video_fallback_image}
+                            onUploadSuccess={(url) => setForm({ ...form, hero_video_fallback_image: url })}
+                            accept="image/*"
+                            t={t}
+                          />
+                        ) : (
+                          <div className="space-y-1">
+                            <input
+                              type="text"
+                              value={form.hero_video_fallback_image || ''}
+                              onChange={(e) => setForm({ ...form, hero_video_fallback_image: e.target.value })}
+                              placeholder="https://example.com/fallback.jpg"
+                              className="w-full text-xs rounded-xl border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                            />
+                          </div>
+                        )}
+                      </div>
                     </>
+                  ) : (
+                    // Helper notice for Image mode
+                    <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl text-xs text-blue-600 dark:text-blue-300 leading-relaxed">
+                      💡 <strong>{isRtl ? 'ملاحظة:' : 'Tip:'}</strong><br />
+                      {isRtl 
+                        ? 'أنت الآن في وضع الصورة. سيتم استخدام ملف الصورة المحدد في الخطوة السابقة لعرضه في واجهة الموقع وتطبيق الموبايل كغلاف رئيسي مباشرة.'
+                        : 'You are currently in Image Mode. The image file chosen in the previous step will be displayed as the main banner on the website and mobile app.'}
+                    </div>
                   )}
                 </div>
+
               </div>
             </Card>
           </div>
         )}
+
 
         {/* Tab Landing: Landing Page Sections */}
         {activeTab === 'landing' && (
