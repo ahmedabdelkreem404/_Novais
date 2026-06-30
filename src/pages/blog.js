@@ -56,11 +56,11 @@ const Blog = () => {
                                             </span>
                                         </div>
                                         <h2 className="text-xl font-bold mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
-                                            {blog.title}
+                                            {isRtl ? (blog.title_ar || blog.title) : blog.title}
                                         </h2>
                                         <div className="text-gray-500 dark:text-gray-400 text-sm line-clamp-3 mb-4 flex-grow">
                                             {/* Strip HTML tags for preview if content is HTML */}
-                                            {blog.content.replace(/<[^>]+>/g, '').substring(0, 150)}...
+                                            {((isRtl ? (blog.content_ar || blog.content) : blog.content) || '').replace(/<[^>]+>/g, '').substring(0, 150)}...
                                         </div>
                                         <div className="flex items-center text-blue-600 font-bold text-sm mt-auto">
                                             {t('blog.read_more')} <LuArrowRight className={`ml-2 transform group-hover:translate-x-1 transition-transform ${isRtl ? 'rotate-180 group-hover:-translate-x-1' : ''}`} />

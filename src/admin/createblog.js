@@ -12,8 +12,10 @@ import { useTranslation } from 'react-i18next';
 const CreateBlog = () => {
     const { t } = useTranslation();
     const [title, setTitle] = useState('');
+    const [titleAr, setTitleAr] = useState('');
     const [slug, setSlug] = useState('');
     const [content, setContent] = useState('');
+    const [contentAr, setContentAr] = useState('');
     const [processing, setProcessing] = useState(false);
     const navigate = useNavigate();
 
@@ -28,7 +30,13 @@ const CreateBlog = () => {
         try {
             const token = localStorage.getItem('token');
             const postURL = `${serverURL}/admin/blogs`;
-            await axios.post(postURL, { title, slug, content }, {
+            await axios.post(postURL, { 
+                title, 
+                title_ar: titleAr, 
+                slug, 
+                content, 
+                content_ar: contentAr 
+            }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success(t('admin.dashboard.blog.create_success'));
@@ -51,7 +59,7 @@ const CreateBlog = () => {
                     </div>
 
                     <Input
-                        label={t('admin.dashboard.blog.blog_title')}
+                        label={t('admin.dashboard.blog.blog_title') + " (English)"}
                         placeholder={t('admin.dashboard.blog.title_placeholder')}
                         value={title}
                         onChange={(e) => {
@@ -59,6 +67,13 @@ const CreateBlog = () => {
                             setSlug(e.target.value.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''));
                         }}
                         required
+                    />
+
+                    <Input
+                        label={t('admin.dashboard.blog.blog_title') + " (العربية)"}
+                        placeholder="أدخل عنوان المقال بالعربية..."
+                        value={titleAr}
+                        onChange={(e) => setTitleAr(e.target.value)}
                     />
 
                     <Input
@@ -71,14 +86,26 @@ const CreateBlog = () => {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                            {t('admin.dashboard.blog.content_label')}
+                            {t('admin.dashboard.blog.content_label') + " (English)"}
                         </label>
                         <textarea
-                            className="w-full min-h-[300px] p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0f0f0f] text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            className="w-full min-h-[200px] p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0f0f0f] text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             placeholder={t('admin.dashboard.blog.content_placeholder')}
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                             required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            {t('admin.dashboard.blog.content_label') + " (العربية)"}
+                        </label>
+                        <textarea
+                            className="w-full min-h-[200px] p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0f0f0f] text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            placeholder="أدخل محتوى المقال باللغة العربية..."
+                            value={contentAr}
+                            onChange={(e) => setContentAr(e.target.value)}
                         />
                     </div>
                 </Card>
