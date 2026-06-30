@@ -164,15 +164,10 @@
       <p>في UI/testing نقول: "اشتغلنا incremental verification". كل feature ليها build/test/smoke. مش Waterfall لأن UI اتغير مع features زي blueprints وoffline payments. ومش DevOps كامل لأن مفيش pipeline deployment ثابت، لكن فيه DevOps mindset في توثيق أوامر build والاختبارات.</p>
     </div>
     <div class="card">
-      <h3>Responsive Mockup صورة توضيحية</h3>
-      <svg viewBox="0 0 980 460" role="img" aria-label="Responsive UI mockup" style="width:100%;height:auto;border:1px solid #dde5f0;border-radius:14px;background:#fff">
-        <rect x="45" y="40" width="560" height="340" rx="20" fill="#f8fafc" stroke="#94a3b8" stroke-width="3"/>
-        <rect x="65" y="70" width="120" height="280" rx="14" fill="#0f766e"/><rect x="210" y="75" width="360" height="50" rx="12" fill="#e0f2fe"/><rect x="210" y="150" width="165" height="90" rx="14" fill="#fff" stroke="#dbe3ef"/><rect x="405" y="150" width="165" height="90" rx="14" fill="#fff" stroke="#dbe3ef"/><rect x="210" y="265" width="360" height="65" rx="14" fill="#fff" stroke="#dbe3ef"/>
-        <text x="325" y="410" text-anchor="middle" style="font:18px Tahoma;fill:#111827">Desktop: sidebar + cards + wide content</text>
-        <rect x="700" y="40" width="185" height="340" rx="28" fill="#f8fafc" stroke="#94a3b8" stroke-width="3"/>
-        <rect x="725" y="75" width="135" height="42" rx="12" fill="#e0f2fe"/><rect x="725" y="135" width="135" height="75" rx="14" fill="#fff" stroke="#dbe3ef"/><rect x="725" y="225" width="135" height="75" rx="14" fill="#fff" stroke="#dbe3ef"/><rect x="725" y="320" width="135" height="35" rx="12" fill="#0f766e"/>
-        <text x="793" y="410" text-anchor="middle" style="font:18px Tahoma;fill:#111827">Mobile: stacked flow</text>
-      </svg>
+      <h3>Responsive Screenshots حقيقية</h3>
+      <p>دي screenshots فعلية من تشغيل React على Chrome بأحجام viewport مختلفة.</p>
+      <figure><img src="screenshots/web-landing-desktop.png" alt="Real desktop responsive screenshot" style="width:100%;border-radius:14px;border:1px solid #dde5f0"><figcaption>Desktop viewport: nav كامل، hero واسع، CTA مركزي.</figcaption></figure>
+      <figure><img src="screenshots/web-landing-mobile.png" alt="Real mobile responsive screenshot" style="width:100%;max-width:390px;border-radius:14px;border:1px solid #dde5f0;display:block;margin:auto"><figcaption>Mobile viewport: menu مختصر، hero stacked، وcontent يبدأ تحت fold.</figcaption></figure>
     </div>
     <div class="card">
       <h3>صور UI حقيقية بدل الموكابس</h3>
@@ -214,7 +209,7 @@
     <div class="card">
       <h3>Full UI/Testing/Electron Flow</h3>
       <ol>
-        <li>UI تبدأ من visual identity: logo، navy background، blue CTA، typography كبيرة في hero، cards للpricing.</li>
+        <li>UI تبدأ من visual identity فعلية من المشروع: <span class="file">public/logo.png</span>، خلفية navy، blue CTA، typography كبيرة في hero، cards للpricing.</li>
         <li>Responsive verification: desktop landing، mobile landing، pricing، signin، create route.</li>
         <li>لو compile error ظهر، ده blocker UI حقيقي؛ أثناء الالتقاط ظهر error في <span class="file">course.js</span> واتعمل fix محدود لإغلاق JSX زائد.</li>
         <li>Electron flow: main process يفتح BrowserWindow، preload يعرض bridge محدود، renderer يشغل React.</li>

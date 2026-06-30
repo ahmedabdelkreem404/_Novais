@@ -26,6 +26,13 @@ workspace run:
 - `web-pricing-desktop.png` - real pricing page.
 - `desktop-electron-home.png` - real Electron BrowserWindow capture.
 - `mobile-emulator-home.png` - real Flutter Android emulator screenshot.
+- `novais-logo.png` - real project logo copied from `public/logo.png`.
+- `novais-launch-logo.png` - real Android launch logo copied from mobile resources.
+- `novais-course-view-sample.png` - real project sample course-view image copied from `src/res/img/slideOne.png`.
+
+All diagrams inside the HTML guides are code-derived documentation diagrams:
+they summarize actual inspected routes, models, services, relationships, and
+flows. They are not presented as screenshots or UI mockups.
 
 During screenshot capture, the current `src/pages/course.js` worktree had a JSX
 compile error in the new multi-mode course layout. A minimal JSX closing-tag fix
