@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             ContentBlueprintSeeder::class,
             SocialLinkSeeder::class,
             PageSeeder::class,
+            PlatformSettingSeeder::class,
         ]);
     }
 }

@@ -12,6 +12,16 @@ import Button from '../components/ui/Button';
 import slideOne from '../res/img/slideOne.png';
 import { useTranslation } from 'react-i18next';
 
+const IconMap = {
+    LuSparkles: LuSparkles,
+    LuChartBar: LuChartBar,
+    LuCircleCheck: LuCircleCheck,
+    LuLanguages: LuLanguages,
+    LuMessageSquare: LuMessageSquare,
+    LuDownload: LuDownload,
+    LuArrowRight: LuArrowRight
+};
+
 const Landing = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
@@ -92,6 +102,38 @@ const Landing = () => {
         return plan[field][lang] || plan[field]['ar'] || fallback;
     };
 
+    const rawFeaturesTitle = (config && (isRtl ? config.landing_features_title_ar : config.landing_features_title_en)) || `${t('landing.sections.features.title')} | ${t('landing.sections.features.title_accent')}`;
+    const featuresTitleParts = rawFeaturesTitle.includes('|') ? rawFeaturesTitle.split('|') : [rawFeaturesTitle, ''];
+
+    const featuresList = (config && Array.isArray(config.landing_features_list)) ? config.landing_features_list : [
+        { icon: 'LuSparkles', key: 'ai' },
+        { icon: 'LuChartBar', key: 'types' },
+        { icon: 'LuCircleCheck', key: 'quizzes' },
+        { icon: 'LuLanguages', key: 'languages' },
+        { icon: 'LuMessageSquare', key: 'chat' },
+        { icon: 'LuDownload', key: 'export' }
+    ];
+
+    const rawStepsTitle = (config && (isRtl ? config.landing_steps_title_ar : config.landing_steps_title_en)) || `${t('landing.sections.process.title')} | ${t('landing.sections.process.title_accent')} ${t('landing.sections.process.subtitle')}`;
+    const stepsTitleParts = rawStepsTitle.includes('|') ? rawStepsTitle.split('|') : [rawStepsTitle, ''];
+
+    const stepsList = (config && Array.isArray(config.landing_steps_list)) ? config.landing_steps_list : [
+        { key: 'topics', icon: 'LuMessageSquare' },
+        { key: 'preferences', icon: 'LuChartBar' },
+        { key: 'language', icon: 'LuLanguages' },
+        { key: 'magic', icon: 'LuSparkles' },
+    ];
+
+    const rawReviewsTitle = (config && (isRtl ? config.landing_reviews_title_ar : config.landing_reviews_title_en)) || `${t('landing.sections.reviews.title')} | ${t('landing.sections.reviews.title_accent')}`;
+    const reviewsTitleParts = rawReviewsTitle.includes('|') ? rawReviewsTitle.split('|') : [rawReviewsTitle, ''];
+
+    const reviewsList = (config && Array.isArray(config.landing_reviews_list)) ? config.landing_reviews_list : [
+        { key: 'sarah', name: "Sarah Johnson", avatar: "SJ" },
+        { key: 'david', name: "Prof. David Chen", avatar: "DC" },
+        { key: 'michael', name: "Michael Rodriguez", avatar: "MR" },
+        { key: 'anna', name: "Anna Wilson", avatar: "AW" }
+    ];
+
     return (
         <div className={`landing ${isRtl ? 'rtl' : 'ltr'}`} dir={isRtl ? 'rtl' : 'ltr'}>
             <section className="landing-hero">
@@ -107,7 +149,19 @@ const Landing = () => {
                         </motion.div>
                         <motion.h1 className="h1 landing-hero__title" variants={fadeInUp}>
                             {config && (isRtl ? config.web_hero_title_ar : config.web_hero_title_en) ? (
-                                isRtl ? config.web_hero_title_ar : config.web_hero_title_en
+                                (() => {
+                                    const rawTitle = isRtl ? config.web_hero_title_ar : config.web_hero_title_en;
+                                    if (rawTitle.includes('|')) {
+                                        const parts = rawTitle.split('|');
+                                        return (
+                                            <>
+                                                {parts[0]}<br />
+                                                <span className="landing-hero__titleAccent">{parts[1]}</span>
+                                            </>
+                                        );
+                                    }
+                                    return rawTitle;
+                                })()
                             ) : (
                                 <>
                                     {t('landing.title_main')}<br />
@@ -213,8 +267,18 @@ const Landing = () => {
             <section className="landing-section" id="features">
                 <div className="app-container">
                     <header className={`landing-section__header landing-section__header--center ${isRtl ? 'text-right' : ''}`}>
-                        <p className="landing-section__kicker">{t('landing.sections.features.kicker')}</p>
-                        <h2 className="h2 landing-section__title">{t('landing.sections.features.title')}<br /><span className="landing-hero__titleAccent">{t('landing.sections.features.title_accent')}</span></h2>
+                        <p className="landing-section__kicker">
+                            {(config && (isRtl ? config.landing_features_kicker_ar : config.landing_features_kicker_en)) || t('landing.sections.features.kicker')}
+                        </p>
+                        <h2 className="h2 landing-section__title">
+                            {featuresTitleParts[0]}
+                            {featuresTitleParts[1] && (
+                                <>
+                                    <br />
+                                    <span className="landing-hero__titleAccent">{featuresTitleParts[1]}</span>
+                                </>
+                            )}
+                        </h2>
                     </header>
 
                     <motion.div
@@ -224,26 +288,29 @@ const Landing = () => {
                         whileInView="visible"
                         viewport={{ once: true, margin: "-50px" }}
                     >
-                        {[
-                            { icon: LuSparkles, key: 'ai' },
-                            { icon: LuChartBar, key: 'types' },
-                            { icon: LuCircleCheck, key: 'quizzes' },
-                            { icon: LuLanguages, key: 'languages' },
-                            { icon: LuMessageSquare, key: 'chat' },
-                            { icon: LuDownload, key: 'export' }
-                        ].map((feature, idx) => (
-                            <motion.div
-                                key={idx}
-                                className="landing-feature"
-                                variants={fadeInUp}
-                            >
-                                <div className="landing-feature__icon" aria-hidden="true">
-                                    <feature.icon size={26} />
-                                </div>
-                                <h3 className="h3 landing-feature__title">{t(`landing.features_list.${feature.key}.title`)}</h3>
-                                <p className="landing-feature__desc">{t(`landing.features_list.${feature.key}.desc`)}</p>
-                            </motion.div>
-                        ))}
+                        {featuresList.map((feature, idx) => {
+                            const IconComponent = IconMap[feature.icon] || feature.icon;
+                            const title = isRtl 
+                                ? (feature.title_ar || feature.title_en || t(`landing.features_list.${feature.key}.title`))
+                                : (feature.title_en || feature.title_ar || t(`landing.features_list.${feature.key}.title`));
+                            const desc = isRtl
+                                ? (feature.desc_ar || feature.desc_en || t(`landing.features_list.${feature.key}.desc`))
+                                : (feature.desc_en || feature.desc_ar || t(`landing.features_list.${feature.key}.desc`));
+
+                            return (
+                                <motion.div
+                                    key={idx}
+                                    className="landing-feature"
+                                    variants={fadeInUp}
+                                >
+                                    <div className="landing-feature__icon" aria-hidden="true">
+                                        {IconComponent && <IconComponent size={26} />}
+                                    </div>
+                                    <h3 className="h3 landing-feature__title">{title}</h3>
+                                    <p className="landing-feature__desc">{desc}</p>
+                                </motion.div>
+                            );
+                        })}
                     </motion.div>
                 </div>
             </section>
@@ -251,38 +318,53 @@ const Landing = () => {
             <section className="landing-section" id="how-it-works">
                 <div className="app-container">
                     <header className={`landing-section__header landing-section__header--center ${isRtl ? 'text-right' : ''}`}>
-                        <p className="landing-section__kicker">{t('landing.sections.process.kicker')}</p>
-                        <h2 className="h2 landing-section__title">{t('landing.sections.process.title')} <span className="landing-hero__titleAccent">{t('landing.sections.process.title_accent')}</span> {t('landing.sections.process.subtitle')}</h2>
+                        <p className="landing-section__kicker">
+                            {(config && (isRtl ? config.landing_steps_kicker_ar : config.landing_steps_kicker_en)) || t('landing.sections.process.kicker')}
+                        </p>
+                        <h2 className="h2 landing-section__title">
+                            {stepsTitleParts[0]}
+                            {stepsTitleParts[1] && (
+                                <>
+                                    <br />
+                                    <span className="landing-hero__titleAccent">{stepsTitleParts[1]}</span>
+                                </>
+                            )}
+                        </h2>
                     </header>
 
                     <div className="landing-steps-diagram">
                         <div className="landing-steps-diagram__path" />
-                        {[
-                            { key: 'topics', icon: LuMessageSquare },
-                            { key: 'preferences', icon: LuChartBar },
-                            { key: 'language', icon: LuLanguages },
-                            { key: 'magic', icon: LuSparkles },
-                        ].map((item, idx) => (
-                            <motion.div
-                                className={`landing-process-card landing-process-card--${idx + 1}`}
-                                key={idx}
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, margin: "-50px" }}
-                                transition={{ duration: 0.6, delay: idx * 0.1 }}
-                            >
-                                <div>
-                                    <div className="landing-process-card__number">0{idx + 1}</div>
-                                    <div className="landing-process-card__icon">
-                                        <item.icon size={30} />
+                        {stepsList.map((item, idx) => {
+                            const IconComponent = IconMap[item.icon] || item.icon;
+                            const title = isRtl 
+                                ? (item.title_ar || item.title_en || t(`landing.steps.${item.key}.title`))
+                                : (item.title_en || item.title_ar || t(`landing.steps.${item.key}.title`));
+                            const desc = isRtl
+                                ? (item.desc_ar || item.desc_en || t(`landing.steps.${item.key}.desc`))
+                                : (item.desc_en || item.desc_ar || t(`landing.steps.${item.key}.desc`));
+
+                            return (
+                                <motion.div
+                                    className={`landing-process-card landing-process-card--${idx + 1}`}
+                                    key={idx}
+                                    initial={{ opacity: 0, y: 30 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true, margin: "-50px" }}
+                                    transition={{ duration: 0.6, delay: idx * 0.1 }}
+                                >
+                                    <div>
+                                        <div className="landing-process-card__number">0{idx + 1}</div>
+                                        <div className="landing-process-card__icon">
+                                            {IconComponent && <IconComponent size={30} />}
+                                        </div>
+                                        <div className="landing-process-card__content">
+                                            <h3>{title}</h3>
+                                            <p>{desc}</p>
+                                        </div>
                                     </div>
-                                    <div className="landing-process-card__content">
-                                        <h3>{t(`landing.steps.${item.key}.title`)}</h3>
-                                        <p>{t(`landing.steps.${item.key}.desc`)}</p>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))}
+                                </motion.div>
+                            );
+                        })}
                     </div>
                 </div>
             </section>
@@ -290,8 +372,18 @@ const Landing = () => {
             <section className="landing-section">
                 <div className="app-container">
                     <header className={`landing-section__header landing-section__header--center ${isRtl ? 'text-right' : ''}`}>
-                        <p className="landing-section__kicker">{t('landing.sections.reviews.kicker')}</p>
-                        <h2 className="h2 landing-section__title">{t('landing.sections.reviews.title')}<span className="landing-hero__titleAccent">{t('landing.sections.reviews.title_accent')}</span></h2>
+                        <p className="landing-section__kicker">
+                            {(config && (isRtl ? config.landing_reviews_kicker_ar : config.landing_reviews_kicker_en)) || t('landing.sections.reviews.kicker')}
+                        </p>
+                        <h2 className="h2 landing-section__title">
+                            {reviewsTitleParts[0]}
+                            {reviewsTitleParts[1] && (
+                                <>
+                                    <br />
+                                    <span className="landing-hero__titleAccent">{reviewsTitleParts[1]}</span>
+                                </>
+                            )}
+                        </h2>
                     </header>
 
                     <motion.div
@@ -301,29 +393,33 @@ const Landing = () => {
                         whileInView="visible"
                         viewport={{ once: true }}
                     >
-                        {[
-                            { key: 'sarah', name: "Sarah Johnson", avatar: "SJ" },
-                            { key: 'david', name: "Prof. David Chen", avatar: "DC" },
-                            { key: 'michael', name: "Michael Rodriguez", avatar: "MR" },
-                            { key: 'anna', name: "Anna Wilson", avatar: "AW" }
-                        ].map((t_item, idx) => (
-                            <motion.div
-                                key={idx}
-                                className="landing-testimonial card"
-                                variants={fadeInUp}
-                            >
-                                <p className="landing-testimonial__quote">"{t(`landing.testimonials.${t_item.key}.quote`)}"</p>
-                                <div className="landing-testimonial__meta">
-                                    <div className="landing-testimonial__avatar">
-                                        {t_item.avatar}
+                        {reviewsList.map((t_item, idx) => {
+                            const quote = isRtl
+                                ? (t_item.quote_ar || t_item.quote_en || t(`landing.testimonials.${t_item.key}.quote`))
+                                : (t_item.quote_en || t_item.quote_ar || t(`landing.testimonials.${t_item.key}.quote`));
+                            const role = isRtl
+                                ? (t_item.role_ar || t_item.role_en || t(`landing.testimonials.${t_item.key}.role`))
+                                : (t_item.role_en || t_item.role_ar || t(`landing.testimonials.${t_item.key}.role`));
+
+                            return (
+                                <motion.div
+                                    key={idx}
+                                    className="landing-testimonial card"
+                                    variants={fadeInUp}
+                                >
+                                    <p className="landing-testimonial__quote">"{quote}"</p>
+                                    <div className="landing-testimonial__meta">
+                                        <div className="landing-testimonial__avatar">
+                                            {t_item.avatar}
+                                        </div>
+                                        <div className="landing-testimonial__info">
+                                            <h4>{t_item.name}</h4>
+                                            <p className="landing-testimonial__role">{role}</p>
+                                        </div>
                                     </div>
-                                    <div className="landing-testimonial__info">
-                                        <h4>{t_item.name}</h4>
-                                        <p className="landing-testimonial__role">{t(`landing.testimonials.${t_item.key}.role`)}</p>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))}
+                                </motion.div>
+                            );
+                        })}
                     </motion.div>
                 </div>
             </section>
@@ -447,12 +543,14 @@ const Landing = () => {
                 <div className="app-container">
                     <div className="landing-cta landing-cta--hover card">
                         <div className="landing-cta__inner">
-                            <h2 className="h2">{t('landing.sections.cta.title')}</h2>
+                            <h2 className="h2">
+                                {(config && (isRtl ? config.landing_cta_title_ar : config.landing_cta_title_en)) || t('landing.sections.cta.title')}
+                            </h2>
                             <p className="landing-cta__desc">
-                                {t('landing.sections.cta.subtitle')}
+                                {(config && (isRtl ? config.landing_cta_subtitle_ar : config.landing_cta_subtitle_en)) || t('landing.sections.cta.subtitle')}
                             </p>
                             <Button variant="primary" size="xl" onClick={() => navigate('/signup')}>
-                                {t('landing.cta_start')}
+                                {(config && (isRtl ? config.landing_cta_btn_ar : config.landing_cta_btn_en)) || t('landing.cta_start')}
                                 {isRtl ? <LuArrowRight className="rotate-180" /> : <LuArrowRight />}
                             </Button>
                         </div>

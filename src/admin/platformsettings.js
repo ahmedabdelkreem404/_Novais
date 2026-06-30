@@ -6,7 +6,6 @@ import { serverURL } from '../constants';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { 
-  LuLanguages, 
   LuGlobe, 
   LuPalette, 
   LuVideo, 
@@ -16,29 +15,17 @@ import {
   LuDownload 
 } from 'react-icons/lu';
 
-const predefinedLanguages = [
-  'English', 'Arabic', 'French', 'Spanish', 'German', 'Italian', 
-  'Portuguese', 'Russian', 'Japanese', 'Chinese', 'Hindi', 
-  'Korean', 'Turkish', 'Polish', 'Dutch', 'Indonesian', 'Thai', 
-  'Swedish', 'Greek', 'Czech', 'Romanian', 'Hungarian', 'Ukrainian'
-];
-
-const predefinedCourseTypes = [
-  'Theory & Image Course', 
-  'Video & Theory Course'
-];
-
-const predefinedLevels = [
-  'Beginner', 'Intermediate', 'Advanced', 'Professional'
-];
-
-const predefinedDepths = [5, 10, 15, 20, 25];
 
 const PlatformSettings = () => {
   const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('identity'); 
+  
+  const [featuresJson, setFeaturesJson] = useState('');
+  const [stepsJson, setStepsJson] = useState('');
+  const [reviewsJson, setReviewsJson] = useState('');
+  const [jsonErrors, setJsonErrors] = useState({ features: '', steps: '', reviews: '' });
   
   const [form, setForm] = useState({
     course_creation_enabled: true,
@@ -112,6 +99,35 @@ const PlatformSettings = () => {
     seo_meta_description_ar: '',
     seo_meta_keywords_en: '',
     seo_meta_keywords_ar: '',
+
+    // Landing Page Customizations
+    landing_features_kicker_en: '',
+    landing_features_kicker_ar: '',
+    landing_features_title_en: '',
+    landing_features_title_ar: '',
+    landing_features_accent_en: '',
+    landing_features_accent_ar: '',
+    landing_steps_kicker_en: '',
+    landing_steps_kicker_ar: '',
+    landing_steps_title_en: '',
+    landing_steps_title_ar: '',
+    landing_steps_accent_en: '',
+    landing_steps_accent_ar: '',
+    landing_reviews_kicker_en: '',
+    landing_reviews_kicker_ar: '',
+    landing_reviews_title_en: '',
+    landing_reviews_title_ar: '',
+    landing_reviews_accent_en: '',
+    landing_reviews_accent_ar: '',
+    landing_cta_title_en: '',
+    landing_cta_title_ar: '',
+    landing_cta_subtitle_en: '',
+    landing_cta_subtitle_ar: '',
+    landing_cta_btn_en: '',
+    landing_cta_btn_ar: '',
+    landing_features_list: [],
+    landing_steps_list: [],
+    landing_reviews_list: [],
   });
 
   const fetchConfig = async () => {
@@ -133,7 +149,13 @@ const PlatformSettings = () => {
         free_levels: Array.isArray(res.data.free_levels) ? res.data.free_levels : [],
         enabled_depths: Array.isArray(res.data.enabled_depths) ? res.data.enabled_depths.map(Number) : [],
         free_depth_limit: res.data.free_depth_limit !== undefined ? Number(res.data.free_depth_limit) : 5,
+        landing_features_list: Array.isArray(res.data.landing_features_list) ? res.data.landing_features_list : [],
+        landing_steps_list: Array.isArray(res.data.landing_steps_list) ? res.data.landing_steps_list : [],
+        landing_reviews_list: Array.isArray(res.data.landing_reviews_list) ? res.data.landing_reviews_list : [],
       }));
+      setFeaturesJson(JSON.stringify(res.data.landing_features_list || [], null, 2));
+      setStepsJson(JSON.stringify(res.data.landing_steps_list || [], null, 2));
+      setReviewsJson(JSON.stringify(res.data.landing_reviews_list || [], null, 2));
     } catch (error) {
       toast.error(t('admin.platform_config.load_fail') || 'Failed to load platform settings');
     } finally {
@@ -166,6 +188,17 @@ const PlatformSettings = () => {
     }
   };
 
+  const updateJson = (key, setVal, rawText) => {
+    setVal(rawText);
+    try {
+      const parsed = JSON.parse(rawText);
+      setForm(prev => ({ ...prev, [key]: parsed }));
+      setJsonErrors(prev => ({ ...prev, [key]: '' }));
+    } catch (e) {
+      setJsonErrors(prev => ({ ...prev, [key]: e.message }));
+    }
+  };
+
   if (loading) {
     return <div className="p-8 text-center text-gray-400 animate-pulse">{t('admin.platform_config.loading') || 'Loading platform settings...'}</div>;
   }
@@ -173,14 +206,14 @@ const PlatformSettings = () => {
   const isRtl = i18n.language.startsWith('ar');
 
   const tabs = [
-    { id: 'identity', name: isRtl ? 'الهوية والشعار' : 'Identity & Logo', icon: LuGlobe },
+    { id: 'identity', name: isRtl ? 'الهوية والشعار' : 'Identity & Branding', icon: LuGlobe },
     { id: 'theme', name: isRtl ? 'مظهر المنصة' : 'Theme Settings', icon: LuPalette },
-    { id: 'hero', name: isRtl ? 'فيديو البطل والواجهة' : 'Hero Video & Media', icon: LuVideo },
-    { id: 'localization', name: isRtl ? 'اللغات والمحتوى' : 'Languages & Content', icon: LuLanguages },
+    { id: 'hero', name: isRtl ? 'الصفحة الرئيسية — قسم البطل' : 'Landing — Hero Section', icon: LuVideo },
+    { id: 'landing', name: isRtl ? 'الصفحة الرئيسية — الأقسام' : 'Landing — Page Sections', icon: LuGlobe },
     { id: 'payments', name: isRtl ? 'المدفوعات والظهور' : 'Payments & Visibility', icon: LuCreditCard },
     { id: 'features', name: isRtl ? 'مفاتيح الميزات' : 'Feature Flags', icon: LuFlag },
-    { id: 'seo', name: isRtl ? 'محركات البحث' : 'SEO & Socials', icon: LuSearch },
-    { id: 'apps', name: isRtl ? 'تطبيقات التحميل' : 'App Downloads', icon: LuDownload },
+    { id: 'seo', name: isRtl ? 'محركات البحث والـ SEO' : 'SEO & Meta Tags', icon: LuSearch },
+    { id: 'apps', name: isRtl ? 'التطبيقات والتحميل' : 'App Downloads', icon: LuDownload },
   ];
 
   return (
@@ -210,9 +243,18 @@ const PlatformSettings = () => {
       {/* Tab Panels */}
       <div className="mt-4">
         
-        {/* Tab 1: Identity & Branding */}
         {activeTab === 'identity' && (
           <div className="space-y-6 animate-in fade-in duration-200">
+            {/* Info notice */}
+            <div className="flex items-start gap-3 p-4 rounded-2xl bg-blue-500/5 border border-blue-500/15 text-sm text-blue-700 dark:text-blue-300">
+              <span className="text-lg leading-none">ℹ️</span>
+              <p className="text-xs font-medium leading-relaxed">
+                {isRtl
+                  ? 'تغييرات الشعار والفافيكون وعنوان المنصة ستُطبَّق فور الحفظ وإعادة تحميل الصفحة. اللوجو الجديد سيظهر في كل مكان يستخدم مكوّن اللوجو.'
+                  : 'Logo, favicon, and platform name changes apply immediately after saving and reloading the page. The new logo will appear everywhere the Logo component is used.'}
+              </p>
+            </div>
+
             <Card className="p-4 sm:p-6 space-y-6">
               <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
                 {isRtl ? 'اسم المنصة وهوية البراند' : 'Platform Identity'}
@@ -532,143 +574,259 @@ const PlatformSettings = () => {
           </div>
         )}
 
-        {/* Tab 4: Languages & Content */}
-        {activeTab === 'localization' && (
+        {/* Tab Landing: Landing Page Sections */}
+        {activeTab === 'landing' && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            <Card className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+            {/* Features Section customization */}
+            <Card className="p-4 sm:p-6 space-y-6">
               <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
-                {isRtl ? 'صلاحيات إنشاء الدروس والكورسات' : 'Course Generation Core Controls'}
+                {isRtl ? 'تخصيص قسم المميزات' : 'Features Section Customization'}
               </h3>
-              
-              <div className="grid grid-cols-1 gap-4">
-                {[
-                  {
-                    key: 'course_creation_enabled',
-                    title: isRtl ? 'تفعيل إنشاء الكورسات' : 'Course creation enabled',
-                    desc: isRtl ? 'السماح للمستخدمين بإنشاء دورات جديدة' : 'Allow users to generate new AI courses'
-                  },
-                  {
-                    key: 'all_languages_free',
-                    title: isRtl ? 'جميع اللغات مجانية' : 'All languages free',
-                    desc: isRtl ? 'إلغاء قيود الاشتراك المدفوع عن جميع اللغات' : 'Make all translation languages available for free plans'
-                  },
-                  {
-                    key: 'video_courses_enabled',
-                    title: isRtl ? 'تفعيل كورسات الفيديو' : 'Video courses enabled',
-                    desc: isRtl ? 'تفعيل توليد كورسات الفيديو بالذكاء الاصطناعي' : 'Allow generation of video-based curriculums'
-                  },
-                  {
-                    key: 'video_courses_free',
-                    title: isRtl ? 'كورسات الفيديو مجانية' : 'Video courses free',
-                    desc: isRtl ? 'إتاحة توليد كورسات الفيديو للحسابات المجانية' : 'Allow free members to generate video courses'
-                  }
-                ].map((item) => (
-                  <div 
-                    key={item.key} 
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 gap-3"
-                  >
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900 dark:text-white">{item.title}</h4>
-                      <p className="text-xs text-gray-400 mt-0.5">{item.desc}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => toggle(item.key)}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none 
-                        ${form[item.key] ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'}`}
-                    >
-                      <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${form[item.key] ? (isRtl ? '-translate-x-5' : 'translate-x-5') : 'translate-x-0'}`} />
-                    </button>
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Features Kicker (English)</label>
+                  <input
+                    type="text"
+                    value={form.landing_features_kicker_en}
+                    onChange={(e) => setForm({ ...form, landing_features_kicker_en: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">الكلام المساعد لقسم المميزات (العربية)</label>
+                  <input
+                    type="text"
+                    value={form.landing_features_kicker_ar}
+                    onChange={(e) => setForm({ ...form, landing_features_kicker_ar: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    dir="rtl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Features Title (English) - use "|" to highlight accent</label>
+                  <input
+                    type="text"
+                    value={form.landing_features_title_en}
+                    onChange={(e) => setForm({ ...form, landing_features_title_en: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">عنوان المميزات (العربية) - استخدم "|" لتمييز الكلمة الملونة</label>
+                  <input
+                    type="text"
+                    value={form.landing_features_title_ar}
+                    onChange={(e) => setForm({ ...form, landing_features_title_ar: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    dir="rtl"
+                  />
+                </div>
               </div>
-            </Card>
 
-            <Card className="p-4 sm:p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">
-                  {t('admin.platform_config.free_depth_limit') || "Free depth limit (max lessons)"}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                  Features List (JSON Array)
+                  {jsonErrors.features && <span className="text-red-500 ml-2 font-bold">{jsonErrors.features}</span>}
                 </label>
-                <input
-                  type="number"
-                  value={form.free_depth_limit}
-                  onChange={(event) => setForm({ ...form, free_depth_limit: Number(event.target.value) })}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                <textarea
+                  value={featuresJson}
+                  onChange={(e) => updateJson('landing_features_list', setFeaturesJson, e.target.value)}
+                  placeholder="[{}]"
+                  className="w-full min-h-[220px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs font-mono text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                 />
               </div>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <TagSelector
-                label={t('admin.platform_config.enabled_languages') || "Enabled languages"}
-                items={form.enabled_languages}
-                predefinedOptions={predefinedLanguages}
-                onChange={(newVal) => {
-                  const filteredFree = form.free_languages.filter(l => newVal.includes(l));
-                  setForm({ ...form, enabled_languages: newVal, free_languages: filteredFree });
-                }}
-                placeholderSelect={isRtl ? "اختر لغة لإضافتها..." : "Select language to add..."}
-              />
+            {/* Steps Section Customization */}
+            <Card className="p-4 sm:p-6 space-y-6">
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
+                {isRtl ? 'تخصيص قسم خطوات العمل' : 'How it Works Section Customization'}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Steps Kicker (English)</label>
+                  <input
+                    type="text"
+                    value={form.landing_steps_kicker_en}
+                    onChange={(e) => setForm({ ...form, landing_steps_kicker_en: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">نص الكيكر للخطوات (العربية)</label>
+                  <input
+                    type="text"
+                    value={form.landing_steps_kicker_ar}
+                    onChange={(e) => setForm({ ...form, landing_steps_kicker_ar: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    dir="rtl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Steps Title (English) - use "|" to highlight accent</label>
+                  <input
+                    type="text"
+                    value={form.landing_steps_title_en}
+                    onChange={(e) => setForm({ ...form, landing_steps_title_en: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">عنوان الخطوات (العربية) - استخدم "|" لتمييز الكلمة الملونة</label>
+                  <input
+                    type="text"
+                    value={form.landing_steps_title_ar}
+                    onChange={(e) => setForm({ ...form, landing_steps_title_ar: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    dir="rtl"
+                  />
+                </div>
+              </div>
 
-              <TagSelector
-                label={t('admin.platform_config.free_languages') || "Free languages"}
-                items={form.free_languages}
-                predefinedOptions={form.enabled_languages}
-                onChange={(newVal) => setForm({ ...form, free_languages: newVal })}
-                placeholderSelect={isRtl ? "اختر لغة مجانية..." : "Select free language..."}
-              />
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                  Steps List (JSON Array)
+                  {jsonErrors.steps && <span className="text-red-500 ml-2 font-bold">{jsonErrors.steps}</span>}
+                </label>
+                <textarea
+                  value={stepsJson}
+                  onChange={(e) => updateJson('landing_steps_list', setStepsJson, e.target.value)}
+                  placeholder="[{}]"
+                  className="w-full min-h-[220px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs font-mono text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                />
+              </div>
+            </Card>
 
-              <TagSelector
-                label={t('admin.platform_config.enabled_course_types') || "Enabled course types"}
-                items={form.enabled_course_types}
-                predefinedOptions={predefinedCourseTypes}
-                onChange={(newVal) => {
-                  const filteredFree = form.free_course_types.filter(t_type => newVal.includes(t_type));
-                  setForm({ ...form, enabled_course_types: newVal, free_course_types: filteredFree });
-                }}
-                placeholderSelect={isRtl ? "اختر نوع كورس لإضافته..." : "Select course type to add..."}
-              />
+            {/* Testimonials Section Customization */}
+            <Card className="p-4 sm:p-6 space-y-6">
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
+                {isRtl ? 'تخصيص قسم آراء العملاء' : 'Testimonials Section Customization'}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Reviews Kicker (English)</label>
+                  <input
+                    type="text"
+                    value={form.landing_reviews_kicker_en}
+                    onChange={(e) => setForm({ ...form, landing_reviews_kicker_en: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">نص الكيكر للآراء (العربية)</label>
+                  <input
+                    type="text"
+                    value={form.landing_reviews_kicker_ar}
+                    onChange={(e) => setForm({ ...form, landing_reviews_kicker_ar: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    dir="rtl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Reviews Title (English) - use "|" to highlight accent</label>
+                  <input
+                    type="text"
+                    value={form.landing_reviews_title_en}
+                    onChange={(e) => setForm({ ...form, landing_reviews_title_en: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">عنوان الآراء (العربية) - استخدم "|" لتمييز الكلمة الملونة</label>
+                  <input
+                    type="text"
+                    value={form.landing_reviews_title_ar}
+                    onChange={(e) => setForm({ ...form, landing_reviews_title_ar: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    dir="rtl"
+                  />
+                </div>
+              </div>
 
-              <TagSelector
-                label={t('admin.platform_config.free_course_types') || "Free course types"}
-                items={form.free_course_types}
-                predefinedOptions={form.enabled_course_types}
-                onChange={(newVal) => setForm({ ...form, free_course_types: newVal })}
-                placeholderSelect={isRtl ? "اختر نوع كورس مجاني..." : "Select free course type..."}
-              />
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                  Reviews List (JSON Array)
+                  {jsonErrors.reviews && <span className="text-red-500 ml-2 font-bold">{jsonErrors.reviews}</span>}
+                </label>
+                <textarea
+                  value={reviewsJson}
+                  onChange={(e) => updateJson('landing_reviews_list', setReviewsJson, e.target.value)}
+                  placeholder="[{}]"
+                  className="w-full min-h-[220px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs font-mono text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                />
+              </div>
+            </Card>
 
-              <TagSelector
-                label={t('admin.platform_config.enabled_levels') || "Enabled complexity levels"}
-                items={form.enabled_levels}
-                predefinedOptions={predefinedLevels}
-                onChange={(newVal) => {
-                  const filteredFree = form.free_levels.filter(lvl => newVal.includes(lvl));
-                  setForm({ ...form, enabled_levels: newVal, free_levels: filteredFree });
-                }}
-                placeholderSelect={isRtl ? "اختر مستوى لإضافته..." : "Select complexity level to add..."}
-              />
-
-              <TagSelector
-                label={t('admin.platform_config.free_levels') || "Free complexity levels"}
-                items={form.free_levels}
-                predefinedOptions={form.enabled_levels}
-                onChange={(newVal) => setForm({ ...form, free_levels: newVal })}
-                placeholderSelect={isRtl ? "اختر مستوى مجاني..." : "Select free complexity level..."}
-              />
-
-              <TagSelector
-                label={t('admin.platform_config.enabled_depths') || "Enabled depths (number of lessons)"}
-                items={form.enabled_depths}
-                predefinedOptions={predefinedDepths}
-                onChange={(newVal) => setForm({ ...form, enabled_depths: newVal })}
-                placeholderSelect={isRtl ? "اختر عمق الكورس لإضافته..." : "Select depth to add..."}
-              />
-            </div>
+            {/* CTA Banner customization */}
+            <Card className="p-4 sm:p-6 space-y-6">
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
+                {isRtl ? 'تخصيص بانر الحث على اتخاذ إجراء (CTA Banner)' : 'CTA Banner Customization'}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">CTA Title (English)</label>
+                  <input
+                    type="text"
+                    value={form.landing_cta_title_en}
+                    onChange={(e) => setForm({ ...form, landing_cta_title_en: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">عنوان البانر (العربية)</label>
+                  <input
+                    type="text"
+                    value={form.landing_cta_title_ar}
+                    onChange={(e) => setForm({ ...form, landing_cta_title_ar: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    dir="rtl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">CTA Subtitle (English)</label>
+                  <textarea
+                    value={form.landing_cta_subtitle_en}
+                    onChange={(e) => setForm({ ...form, landing_cta_subtitle_en: e.target.value })}
+                    className="w-full min-h-[80px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">الوصف الفرعي للبانر (العربية)</label>
+                  <textarea
+                    value={form.landing_cta_subtitle_ar}
+                    onChange={(e) => setForm({ ...form, landing_cta_subtitle_ar: e.target.value })}
+                    className="w-full min-h-[80px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    dir="rtl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">CTA Button (English)</label>
+                  <input
+                    type="text"
+                    value={form.landing_cta_btn_en}
+                    onChange={(e) => setForm({ ...form, landing_cta_btn_en: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">نص زر البانر (العربية)</label>
+                  <input
+                    type="text"
+                    value={form.landing_cta_btn_ar}
+                    onChange={(e) => setForm({ ...form, landing_cta_btn_ar: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    dir="rtl"
+                  />
+                </div>
+              </div>
+            </Card>
           </div>
         )}
 
-        {/* Tab 5: Payments & Visibility */}
+
+        {/* Tab: Payments & Visibility */}
         {activeTab === 'payments' && (
+
           <div className="space-y-6 animate-in fade-in duration-200">
             <Card className="p-4 sm:p-6 space-y-6">
               <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">
@@ -910,72 +1068,8 @@ const PlatformSettings = () => {
   );
 };
 
-// TagSelector Component
-const TagSelector = ({ label, items, predefinedOptions, onChange, placeholderSelect }) => {
-  const currentItems = Array.isArray(items) ? items : [];
-  const availableOptions = predefinedOptions.filter(opt => !currentItems.includes(opt));
-
-  const addTag = (opt) => {
-    const parsedOpt = typeof predefinedOptions[0] === 'number' ? Number(opt) : opt;
-    if (parsedOpt !== undefined && parsedOpt !== "" && !currentItems.includes(parsedOpt)) {
-      onChange([...currentItems, parsedOpt]);
-    }
-  };
-
-  const removeTag = (opt) => {
-    onChange(currentItems.filter(item => item !== opt));
-  };
-
-  return (
-    <Card className="p-4 sm:p-5 flex flex-col justify-between h-full min-h-[160px]">
-      <div>
-        <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">{label}</label>
-        
-        <div className="flex flex-wrap gap-1.5 mb-3 min-h-[44px] p-2 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/5 items-center">
-          {currentItems.length > 0 ? (
-            currentItems.map((item, idx) => (
-              <span
-                key={idx}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300 border border-blue-500/15"
-              >
-                {item}
-                <button
-                  type="button"
-                  onClick={() => removeTag(item)}
-                  className="hover:text-red-500 dark:hover:text-red-400 font-extrabold transition-colors ml-1 cursor-pointer"
-                >
-                  ×
-                </button>
-              </span>
-            ))
-          ) : (
-            <span className="text-xs text-gray-400 italic px-2">No items configured</span>
-          )}
-        </div>
-      </div>
-
-      {availableOptions.length > 0 && (
-        <div className="relative mt-2">
-          <select
-            value=""
-            onChange={(e) => {
-              addTag(e.target.value);
-              e.target.value = "";
-            }}
-            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-gray-300 cursor-pointer"
-          >
-            <option value="" disabled>{placeholderSelect || "Select to add..."}</option>
-            {availableOptions.map((opt, i) => (
-              <option key={i} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
-      )}
-    </Card>
-  );
-};
-
 // FileUploaderCard
+
 const FileUploaderCard = ({ label, fileUrl, onUploadSuccess, accept, t }) => {
   const [uploading, setUploading] = useState(false);
 

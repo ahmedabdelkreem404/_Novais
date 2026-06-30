@@ -121,20 +121,48 @@ function App() {
       try {
         const res = await axios.get(`${serverURL}/platform-settings`);
         if (res.data) {
-          if (res.data.system_theme_mode) {
-            localStorage.setItem('systemThemeMode', res.data.system_theme_mode);
-          }
-          if (res.data.theme_default_mode) {
-            localStorage.setItem('themeDefaultMode', res.data.theme_default_mode);
-          }
+          const d = res.data;
+
+          // Theme
+          if (d.system_theme_mode) localStorage.setItem('systemThemeMode', d.system_theme_mode);
+          if (d.theme_default_mode) localStorage.setItem('themeDefaultMode', d.theme_default_mode);
           window.dispatchEvent(new Event('themeChange'));
+
+          // Custom logo: store URL so LogoComponent can use it
+          if (d.branding_logo_url) {
+            localStorage.setItem('platformLogoUrl', d.branding_logo_url);
+          } else {
+            localStorage.removeItem('platformLogoUrl');
+          }
+          window.dispatchEvent(new Event('brandingChange'));
+
+          // Favicon
+          if (d.branding_favicon_url) {
+            const faviconUrl = d.branding_favicon_url.startsWith('http')
+              ? d.branding_favicon_url
+              : `${serverURL.replace('/api', '')}${d.branding_favicon_url}`;
+            let link = document.querySelector("link[rel~='icon']");
+            if (!link) {
+              link = document.createElement('link');
+              link.rel = 'icon';
+              document.head.appendChild(link);
+            }
+            link.href = faviconUrl;
+          }
+
+          // Page title
+          const lang = localStorage.getItem('i18nextLng') || 'en';
+          const isAr = lang.startsWith('ar');
+          const seoTitle = isAr ? d.seo_meta_title_ar : d.seo_meta_title_en;
+          if (seoTitle) document.title = seoTitle;
         }
       } catch (err) {
-        console.error("Failed to fetch theme mode config", err);
+        console.error("Failed to fetch platform config", err);
       }
     };
     fetchThemeMode();
   }, [serverURL]);
+
 
   useEffect(() => {
     // Apply Dark Mode to HTML tag for Tailwind

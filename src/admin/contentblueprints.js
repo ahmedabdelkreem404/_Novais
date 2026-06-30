@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +11,10 @@ import {
   LuToggleLeft,
   LuToggleRight,
   LuTrash2,
-  LuSparkles
+  LuSparkles,
+  LuChevronDown,
+  LuChevronUp,
+  LuZap
 } from 'react-icons/lu';
 import { serverURL } from '../constants';
 import Card from '../components/ui/Card';
@@ -316,6 +319,204 @@ const FieldEditor = ({ fields, onChange, advanced, t, label }) => {
   );
 };
 
+// ─── Platform-wide AI Generation Rules Panel ────────────────────────────────
+const PREDEFINED_LANGUAGES = [
+  'English','Arabic','French','Spanish','German','Italian','Portuguese',
+  'Russian','Japanese','Chinese','Hindi','Korean','Turkish','Polish',
+  'Dutch','Indonesian','Thai','Swedish','Greek','Czech','Romanian',
+];
+const PREDEFINED_TYPES = ['Theory & Image Course','Video & Theory Course'];
+const PREDEFINED_LEVELS = ['Beginner','Intermediate','Advanced','Professional'];
+const PREDEFINED_DEPTHS = [5,10,15,20,25];
+
+const GenerationRulesPanel = ({ isRtl, label }) => {
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [rules, setRules] = useState({
+    course_creation_enabled: true,
+    all_languages_free: false,
+    video_courses_enabled: true,
+    video_courses_free: false,
+    free_depth_limit: 5,
+    enabled_languages: [],
+    free_languages: [],
+    enabled_course_types: [],
+    free_course_types: [],
+    enabled_levels: [],
+    free_levels: [],
+    enabled_depths: [],
+  });
+
+  const load = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${serverURL}/admin/platform-settings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const d = res.data || {};
+      setRules(prev => ({
+        ...prev,
+        course_creation_enabled: d.course_creation_enabled !== undefined ? !!d.course_creation_enabled : true,
+        all_languages_free: !!d.all_languages_free,
+        video_courses_enabled: d.video_courses_enabled !== undefined ? !!d.video_courses_enabled : true,
+        video_courses_free: !!d.video_courses_free,
+        free_depth_limit: d.free_depth_limit !== undefined ? Number(d.free_depth_limit) : 5,
+        enabled_languages: Array.isArray(d.enabled_languages) ? d.enabled_languages : [],
+        free_languages: Array.isArray(d.free_languages) ? d.free_languages : [],
+        enabled_course_types: Array.isArray(d.enabled_course_types) ? d.enabled_course_types : [],
+        free_course_types: Array.isArray(d.free_course_types) ? d.free_course_types : [],
+        enabled_levels: Array.isArray(d.enabled_levels) ? d.enabled_levels : [],
+        free_levels: Array.isArray(d.free_levels) ? d.free_levels : [],
+        enabled_depths: Array.isArray(d.enabled_depths) ? d.enabled_depths.map(Number) : [],
+      }));
+    } catch (e) { /* silently fail */ }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const toggle = (key) => setRules(r => ({ ...r, [key]: !r[key] }));
+  const set = (key, val) => setRules(r => ({ ...r, [key]: val }));
+
+  const addTag = (listKey, val, predefined) => {
+    const parsed = typeof predefined[0] === 'number' ? Number(val) : val;
+    if (!rules[listKey].includes(parsed)) set(listKey, [...rules[listKey], parsed]);
+  };
+  const removeTag = (listKey, val) => set(listKey, rules[listKey].filter(x => x !== val));
+
+  const saveRules = async () => {
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${serverURL}/admin/platform-settings`, rules, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success(label('Generation rules saved', 'تم حفظ قواعد التوليد'));
+    } catch (e) {
+      toast.error(label('Save failed', 'فشل الحفظ'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const ToggleRow = ({ fieldKey, titleEn, titleAr, descEn, descAr }) => (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/5 gap-2">
+      <div>
+        <p className="text-sm font-bold text-gray-900 dark:text-white">{label(titleEn, titleAr)}</p>
+        <p className="text-xs text-gray-400">{label(descEn, descAr)}</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => toggle(fieldKey)}
+        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${rules[fieldKey] ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'}`}
+      >
+        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ${rules[fieldKey] ? (isRtl ? '-translate-x-5' : 'translate-x-5') : 'translate-x-0'}`} />
+      </button>
+    </div>
+  );
+
+  const TagSelector = ({ listKey, predefined, labelEn, labelAr, freeOf }) => {
+    const current = Array.isArray(rules[listKey]) ? rules[listKey] : [];
+    const available = (freeOf ? rules[freeOf] : predefined).filter(x => !current.includes(x));
+    return (
+      <div className="space-y-2">
+        <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 block">{label(labelEn, labelAr)}</span>
+        <div className="flex flex-wrap gap-1.5 min-h-[36px] p-2 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-100 dark:border-white/5">
+          {current.length > 0 ? current.map((item, i) => (
+            <span key={i} className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/15">
+              {item}
+              <button type="button" onClick={() => removeTag(listKey, item)} className="hover:text-red-500 ml-0.5 font-extrabold">×</button>
+            </span>
+          )) : <span className="text-xs text-gray-400 italic px-1">{label('None configured', 'لا يوجد')}</span>}
+        </div>
+        {available.length > 0 && (
+          <select
+            value=""
+            onChange={(e) => { addTag(listKey, e.target.value, predefined); e.target.value = ''; }}
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 dark:border-white/10 dark:bg-white/5 dark:text-gray-300 cursor-pointer"
+          >
+            <option value="" disabled>{label('Select to add...', 'اختر لإضافة...')}</option>
+            {available.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
+          </select>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="mb-8 rounded-2xl border border-amber-500/20 bg-amber-50/30 dark:bg-amber-950/10 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between p-4 text-start hover:bg-amber-50/50 dark:hover:bg-amber-900/10 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+            <LuZap size={18} />
+          </div>
+          <div>
+            <p className="text-sm font-black text-gray-900 dark:text-white">
+              {label('Global AI Generation Rules', 'قواعد توليد الذكاء الاصطناعي العامة')}
+            </p>
+            <p className="text-xs text-gray-500">
+              {label('Platform-wide controls: enabled languages, course types, levels & depths for all blueprints.', 'إعدادات المنصة الكاملة: اللغات والأنواع والمستويات والأعماق المتاحة لجميع المخططات.')}
+            </p>
+          </div>
+        </div>
+        <div className="text-gray-400 shrink-0">
+          {open ? <LuChevronUp size={18} /> : <LuChevronDown size={18} />}
+        </div>
+      </button>
+
+      {open && (
+        <div className="border-t border-amber-500/15 p-4 space-y-5">
+          {/* Core toggles */}
+          <div className="grid grid-cols-1 gap-3">
+            <ToggleRow fieldKey="course_creation_enabled" titleEn="Course Creation Enabled" titleAr="تفعيل إنشاء الكورسات" descEn="Allow users to generate new AI courses" descAr="السماح للمستخدمين بإنشاء دورات جديدة" />
+            <ToggleRow fieldKey="all_languages_free" titleEn="All Languages Free" titleAr="جميع اللغات مجانية" descEn="Make all translation languages available for free plans" descAr="إلغاء قيود الاشتراك المدفوع عن جميع اللغات" />
+            <ToggleRow fieldKey="video_courses_enabled" titleEn="Video Courses Enabled" titleAr="تفعيل كورسات الفيديو" descEn="Allow generation of video-based curricula" descAr="تفعيل توليد كورسات الفيديو بالذكاء الاصطناعي" />
+            <ToggleRow fieldKey="video_courses_free" titleEn="Video Courses Free" titleAr="كورسات الفيديو مجانية" descEn="Allow free members to generate video courses" descAr="إتاحة توليد كورسات الفيديو للحسابات المجانية" />
+          </div>
+
+          {/* Free depth limit */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 block">{label('Free Depth Limit (max lessons)', 'حد عمق الكورس المجاني (أقصى دروس)')}</label>
+            <input
+              type="number" min={1} max={50}
+              value={rules.free_depth_limit}
+              onChange={(e) => set('free_depth_limit', Number(e.target.value))}
+              className="w-32 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm dark:border-white/10 dark:bg-white/5 dark:text-white"
+            />
+          </div>
+
+          {/* Tag selectors grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <TagSelector listKey="enabled_languages" predefined={PREDEFINED_LANGUAGES} labelEn="Enabled Languages" labelAr="اللغات المتاحة" />
+            <TagSelector listKey="free_languages" predefined={PREDEFINED_LANGUAGES} freeOf="enabled_languages" labelEn="Free Languages" labelAr="اللغات المجانية" />
+            <TagSelector listKey="enabled_course_types" predefined={PREDEFINED_TYPES} labelEn="Enabled Course Types" labelAr="أنواع الكورسات المتاحة" />
+            <TagSelector listKey="free_course_types" predefined={PREDEFINED_TYPES} freeOf="enabled_course_types" labelEn="Free Course Types" labelAr="أنواع الكورسات المجانية" />
+            <TagSelector listKey="enabled_levels" predefined={PREDEFINED_LEVELS} labelEn="Enabled Complexity Levels" labelAr="مستويات الصعوبة المتاحة" />
+            <TagSelector listKey="free_levels" predefined={PREDEFINED_LEVELS} freeOf="enabled_levels" labelEn="Free Complexity Levels" labelAr="مستويات الصعوبة المجانية" />
+            <TagSelector listKey="enabled_depths" predefined={PREDEFINED_DEPTHS} labelEn="Enabled Depths (lesson counts)" labelAr="أعماق الكورس المتاحة" />
+          </div>
+
+          <div className="flex justify-end pt-1">
+            <button
+              type="button"
+              onClick={saveRules}
+              disabled={saving}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition disabled:opacity-50"
+            >
+              <LuSave size={16} />
+              {saving ? label('Saving...', 'جار الحفظ...') : label('Save Generation Rules', 'حفظ قواعد التوليد')}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Main ContentBlueprints Component ───────────────────────────────────────
 const ContentBlueprints = () => {
   const { t, i18n } = useTranslation();
   const isRtl = i18n.language.startsWith('ar');
@@ -439,6 +640,9 @@ const ContentBlueprints = () => {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-1 sm:px-4 pb-32">
+      {/* Global AI Generation Rules (moved from Platform Settings) */}
+      <GenerationRulesPanel isRtl={isRtl} label={label} />
+
       {/* Premium selector grid at the top instead of duplicate sidebar */}
       <div className="mb-8 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/5 rounded-2xl p-4">
         <div className="mb-3 flex items-center justify-between">
