@@ -89,6 +89,8 @@ class DeepSeekService implements AIProviderInterface
         $optionalSectionsStr = implode(', ', $optionalSections);
         $citationText = $citationRequired ? 'strictly required' : 'optional';
         $quizText = $includeQuiz ? 'required' : 'optional';
+        $productTerms = $this->blueprintTerminology($blueprintSlug);
+        $specializedRules = $this->blueprintSpecializedRules($blueprintSlug);
 
         $prompt = <<<BLUEPRINT_PROMPT
 ────────────────────────────
@@ -106,15 +108,23 @@ $fieldsStr
 BLUEPRINT INSTRUCTIONS:
 $instructions
 
+PRODUCT-SPECIFIC TERMINOLOGY:
+$productTerms
+
+SPECIALIZED RULES:
+$specializedRules
+
 OUTLINING CONSTRAINTS:
 1. Generate a structured outline tailored EXACTLY for the content type "$blueprintName". Do not generate a generic learning course if the type is a Book, Exam, or Research Paper.
-2. Structure the output into EXACTLY $count modules/chapters/sections (represented in the JSON output under the "chapters" key).
+2. Structure the output into EXACTLY $count product-appropriate chapters/sections/items (represented in the JSON output under the "chapters" key for NOVAIS compatibility).
 3. The content of each chapter/section must follow these required components: $requiredSectionsStr.
 4. Optionally incorporate elements of: $optionalSectionsStr.
 5. Language: All titles, descriptions, and structural nodes MUST be written in "$language".
 6. Citation Requirements: Academic citations and references are $citationText.
 7. Final Assessment: A quiz or review section is $quizText.
 8. Auto-inference: If any parameter or preference under "SUBMITTED PARAMETERS" is empty, blank, or unspecified, you must dynamically generate and design those details yourself to fit the topic and educational context.
+9. Never use "course", "lessons", "modules", "learning path", or video-course language for books, exams, question banks, theses, graduation project documents, stories, assignments, or lesson plans unless the selected blueprint is actually a course.
+10. For academic/research outputs, do not invent verified citations, DOI, URLs, or real statistics. Use clearly labeled reference placeholders or suggested source topics unless verified sources were provided by the user.
 
 OUTPUT JSON (Strictly follow this structure. Do not change key names to maintain compatibility with the NOVAIS engine):
 {
@@ -135,6 +145,48 @@ OUTPUT JSON (Strictly follow this structure. Do not change key names to maintain
 BLUEPRINT_PROMPT;
 
         return $this->chatRequest($base . $prompt, true, "You are NOVAIS, an intelligent learning coach generating content for a {$blueprintName}.");
+    }
+
+    private function blueprintTerminology(string $blueprintSlug): string
+    {
+        $map = [
+            'normal-course' => 'Use modules, lessons, exercises, practical tasks, projects, and checkpoints.',
+            'leveled-course' => 'Use levels, modules, lessons, checkpoints, and practical exercises.',
+            'interactive-practical-course' => 'Use modules, lessons, exercises, practical tasks, projects, and checkpoints.',
+            'academic-course' => 'Use lectures, lecture notes, slide outlines, discussion questions, assignments, and references.',
+            'study-review' => 'Use summary sections, key points, expected questions, exam tips, and revision plan.',
+            'question-bank' => 'Use questions, answers, explanations, difficulty, question types, and topic grouping.',
+            'exam-builder' => 'Use exam sections, questions, marks, model answers, and grading scheme.',
+            'book' => 'Use cover, preface, table of contents, chapters, exercises, glossary, references, and image placeholders.',
+            'story' => 'Use title, synopsis, characters, chapters/scenes, narrative arcs, and educational message.',
+            'graduation-project' => 'Use graduation project document, academic document, project book, cover page, chapters, sections, supervisors, students, faculty, department, university, methodology, results, references, and appendices.',
+            'master-thesis' => 'Use abstract, research problem, research questions, hypotheses, literature review, methodology, findings, discussion, recommendations, and references.',
+            'lesson-plan' => 'Use lesson objectives, materials, warm-up, explanation, activities, assessment, homework, and teacher notes.',
+            'assignment-builder' => 'Use assignment brief, tasks, deliverables, rubric, and answer guide.',
+            'project-based-learning' => 'Use project scenario, milestones, tasks, evaluation rubric, and deliverables.',
+        ];
+
+        return $map[$blueprintSlug] ?? 'Use terminology that exactly matches the selected content type.';
+    }
+
+    private function blueprintSpecializedRules(string $blueprintSlug): string
+    {
+        if ($blueprintSlug === 'graduation-project') {
+            return implode("\n", [
+                '- Graduation Project Book must be a complete academic document, not a course.',
+                '- Support any faculty or specialization: medicine, pharmacy, nursing, engineering, computer science, business, accounting, law, education, agriculture, media, arts, tourism, psychology, sociology, science, architecture, and others.',
+                '- Include cover page data when provided: university, faculty, department, project title, students, supervisors, academic year/date, and logo placeholder if useful.',
+                '- Use neutral academic sections for non-software projects: cover page, declaration if suitable, acknowledgements, abstract, table of contents, lists of figures/tables when enabled, introduction, problem statement, objectives, importance, scope, literature review, methodology, practical/applied part, results, discussion, conclusion, recommendations, references, appendices.',
+                '- Only include functional/non-functional requirements, database design, UML, software architecture, implementation, testing, deployment, Agile, Waterfall, DevOps, SRS, or system lifecycle if the topic/faculty/department/tools clearly indicate software/IT/system/app/platform OR the user explicitly asks for those sections.',
+                '- When image, diagram, or table placeholders are enabled or useful, write specific placeholders such as [IMAGE PLACEHOLDER: Add a photo/illustration showing ...], [DIAGRAM PLACEHOLDER: Add a diagram explaining ...], or [TABLE PLACEHOLDER: Add a table comparing ...].',
+            ]);
+        }
+
+        if ($blueprintSlug === 'master-thesis') {
+            return '- Treat references as placeholders or suggested source topics unless verified sources are supplied. Do not fabricate DOI, URLs, real statistics, or citations.';
+        }
+
+        return '- Match the selected product type exactly and avoid generic course wording for non-course blueprints.';
     }
 
     public function validateTopicSafety(string $topic): bool

@@ -58,7 +58,7 @@ class ContentBlueprint extends Model
             ['exam builder', 'إنشاء امتحان', 'exam-builder', ['exam paper', 'instructions', 'model answers', 'grading rubric']],
             ['book', 'كتاب كامل', 'book', ['preface', 'chapters', 'exercises', 'glossary']],
             ['novel story', 'رواية / قصة تعليمية', 'story', ['synopsis', 'chapters', 'scenes', 'educational message']],
-            ['graduation project', 'كتاب مشروع تخرج', 'graduation-project', ['abstract', 'introduction', 'methodology', 'requirements', 'system design', 'implementation', 'testing', 'references']],
+            ['graduation project book', 'كتاب مشروع تخرج', 'graduation-project', ['cover page', 'abstract', 'acknowledgements', 'table of contents', 'introduction', 'problem statement', 'objectives', 'importance', 'scope', 'literature review', 'methodology', 'applied part', 'results', 'discussion', 'conclusion', 'recommendations', 'references', 'appendices']],
             ['master thesis', 'رسالة ماجستير / بحث أكاديمي متقدم', 'master-thesis', ['abstract', 'introduction', 'literature review', 'methodology', 'findings', 'discussion', 'references']],
             ['teacher lesson plan', 'خطة درس للمعلم', 'lesson-plan', ['lesson objectives', 'activities', 'assessment', 'homework']],
             ['assignment builder', 'إنشاء واجب / تكليف', 'assignment-builder', ['assignment brief', 'tasks', 'grading rubric', 'answer guide']],
@@ -93,12 +93,34 @@ class ContentBlueprint extends Model
                 'media_rules' => ['prefer_instructional_media' => true, 'avoid_decorative_media' => true],
                 'citation_rules' => ['required' => in_array($slug, ['research-paper', 'book', 'graduation-project', 'master-thesis'], true)],
                 'tone_rules' => ['style' => 'clear, educational, academically responsible'],
-                'output_format_rules' => ['format' => 'structured JSON compatible with NOVAIS course metadata'],
-                'prompt_instructions' => "Generate a " . Str::title($nameEn) . " with explicit structure, practical educational value, and language-appropriate labels. Follow the required sections exactly.",
+                'output_format_rules' => ['format' => 'structured JSON compatible with NOVAIS metadata', 'terminology_must_match_blueprint' => true],
+                'prompt_instructions' => self::defaultPromptInstructions($slug, Str::title($nameEn)),
                 'validation_schema' => ['required' => ['title', 'description', 'chapters']],
                 'form_schema' => self::defaultFormSchema($slug, Str::title($nameEn)),
             ];
         })->all();
+    }
+
+    private static function defaultPromptInstructions(string $slug, string $name): string
+    {
+        $instructions = [
+            'interactive-practical-course' => 'Generate an interactive practical course using modules, lessons, exercises, practical tasks, projects, and checkpoints.',
+            'normal-course' => 'Generate an interactive practical course using modules, lessons, exercises, practical tasks, projects, and checkpoints.',
+            'leveled-course' => 'Generate a leveled course using level maps, modules, lessons, exercises, practical tasks, and checkpoints.',
+            'academic-course' => 'Generate an academic lecture pack using lectures, lecture notes, slide outlines, discussion questions, assignments, and references.',
+            'study-review' => 'Generate a study review using summary sections, key points, expected questions, exam tips, and a revision plan.',
+            'question-bank' => 'Generate a question bank using questions, answers, explanations, difficulty, question types, and topic grouping.',
+            'exam-builder' => 'Generate an exam using exam sections, questions, marks, model answers, and a grading scheme.',
+            'book' => 'Generate a full book using cover, preface, table of contents, chapters, exercises, glossary, references, and useful image placeholders.',
+            'story' => 'Generate an educational novel or story using title, synopsis, characters, chapters or scenes, narrative arcs, and educational message when selected.',
+            'graduation-project' => 'Generate a complete academic graduation project document for any faculty or specialization. Do not assume programming, DevOps, Agile, Waterfall, SRS, database, UML, deployment, or software architecture unless the submitted topic/faculty/department/tools clearly indicate a software, IT, system, app, or platform project, or the user explicitly asks for those sections. For non-software projects use neutral academic sections: cover page, abstract, acknowledgements, table of contents, introduction, problem statement, objectives, importance, scope, literature review, methodology, practical/applied part, results, discussion, conclusion, recommendations, references, and appendices. References must be placeholders or suggested source topics unless the user supplied verified sources; never fabricate DOI, URLs, real statistics, or fake citations.',
+            'master-thesis' => 'Generate academic research or thesis sections using abstract, research problem, research questions, hypotheses, literature review, methodology, findings, discussion, recommendations, and references. Do not fabricate verified citations, DOI, URLs, or statistics.',
+            'lesson-plan' => 'Generate a teacher lesson plan using lesson objectives, materials, warm-up, explanation, activities, assessment, homework, and teacher notes.',
+            'assignment-builder' => 'Generate an assignment using assignment brief, tasks, deliverables, rubric, and answer guide.',
+            'project-based-learning' => 'Generate a project-based learning plan using project scenario, milestones, tasks, evaluation rubric, and deliverables.',
+        ];
+
+        return $instructions[$slug] ?? "Generate a {$name} with explicit structure, practical educational value, and language-appropriate labels. Follow the required sections exactly.";
     }
 
     public static function defaultFormSchema(string $slug, string $name = 'course'): array
@@ -255,25 +277,35 @@ class ContentBlueprint extends Model
                 ]),
             ],
             'graduation-project' => [
-                self::field('domain', 'Project domain', 'مجال المشروع', 'text', true, ['en' => 'e.g. Healthcare, fintech, IoT...', 'ar' => 'مثال: الرعاية الصحية، التكنولوجيا المالية...']),
+                self::field('faculty', 'Faculty / College', 'الكلية', 'text', true, ['en' => 'e.g. Faculty of Medicine, Commerce, Engineering, Law...', 'ar' => 'مثال: كلية الطب، التجارة، الهندسة، الحقوق...']),
+                self::field('department', 'Department / Specialization', 'القسم أو التخصص', 'text', true, ['en' => 'e.g. Accounting, Nursing, Architecture, Computer Science...', 'ar' => 'مثال: المحاسبة، التمريض، العمارة، علوم الحاسب...']),
+                self::field('university_name', 'University name', 'اسم الجامعة', 'text', true, ['en' => 'Official university name...', 'ar' => 'اسم الجامعة الرسمي...']),
+                self::field('student_names', 'Student names', 'أسماء الطلاب', 'textarea', true, ['en' => 'Write one student per line...', 'ar' => 'اكتب اسم كل طالب في سطر...']),
+                self::field('supervisor_names', 'Supervisor name(s)', 'أسماء المشرفين', 'textarea', true, ['en' => 'Supervisor, co-supervisor, academic advisor...', 'ar' => 'المشرف، المشرف المشارك، المرشد الأكاديمي...']),
+                self::field('academic_year', 'Academic year or date', 'السنة الدراسية أو التاريخ', 'text', false, ['en' => 'e.g. 2025/2026 or June 2026...', 'ar' => 'مثال: 2025/2026 أو يونيو 2026...']),
+                self::field('project_description', 'Project description / idea', 'وصف فكرة المشروع', 'textarea', false, ['en' => 'Briefly describe the project idea. Leave blank for NOVAIS to infer from the title.', 'ar' => 'صف فكرة المشروع باختصار، أو اتركها ليستنتجها NOVAIS من العنوان.']),
                 self::field('team_size', 'Team size', 'حجم الفريق', 'number', false, '4'),
-                self::field('supervisor_role', 'Supervisor role', 'دور المشرف', 'text', false, ['en' => 'e.g. Advisor, main grader...', 'ar' => 'مثال: مستشار، مصحح رئيسي...']),
-                self::field('problem_statement', 'Problem statement', 'صياغة المشكلة', 'textarea', true, ['en' => 'What problem does the project solve?', 'ar' => 'ما هي المشكلة التي يحلها المشروع؟']),
-                self::field('objectives', 'Objectives', 'الأهداف', 'textarea', true, ['en' => 'Core objectives of the project...', 'ar' => 'الأهداف الأساسية للمشروع...']),
+                self::field('problem_statement', 'Problem statement', 'صياغة المشكلة', 'textarea', false, ['en' => 'What problem does the project solve?', 'ar' => 'ما هي المشكلة التي يحلها المشروع؟']),
+                self::field('objectives', 'Objectives', 'الأهداف', 'textarea', false, ['en' => 'Core objectives of the project...', 'ar' => 'الأهداف الأساسية للمشروع...']),
                 self::field('project_scope', 'Project scope', 'نطاق المشروع', 'textarea', false, ['en' => 'Project scope and boundaries...', 'ar' => 'نطاق المشروع وحدوده...']),
-                self::field('technologies', 'Tools/Technologies', 'الأدوات والتقنيات المستخدمة', 'text', false, ['en' => 'e.g. React, Laravel, PostgreSQL...', 'ar' => 'مثال: ريأكت، لارافيل، بوستجرس...']),
-                self::field('methodology', 'Methodology', 'منهجية التطوير', 'select', true, null, [
-                    ['value' => 'agile', 'label' => ['en' => 'Agile Scrum', 'ar' => 'أجايل / سكروم']],
-                    ['value' => 'waterfall', 'label' => ['en' => 'Waterfall', 'ar' => 'الشلال']],
-                    ['value' => 'devops', 'label' => ['en' => 'DevOps', 'ar' => 'ديف أوبس']]
-                ]),
-                self::field('system_requirements', 'System requirements', 'متطلبات النظام', 'textarea', false, ['en' => 'Functional & non-functional requirements...', 'ar' => 'المتطلبات الوظيفية وغير الوظيفية...']),
+                self::field('methodology', 'Methodology', 'المنهجية', 'textarea', false, ['en' => 'Research, practical, experimental, field, clinical, design, or software methodology...', 'ar' => 'منهجية بحثية، عملية، تجريبية، ميدانية، سريرية، تصميمية، أو برمجية...']),
+                self::field('tools_or_materials', 'Tools / materials / technologies', 'الأدوات أو المواد أو التقنيات', 'text', false, ['en' => 'Lab materials, survey tools, accounting standards, software stack when relevant...', 'ar' => 'مواد معملية، أدوات استبيان، معايير محاسبية، تقنيات برمجية عند الحاجة...']),
+                self::field('expected_outcomes', 'Expected outcomes', 'النتائج المتوقعة', 'textarea', false, ['en' => 'Expected results, deliverables, or academic value...', 'ar' => 'النتائج المتوقعة أو المخرجات أو القيمة الأكاديمية...']),
+                self::field('beneficiaries', 'Target audience / beneficiaries', 'الجمهور المستفيد', 'text', false, ['en' => 'Patients, students, businesses, farmers, researchers...', 'ar' => 'مرضى، طلاب، شركات، مزارعون، باحثون...']),
+                self::field('references_required', 'References required?', 'هل المراجع مطلوبة؟', 'boolean', false),
+                self::field('image_placeholders', 'Image placeholders required?', 'هل مواضع الصور مطلوبة؟', 'boolean', false),
+                self::field('diagram_placeholders', 'Diagram placeholders required?', 'هل مواضع الرسوم التوضيحية مطلوبة؟', 'boolean', false),
+                self::field('tables_required', 'Tables required?', 'هل الجداول مطلوبة؟', 'boolean', false),
+                self::field('appendices_required', 'Appendices required?', 'هل الملاحق مطلوبة؟', 'boolean', false),
+                self::field('functional_requirements', 'Functional requirements', 'المتطلبات الوظيفية', 'boolean', false),
+                self::field('non_functional_requirements', 'Non-functional requirements', 'المتطلبات غير الوظيفية', 'boolean', false),
                 self::field('db_design_required', 'Database design required?', 'هل تصميم قاعدة البيانات مطلوب؟', 'boolean', false),
                 self::field('uml_required', 'UML/Architecture diagrams required?', 'هل بنية النظام ورسومات UML مطلوبة؟', 'boolean', false),
-                self::field('implementation_plan', 'Implementation plan', 'خطة التنفيذ', 'boolean', false),
-                self::field('testing_evaluation', 'Testing & evaluation', 'الاختبار والتقييم', 'boolean', false),
+                self::field('architecture_required', 'Software architecture required?', 'هل معمارية البرمجيات مطلوبة؟', 'boolean', false),
+                self::field('implementation_plan', 'Implementation / applied plan', 'خطة التنفيذ أو التطبيق', 'boolean', false),
+                self::field('testing_evaluation', 'Testing / evaluation plan', 'خطة الاختبار أو التقييم', 'boolean', false),
                 self::field('timeline', 'Project timeline', 'الجدول الزمني', 'boolean', false),
-                self::field('image_placeholders', 'Include screenshot/diagram placeholders', 'تضمين مواضع الصور والرسومات', 'boolean', false),
+                self::field('budget_resources', 'Budget / resources', 'الميزانية أو الموارد', 'textarea', false, ['en' => 'Optional budget, resources, equipment, or constraints...', 'ar' => 'ميزانية اختيارية، موارد، معدات، أو قيود...']),
             ],
             'master-thesis' => [
                 self::field('research_problem', 'Research problem', 'مشكلة البحث', 'textarea', true, ['en' => 'Core research problem...', 'ar' => 'مشكلة البحث الأساسية...']),

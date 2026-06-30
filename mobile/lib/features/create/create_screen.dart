@@ -264,7 +264,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: active
-                ? AppColors.primary.withOpacity(0.1)
+                ? AppColors.primary.withValues(alpha: 0.1)
                 : (isDark ? const Color(0xFF1F1F1F) : const Color(0xFFF9FAFB)),
             border: Border.all(
               color: active ? AppColors.primary : (isDark ? Colors.grey[800]! : Colors.grey[300]!),

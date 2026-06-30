@@ -149,9 +149,34 @@ class CourseService
             $outline['blueprint_name'] = $blueprint->name;
             $outline['blueprint_structure'] = $blueprint->output_structure;
             $outline['blueprint_fields'] = $blueprintFields;
+            $outline['submitted_blueprint_fields'] = $blueprintFields;
+            $outline['content_kind'] = $blueprint->slug;
+            $outline['language_variant'] = $lang;
+            $outline['display_terms'] = $this->displayTermsForBlueprint($blueprint->slug);
+            $outline['output_sections'] = $blueprint->required_sections ?? [];
         }
 
         return $outline;
+    }
+
+    private function displayTermsForBlueprint(string $slug): array
+    {
+        return [
+            'normal-course' => ['item' => 'Lesson', 'group' => 'Module', 'structure' => 'Modules'],
+            'leveled-course' => ['item' => 'Lesson', 'group' => 'Level', 'structure' => 'Levels'],
+            'interactive-practical-course' => ['item' => 'Lesson', 'group' => 'Module', 'structure' => 'Modules'],
+            'academic-course' => ['item' => 'Lecture', 'group' => 'Lecture Pack', 'structure' => 'Lectures'],
+            'study-review' => ['item' => 'Review Section', 'group' => 'Study Guide', 'structure' => 'Summary Sections'],
+            'question-bank' => ['item' => 'Question', 'group' => 'Question Group', 'structure' => 'Questions'],
+            'exam-builder' => ['item' => 'Exam Question', 'group' => 'Exam Section', 'structure' => 'Exam Sections'],
+            'book' => ['item' => 'Chapter', 'group' => 'Book Part', 'structure' => 'Chapters'],
+            'story' => ['item' => 'Scene', 'group' => 'Chapter', 'structure' => 'Chapters / Scenes'],
+            'graduation-project' => ['item' => 'Document Section', 'group' => 'Chapter', 'structure' => 'Document Sections'],
+            'master-thesis' => ['item' => 'Research Section', 'group' => 'Chapter', 'structure' => 'Research Sections'],
+            'lesson-plan' => ['item' => 'Activity', 'group' => 'Lesson Plan', 'structure' => 'Lesson Plan Sections'],
+            'assignment-builder' => ['item' => 'Task', 'group' => 'Assignment Section', 'structure' => 'Tasks'],
+            'project-based-learning' => ['item' => 'Milestone', 'group' => 'Project Phase', 'structure' => 'Milestones'],
+        ][$slug] ?? ['item' => 'Section', 'group' => 'Content', 'structure' => 'Sections'];
     }
 
     private function normalizeBlueprintFields(mixed $fields): array

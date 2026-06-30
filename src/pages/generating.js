@@ -5,7 +5,6 @@ import { FiCheckCircle, FiLoader, FiCpu, FiFileText, FiImage, FiVideo, FiServer,
 import axios from 'axios';
 import { serverURL, logo } from '../constants';
 import { useTranslation, Trans } from 'react-i18next';
-import { toast } from 'react-toastify';
 
 const Generating = () => {
     const { t, i18n } = useTranslation();
@@ -17,6 +16,14 @@ const Generating = () => {
     const [error, setError] = useState(null);
     const [retryCount, setRetryCount] = useState(0);
     const isRtl = i18n.language === 'ar';
+
+    const navigateBackToDraft = () => {
+        navigate('/dashboard/generate-course', {
+            state: {
+                draft: state?.generateDraft || state
+            }
+        });
+    };
 
     const getLocalizedErrorMessage = (msgKey) => {
         const isAr = i18n.language?.startsWith('ar');
@@ -80,7 +87,7 @@ const Generating = () => {
     // Progress and API Call
     useEffect(() => {
         if (!state?.topic) {
-            navigate('/dashboard/generate-course', { replace: true });
+            navigate('/dashboard/generate-course', { replace: true, state: { draft: state?.generateDraft || state } });
             return;
         }
 
@@ -260,11 +267,11 @@ const Generating = () => {
                                     {t('retry')}
                                 </button>
                                 <button
-                                    onClick={() => navigate('/dashboard/generate-course')}
+                                    onClick={navigateBackToDraft}
                                     className="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 py-3.5 px-6 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all"
                                 >
                                     <FiArrowLeft size={16} className={isRtl ? 'rotate-180' : ''} />
-                                    {t('go_back')}
+                                    {t('common.go_back')}
                                 </button>
                             </div>
                         </motion.div>

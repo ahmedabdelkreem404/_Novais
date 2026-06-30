@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import {
   LuCopy,
   LuEye,
-  LuEyeOff,
   LuPlus,
   LuSave,
   LuSettings2,
@@ -343,6 +342,7 @@ const ContentBlueprints = () => {
 
   useEffect(() => {
     load().catch(() => toast.error(label('Failed to load blueprints', 'فشل في تحميل المخططات')));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateField = (key, value) => setSelected((current) => normalizeBlueprint({ ...(current || emptyBlueprint), [key]: value }));

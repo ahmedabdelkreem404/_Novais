@@ -14,16 +14,28 @@ const Topics = () => {
     const { jsonData, mainTopic, type, courseId, ...originalFormData } = state || {};
     const navigate = useNavigate();
     const [courseData] = useState(jsonData);
+    const displayTerms = courseData?.display_terms || {};
+    const sectionLabel = displayTerms.item || (originalFormData.blueprint_slug?.includes('course') ? t('topics.lessons') : (isRtl ? 'أقسام' : 'Sections'));
+    const structureLabel = displayTerms.structure || (originalFormData.blueprint_slug?.includes('course') ? 'Course Structure' : 'Content Structure');
 
     useEffect(() => {
         if (!jsonData) {
-            navigate("/dashboard/generate-course");
+            navigate("/dashboard/generate-course", {
+                state: { draft: originalFormData.generateDraft || originalFormData }
+            });
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [jsonData, navigate]);
 
     const handleCancel = () => {
         navigate("/dashboard/generate-course", {
-            state: { ...originalFormData, topic: mainTopic, type }
+            state: {
+                draft: originalFormData.generateDraft || {
+                    ...originalFormData,
+                    topic: mainTopic,
+                    type
+                }
+            }
         });
     }
 
@@ -120,10 +132,10 @@ const Topics = () => {
                             <div className="p-5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-white/5 flex items-start justify-between">
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-                                        {topic.title || `Module ${idx + 1}`}
+                                        {topic.title || `${displayTerms.group || 'Section'} ${idx + 1}`}
                                     </h3>
                                     <p className="text-xs font-medium text-gray-500 mt-1 uppercase tracking-wider">
-                                        {(topic.subtopics || topic.sections || []).length} {t('topics.lessons')}
+                                        {(topic.subtopics || topic.sections || []).length} {sectionLabel}
                                     </p>
                                 </div>
                             </div>
@@ -157,7 +169,7 @@ const Topics = () => {
                         <LuSparkles size={14} /> {t('topics.ai_generator')}
                     </div>
                     <h1 className='text-3xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight leading-tight'>
-                        {mainTopic || "Course Structure"}
+                        {mainTopic || structureLabel}
                     </h1>
                     <p className='text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed'>
                         {t('topics.review_desc')}

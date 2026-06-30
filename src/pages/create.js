@@ -44,7 +44,7 @@ const templateCards = [
     { slug: 'question-bank', nameEn: 'Question Bank', nameAr: 'بنك أسئلة شروحات', descEn: 'Generate collections of MCQs, essay questions, true/false, with detailed explanation keys.', descAr: 'مجموعة من الأسئلة المتنوعة (اختياري، صح/خطأ، مقالي) مع الشروحات المفصلة.', icon: LuCircleHelp },
     { slug: 'exam-builder', nameEn: 'Practice Exam Builder', nameAr: 'بناء اختبارات قصيرة', descEn: 'Formal tests with strict mark distribution, sections counts, duration, and grading rubrics.', descAr: 'اختبار رسمي محدد بالدرجات، عدد الأقسام، الزمن المتاح، ونموذج إجابة.', icon: LuListChecks },
     { slug: 'book', nameEn: 'Full Book Outline', nameAr: 'تأليف كتاب تعليمي', descEn: 'Outline multi-chapter books with introduction, preface, chapter summaries, glossary and references.', descAr: 'كتابة تمهيد، فصول متكاملة، تدريبات عملية، مسرد للمصطلحات ومراجع.', icon: LuBook },
-    { slug: 'graduation-project', nameEn: 'Graduation Project Book', nameAr: 'توثيق مشروع تخرج', descEn: 'Comprehensive document covering requirements, system design, DB architecture, UMLs, and testing.', descAr: 'توثيق متكامل يغطي المتمتطلبات، تصميم قاعدة البيانات، رسومات UML، والاختبار.', icon: LuFolderHeart },
+    { slug: 'graduation-project', nameEn: 'Graduation Project Book', nameAr: 'توثيق مشروع تخرج', descEn: 'Build a complete academic project document for any faculty, with software sections only when relevant.', descAr: 'توثيق أكاديمي متكامل لأي كلية أو تخصص، مع أقسام البرمجة فقط عند الحاجة.', icon: LuFolderHeart },
     { slug: 'master-thesis', nameEn: 'Master Thesis / Research Outline', nameAr: 'أطروحة ماجستير / بحث أكاديمي', descEn: 'Exhaustive academic research synthesis with literature depth, hypotheses, methodology, and citation style.', descAr: 'إطار بحثي شامل بمحددات المنهجية، مراجعة الأدبيات، الفرضيات، والتوصيات.', icon: LuAward },
     { slug: 'lesson-plan', nameEn: 'Teacher Lesson Plan', nameAr: 'خطة درس المعلم', descEn: 'Structured classroom lesson plans with objectives, materials, teaching strategy, and activities.', descAr: 'خطة دراسية للمعلمين تحدد الأهداف، الاستراتيجية، الأنشطة، والواجب.', icon: LuClipboardList },
     { slug: 'assignment-builder', nameEn: 'Assignment Builder', nameAr: 'تكليفات وواجبات دراسية', descEn: 'Generate tasks list with detailed task description, deadline style, and grading criteria.', descAr: 'إنشاء تكليفات عملية أو نظرية مع معايير تقييم ودليل إجابة.', icon: LuClipboardList },
@@ -128,10 +128,11 @@ const getFieldLabel = (field, lang = 'en') => {
 const getFieldCategory = (slug, fieldKey) => {
     // Essential fields for each blueprint
     const essentialKeys = [
-        'practical_domain', 'practice_intensity', 'academic_level', 'lecture_count', 
+        'practical_domain', 'practice_intensity', 'academic_level', 'lecture_count',
         'exam_level', 'topics_to_review', 'topics', 'question_count', 'question_types', 
         'exam_duration', 'total_marks', 'section_count', 'target_reader', 'chapter_count', 
-        'writing_style', 'genre', 'theme', 'domain', 'problem_statement', 'objectives', 
+        'writing_style', 'genre', 'theme', 'faculty', 'department', 'student_names',
+        'supervisor_names', 'university_name', 'domain', 'problem_statement', 'objectives',
         'research_problem', 'research_questions', 'grade', 'duration', 'learning_objectives', 
         'activities', 'assessment_method', 'task_count', 'delivery_style', 'final_deliverable', 
         'milestones', 'evaluation_criteria'
@@ -152,6 +153,30 @@ const getBlueprintFields = (blueprint) => Array.isArray(blueprint?.form_schema?.
     ? blueprint.form_schema.fields
     : [];
 
+const getDraftKey = () => {
+    const userKey = localStorage.getItem('userId') || localStorage.getItem('email') || localStorage.getItem('token')?.slice(0, 16) || 'guest';
+    return `novais.generateWizardDraft.${userKey}`;
+};
+
+const readGenerateDraft = () => {
+    try {
+        const raw = sessionStorage.getItem(getDraftKey()) || localStorage.getItem(getDraftKey());
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+};
+
+const writeGenerateDraft = (draft) => {
+    try {
+        const serialized = JSON.stringify(draft);
+        sessionStorage.setItem(getDraftKey(), serialized);
+        localStorage.setItem(getDraftKey(), serialized);
+    } catch {
+        // Draft persistence is best-effort; generation must keep working.
+    }
+};
+
 const CreateCourse = () => {
     const { t, i18n } = useTranslation();
     const isAr = i18n.language?.startsWith('ar');
@@ -162,21 +187,25 @@ const CreateCourse = () => {
     const [usage, setUsage] = useState({ used: 0, limit: 1, remaining: 1 });
     const [loadingPlan, setLoadingPlan] = useState(true);
 
-    const [step, setStep] = useState(1);
-    const [validationError, setValidationError] = useState('');
-    const [advancedOpen, setAdvancedOpen] = useState(false);
+    const location = useLocation();
+    const routeDraft = location.state?.draft || location.state?.generateDraft || null;
+    const cachedDraft = routeDraft ? null : readGenerateDraft();
+    const initialDraft = routeDraft || cachedDraft || {};
+    const initialFormState = initialDraft.formData || initialDraft;
 
-    const location = useLocation(); // Add this import if missing
+    const [step, setStep] = useState(initialDraft.step || 1);
+    const [validationError, setValidationError] = useState('');
+    const [advancedOpen, setAdvancedOpen] = useState(Boolean(initialDraft.advancedOpen));
 
     // Initial State (Default or from Navigation State)
     const [formData, setFormData] = useState({
-        topic: location.state?.topic || '',
+        topic: initialFormState?.topic || '',
         subTopic: '',
-        subTopics: location.state?.subTopics || [],
-        numModules: location.state?.numModules || 5,
-        type: location.state?.type || 'Theory & Image Course',
-        language: location.state?.language || 'English',
-        level: location.state?.level || 'Beginner'
+        subTopics: initialFormState?.subTopics || [],
+        numModules: initialFormState?.numModules || 5,
+        type: initialFormState?.type || 'Theory & Image Course',
+        language: initialFormState?.language || 'English',
+        level: initialFormState?.level || 'Beginner'
     });
 
 
@@ -228,8 +257,12 @@ const CreateCourse = () => {
 
     const [config, setConfig] = useState(null);
     const [blueprints, setBlueprints] = useState([]);
-    const [selectedBlueprint, setSelectedBlueprint] = useState(location.state?.blueprint_slug || 'normal-course');
-    const [blueprintFields, setBlueprintFields] = useState(location.state?.blueprint_fields || {});
+    const [selectedBlueprint, setSelectedBlueprint] = useState(
+        initialDraft.selectedBlueprint || initialFormState?.blueprint_slug || 'normal-course'
+    );
+    const [blueprintFields, setBlueprintFields] = useState(
+        initialDraft.blueprintFields || initialFormState?.blueprint_fields || {}
+    );
 
     useEffect(() => {
         const fetchConfig = async () => {
@@ -369,7 +402,9 @@ const CreateCourse = () => {
             let changed = false;
             activeBlueprintFields.forEach((field) => {
                 if (next[field.key] !== undefined) return;
+                if (field.type === 'boolean' && !field.required) return;
                 if (field.type === 'boolean') next[field.key] = false;
+                else if (field.type === 'select' && !field.required) return;
                 else if (field.type === 'multiselect') next[field.key] = [];
                 else next[field.key] = '';
                 changed = true;
@@ -386,6 +421,18 @@ const CreateCourse = () => {
             }));
         }
     }, [selectedBlueprint, activeBlueprint]);
+
+    useEffect(() => {
+        writeGenerateDraft({
+            formData,
+            selectedBlueprint,
+            blueprintFields,
+            step,
+            advancedOpen,
+            updatedAt: new Date().toISOString()
+        });
+    }, [formData, selectedBlueprint, blueprintFields, step, advancedOpen]);
+
     const addSubTopic = () => {
         if (formData.subTopic.trim()) {
             setFormData({
@@ -435,6 +482,14 @@ const CreateCourse = () => {
             blueprint_slug: selectedBlueprint,
             blueprint_fields: blueprintFields
         };
+        const draft = {
+            formData,
+            selectedBlueprint,
+            blueprintFields,
+            step,
+            advancedOpen,
+            updatedAt: new Date().toISOString()
+        };
 
         if (blueprintFields.level !== undefined) {
             submissionData.level = blueprintFields.level;
@@ -446,7 +501,8 @@ const CreateCourse = () => {
             submissionData.type = blueprintFields.type;
         }
 
-        navigate('/generating', { state: submissionData });
+        writeGenerateDraft(draft);
+        navigate('/generating', { state: { ...submissionData, generateDraft: draft } });
     };
 
     const navigateToPricing = () => {

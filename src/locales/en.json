@@ -45,6 +45,7 @@
         "process": "Process",
         "admin": "Admin",
         "back_to_home": "Back to Home",
+        "go_back": "Back",
         "processing": "Processing...",
         "courses_limit": "Creation Limit",
         "remaining_courses": "Remaining Courses",
