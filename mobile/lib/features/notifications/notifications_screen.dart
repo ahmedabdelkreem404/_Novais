@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api/notifications_provider.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/widgets.dart';
 
 class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
@@ -29,9 +30,15 @@ class NotificationsScreen extends ConsumerWidget {
       body: inboxAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => Center(
-          child: Text(
-            l10n.t('error'),
-            style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+          child: NvEmptyState(
+            icon: Icons.notifications_off_outlined,
+            title: l10n.t('failed_load_notifications'),
+            subtitle: l10n.t('pull_to_retry'),
+            action: NvButton(
+              label: l10n.t('retry'),
+              width: 150,
+              onTap: () => ref.invalidate(notificationsProvider),
+            ),
           ),
         ),
         data: (inbox) {

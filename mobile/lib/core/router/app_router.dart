@@ -125,6 +125,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
           GoRoute(path: '/signin', builder: (_, __) => const SignInScreen()),
           GoRoute(path: '/signup', builder: (_, __) => const SignUpScreen()),
+          GoRoute(path: '/pricing', builder: (_, __) => const PricingScreen()),
         ],
       ),
 
@@ -158,10 +159,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => AudioPlayerScreen(
           courseId: int.parse(state.pathParameters['courseId']!),
         ),
-      ),
-      GoRoute(
-        path: '/pricing',
-        builder: (_, __) => const PricingScreen(),
       ),
       GoRoute(
         path: '/subscription',

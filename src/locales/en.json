@@ -506,6 +506,8 @@
         "social_links": "Social Links",
         "plans": "Subscription Plans",
         "platform_settings": "Platform Settings",
+        "content_blueprints": "AI Blueprints",
+        "notifications": "Notifications",
         "plan_mgmt": {
             "loading": "Loading Plans...",
             "fetch_fail": "Failed to fetch plans",
