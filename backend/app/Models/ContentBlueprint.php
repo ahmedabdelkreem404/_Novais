@@ -308,6 +308,12 @@ class ContentBlueprint extends Model
                 self::field('budget_resources', 'Budget / resources', 'الميزانية أو الموارد', 'textarea', false, ['en' => 'Optional budget, resources, equipment, or constraints...', 'ar' => 'ميزانية اختيارية، موارد، معدات، أو قيود...']),
             ],
             'master-thesis' => [
+                self::field('university_name', 'University name', 'اسم الجامعة', 'text', true, ['en' => 'Official university name...', 'ar' => 'اسم الجامعة الرسمي...']),
+                self::field('faculty', 'Faculty / College', 'الكلية', 'text', true, ['en' => 'e.g. Faculty of Medicine, Commerce, Engineering, Law...', 'ar' => 'مثال: كلية الطب، التجارة، الهندسة، الحقوق...']),
+                self::field('department', 'Department / Specialization', 'القسم أو التخصص', 'text', true, ['en' => 'e.g. Accounting, Nursing, Architecture, Computer Science...', 'ar' => 'مثال: المحاسبة، التمريض، العمارة، علوم الحاسب...']),
+                self::field('student_names', 'Researcher / Student name', 'اسم الباحث / الطالب', 'text', true, ['en' => 'Bilingual researcher name...', 'ar' => 'اسم الباحث ثلاثي بالكامل...']),
+                self::field('supervisor_names', 'Supervisor name(s)', 'أسماء لجنة الإشراف والمناقشة', 'textarea', true, ['en' => 'Principal supervisor, co-supervisors, external reviewers...', 'ar' => 'المشرف الرئيسي، المشرف المشارك، المناقش الخارجي...']),
+                self::field('academic_year', 'Academic year or date', 'السنة الدراسية أو التاريخ', 'text', false, ['en' => 'e.g. 2025/2026 or June 2026...', 'ar' => 'مثال: 2025/2026 أو يونيو 2026...']),
                 self::field('research_problem', 'Research problem', 'مشكلة البحث', 'textarea', true, ['en' => 'Core research problem...', 'ar' => 'مشكلة البحث الأساسية...']),
                 self::field('research_questions', 'Research questions', 'أسئلة البحث', 'textarea', true, ['en' => 'Research questions...', 'ar' => 'أسئلة البحث...']),
                 self::field('hypotheses', 'Hypotheses', 'الفرضيات', 'textarea', false, ['en' => 'Hypotheses...', 'ar' => 'الفرضيات...']),

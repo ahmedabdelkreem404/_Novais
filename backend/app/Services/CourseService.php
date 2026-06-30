@@ -325,13 +325,24 @@ class CourseService
 
         $course = $lesson->course;
         
+        $blueprint = null;
+        if (!empty($course->blueprint_slug)) {
+            $blueprint = \App\Models\ContentBlueprint::query()
+                ->where('slug', $course->blueprint_slug)
+                ->where('enabled', true)
+                ->first();
+        }
+        $blueprintFields = $this->normalizeBlueprintFields($course->metadata['blueprint_fields'] ?? []);
+
         // 1. Generate Content via AI -> Returns Array [content, media, quiz, etc]
         $aiResponse = $this->aiProvider->generateLessonContent(
             $lesson->topic_title,
             $lesson->title,
             $course->language,
             $course->type,
-            $course->level ?? 'Beginner'
+            $course->level ?? 'Beginner',
+            $blueprint,
+            $blueprintFields
         );
 
         $textContent = $aiResponse['content'] ?? 'Content generation failed.';

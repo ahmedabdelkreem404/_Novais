@@ -170,21 +170,32 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
     final lesson = lessons.isNotEmpty ? lessons[_currentLesson] : null;
     _scheduleLessonPreparation(course, lesson);
 
+    final blueprintSlug = course.blueprintSlug;
+    final documentSlugs = ['book', 'graduation-project', 'master-thesis'];
+    final questionSlugs = ['question-bank', 'exam-builder', 'assignment-builder'];
+    final storySlugs = ['story'];
+    final isDocument = documentSlugs.contains(blueprintSlug);
+    final isQuestion = questionSlugs.contains(blueprintSlug);
+    final isStory = storySlugs.contains(blueprintSlug);
+    final isCourse = !isDocument && !isQuestion && !isStory;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(course.title, maxLines: 1, overflow: TextOverflow.ellipsis),
         leading: BackButton(onPressed: () => context.pop()),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.quiz_outlined),
-            tooltip: l10n.t('quiz'),
-            onPressed: () => context.push('/quiz/${course.id}'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.workspace_premium_outlined),
-            tooltip: l10n.t('certificate'),
-            onPressed: () => context.push('/certificate/${course.id}'),
-          ),
+          if (isCourse) ...[
+            IconButton(
+              icon: const Icon(Icons.quiz_outlined),
+              tooltip: l10n.t('quiz'),
+              onPressed: () => context.push('/quiz/${course.id}'),
+            ),
+            IconButton(
+              icon: const Icon(Icons.workspace_premium_outlined),
+              tooltip: l10n.t('certificate'),
+              onPressed: () => context.push('/certificate/${course.id}'),
+            ),
+          ],
           IconButton(
             icon: const Icon(Icons.menu),
             onPressed: () => setState(() => _drawerOpen = !_drawerOpen),

@@ -34,18 +34,35 @@ class ExportController extends Controller
         $exportLessons = $course->lessons->map(function ($lesson, $index) {
             $content = $lesson->content ?: $lesson->topic_title ?: '';
 
+            // Clean markdown placeholders inside the exported content to render them nicely
+            // e.g. [IMAGE PLACEHOLDER: ...] -> custom formatted div
+            $html = $this->markdownHtml($content);
+            $html = preg_replace(
+                '/\[(IMAGE|DIAGRAM|TABLE)\s+PLACEHOLDER:\s*([^\]]+)\]/i',
+                '<div class="placeholder-box"><div class="placeholder-title">$1 Placeholder</div>$2</div>',
+                $html
+            );
+
             return [
                 'number' => $index + 1,
                 'title' => $lesson->title ?: 'Lesson',
-                'html' => $this->markdownHtml($content),
+                'html' => $html,
             ];
         });
         $isRtl = $this->containsArabic($course->title . ' ' . $course->lessons->pluck('content')->implode(' '));
+        $blueprintFields = $course->metadata['blueprint_fields'] ?? [];
 
-        $pdf = Pdf::loadView('exports.course_pdf', compact('course', 'user', 'exportLessons', 'isRtl'))
+        $documentBlueprints = ['book', 'graduation-project', 'master-thesis'];
+        $isDocument = in_array($course->blueprint_slug, $documentBlueprints, true);
+        $viewName = $isDocument ? 'exports.document_pdf' : 'exports.course_pdf';
+
+        $pdf = Pdf::loadView($viewName, compact('course', 'user', 'exportLessons', 'isRtl', 'blueprintFields'))
             ->setPaper('a4')
             ->setOption('isRemoteEnabled', true);
-        return $pdf->download(Str::slug($course->title) . '.pdf');
+            
+        $blueprintSlug = $course->blueprint_slug ?: 'course';
+        $filename = Str::slug($course->title ?: 'novais') . '-' . $blueprintSlug . '.pdf';
+        return $pdf->download($filename);
     }
 
     public function exportPpt($courseId)

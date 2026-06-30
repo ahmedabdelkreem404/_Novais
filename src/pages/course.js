@@ -118,6 +118,19 @@ const Course = () => {
     const [chatHistory, setChatHistory] = useState([]);
     const [quizResult, setQuizResult] = useState(null);
     const [blueprintSlug, setBlueprintSlug] = useState('normal-course');
+    const [generatingSectionTitle, setGeneratingSectionTitle] = useState('');
+    const [showAnswers, setShowAnswers] = useState(false);
+
+    const layoutMode = useMemo(() => {
+        const documentSlugs = ['book', 'graduation-project', 'master-thesis'];
+        const questionSlugs = ['question-bank', 'exam-builder', 'assignment-builder'];
+        const storySlugs = ['story'];
+
+        if (documentSlugs.includes(blueprintSlug)) return 'document';
+        if (questionSlugs.includes(blueprintSlug)) return 'question';
+        if (storySlugs.includes(blueprintSlug)) return 'story';
+        return 'course';
+    }, [blueprintSlug]);
 
     const getDynamicLabel = (key) => {
         const lang = i18n.language?.startsWith('ar') ? 'ar' : 'en';
@@ -246,6 +259,321 @@ const Course = () => {
         window.dispatchEvent(new Event('themeChange'));
     }, [isDarkMode, navigate]);
 
+    const scrollToSection = (title) => {
+        const slugified = title.replace(/\s+/g, '-');
+        const el = document.getElementById(`section-${slugified}`);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    const renderContentWithPlaceholders = (text, isAr) => {
+        if (!text) return null;
+        const regex = /(\[(?:IMAGE|DIAGRAM|TABLE)\s+PLACEHOLDER:\s*[^\]]+\])/gi;
+        const parts = text.split(regex);
+        return parts.map((part, index) => {
+            const match = /\[(IMAGE|DIAGRAM|TABLE)\s+PLACEHOLDER:\s*([^\]]+)\]/i.exec(part);
+            if (match) {
+                const type = match[1].toUpperCase();
+                const desc = match[2];
+                const isTable = type === 'TABLE';
+                const isDiagram = type === 'DIAGRAM';
+                return (
+                    <div key={index} className="my-8 p-6 bg-slate-50 dark:bg-slate-900/40 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl flex flex-col sm:flex-row items-center gap-4 text-center sm:text-start transition-all hover:border-blue-500/50">
+                        <div className="w-14 h-14 rounded-2xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                            {isTable ? <LuFileText size={28} /> : isDiagram ? <FiActivity size={28} /> : <FiImage size={28} />}
+                        </div>
+                        <div>
+                            <div className="text-[11px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1">
+                                {isTable ? (isAr ? 'موضع جدول مقترح' : 'Suggested Table Placeholder') : isDiagram ? (isAr ? 'موضع رسم توضيحي مقترح' : 'Suggested Diagram Placeholder') : (isAr ? 'موضع صورة مقترحة' : 'Suggested Image Placeholder')}
+                            </div>
+                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300 leading-relaxed">
+                                {desc}
+                            </p>
+                        </div>
+                    </div>
+                );
+            }
+            return <StyledText key={index} text={part} isRtl={isAr} />;
+        });
+    };
+
+    const renderDocumentLayout = () => {
+        const blueprintFields = jsonData?.blueprint_fields || {};
+        return (
+            <div className="w-full max-w-4xl mx-auto py-10" dir={isArabic ? 'rtl' : 'ltr'}>
+                {/* 1. Academic Cover Sheet */}
+                <div className="bg-white dark:bg-[#111111] border border-gray-200/60 dark:border-gray-800 rounded-[32px] p-8 md:p-16 shadow-2xl mb-12 text-center relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/10 to-transparent rounded-bl-full pointer-events-none" />
+                    <div className="border-b-2 border-double border-gray-200 dark:border-gray-800 pb-8 mb-12">
+                        {blueprintFields.university_name && (
+                            <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-wide">{blueprintFields.university_name}</h3>
+                        )}
+                        {blueprintFields.faculty && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400 font-bold mt-1">{blueprintFields.faculty}</p>
+                        )}
+                        {blueprintFields.department && (
+                            <p className="text-xs text-gray-400 dark:text-gray-500 font-bold mt-0.5">{blueprintFields.department}</p>
+                        )}
+                    </div>
+                    <div className="my-16">
+                        <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-black uppercase tracking-widest mb-6">
+                            {blueprintSlug === 'graduation-project' ? (isArabic ? 'مشروع التخرج النهائي' : 'Graduation Project Book') : blueprintSlug === 'master-thesis' ? (isArabic ? 'رسالة ماجستير علمية' : 'Master Thesis') : (isArabic ? 'كتاب تعليمي متكامل' : 'Academic Book')}
+                        </span>
+                        <h1 className="text-3xl md:text-5xl font-black text-gray-900 dark:text-white leading-tight max-w-2xl mx-auto select-all">
+                            {mainTopic}
+                        </h1>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-start max-w-xl mx-auto border-t border-gray-100 dark:border-gray-800/50 pt-8 mt-16 text-sm">
+                        {blueprintFields.specialization && (
+                            <div>
+                                <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 block mb-1">{isArabic ? 'التخصص الدراسي' : 'Specialization'}</span>
+                                <span className="font-bold text-gray-900 dark:text-white">{blueprintFields.specialization}</span>
+                            </div>
+                        )}
+                        {blueprintFields.student_names && (
+                            <div>
+                                <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 block mb-1">{isArabic ? 'إعداد الطلاب / الباحث' : 'Prepared By'}</span>
+                                <span className="font-bold text-gray-900 dark:text-white whitespace-pre-line">{blueprintFields.student_names}</span>
+                            </div>
+                        )}
+                        {blueprintFields.supervisor_names && (
+                            <div className="md:col-span-2">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 block mb-1">{isArabic ? 'إشراف لجنة الأساتذة' : 'Supervised By'}</span>
+                                <span className="font-bold text-gray-900 dark:text-white whitespace-pre-line">{blueprintFields.supervisor_names}</span>
+                            </div>
+                        )}
+                    </div>
+                    <div className="mt-20 text-xs text-gray-400 font-bold tracking-widest border-t border-gray-100 dark:border-gray-800/30 pt-6">
+                        {blueprintFields.academic_year || new Date().getFullYear()}
+                    </div>
+                </div>
+
+                {/* 2. Table of Contents List */}
+                <div className="bg-white dark:bg-[#111111] border border-gray-200 dark:border-gray-800 rounded-[32px] p-8 md:p-10 shadow-2xl mb-12 text-start">
+                    <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
+                        {isArabic ? 'الفهرس العام' : 'Table of Contents'}
+                    </h2>
+                    <div className="space-y-3">
+                        {flatTopics.map((item, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => scrollToSection(item.subtopicTitle)}
+                                className="w-full flex justify-between items-center py-2.5 px-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 font-bold transition-all text-start"
+                            >
+                                <span className="flex items-center gap-3">
+                                    <span className="text-blue-500 text-sm font-black">{idx + 1}.</span>
+                                    <span>{item.subtopicTitle}</span>
+                                </span>
+                                <span className="text-gray-400 dark:text-gray-600 text-xs">➔</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 3. Continuous Content Reader Sections */}
+                <div className="space-y-12">
+                    {flatTopics.map((item, idx) => {
+                        const hasContent = item.subtopicObj.content || item.subtopicObj.theory;
+                        const isGeneratingThis = loading && generatingSectionTitle === item.subtopicTitle;
+                        const sectionId = `section-${item.subtopicTitle.replace(/\s+/g, '-')}`;
+                        return (
+                            <div key={idx} id={sectionId} className="bg-white dark:bg-[#111111] border border-gray-200 dark:border-gray-800 rounded-[32px] p-8 md:p-12 shadow-2xl text-start scroll-mt-24 transition-all hover:shadow-blue-500/5">
+                                <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800/80 pb-6 mb-8">
+                                    <h2 className="text-xl md:text-3xl font-black text-gray-900 dark:text-white leading-tight">
+                                        {item.subtopicTitle}
+                                    </h2>
+                                    <span className="text-xs font-black uppercase tracking-widest text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-900/30">
+                                        {getDynamicLabel('layer')} {idx + 1}
+                                    </span>
+                                </div>
+                                {isGeneratingThis ? (
+                                    <div className="py-8 flex flex-col items-center justify-center">
+                                        <div className="relative w-24 h-24 mb-6 flex items-center justify-center">
+                                            <FiLoader size={48} className="animate-spin text-blue-600" />
+                                            <img src={logo} alt="Processing" className="w-[20px] h-[20px] absolute object-contain animate-pulse" />
+                                        </div>
+                                        <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('footer.magic_title')}</h4>
+                                        <div className="w-full max-w-md bg-slate-950 text-slate-300 font-mono text-[11px] p-4 rounded-xl text-left border border-slate-800">
+                                            {prepLogLines.map((line, i) => (
+                                                <div key={i} className="flex gap-2">
+                                                    <span className="text-blue-500 font-bold">~</span>
+                                                    <span>{line}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : hasContent ? (
+                                    <div className="prose prose-lg dark:prose-invert max-w-none prose-p:text-[17px] md:prose-p:text-[19px] prose-p:leading-[1.8] prose-p:text-gray-700 dark:prose-p:text-gray-300">
+                                        {renderContentWithPlaceholders(item.subtopicObj.theory || item.subtopicObj.content, isArabic)}
+                                        {item.subtopicObj.examples && (
+                                            <div className="not-prose mt-12 bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-white/5 rounded-3xl p-6 md:p-8">
+                                                <h4 className="text-base font-black text-gray-900 dark:text-white mb-4 uppercase tracking-wider flex items-center gap-2">
+                                                    <LuAward className="text-blue-500" /> {t('sidebar.applied_examples')}
+                                                </h4>
+                                                {renderContentWithPlaceholders(item.subtopicObj.examples, isArabic)}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="py-12 text-center">
+                                        <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-white/5 flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-white/10 text-gray-400">
+                                            <LuBookOpen size={28} />
+                                        </div>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-xs mx-auto">
+                                            {isArabic ? 'هذا القسم من الوثيقة لم يتم توليده بعد.' : 'This section of the document has not been generated yet.'}
+                                        </p>
+                                        <button
+                                            onClick={() => handlePrepareLessonInternal(item.chapterTitle, item.subtopicTitle, item.subtopicObj)}
+                                            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition-all"
+                                        >
+                                            {isArabic ? 'توليد القسم الآن' : 'Generate Section Now'}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    };
+
+    const renderQuestionLayout = () => {
+        return (
+            <div className="w-full max-w-4xl mx-auto py-10" dir={isArabic ? 'rtl' : 'ltr'}>
+                <div className="bg-white dark:bg-[#111111] border border-gray-200 dark:border-gray-800 rounded-[32px] p-8 md:p-12 shadow-2xl mb-12 text-start">
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-gray-100 dark:border-gray-800/80 pb-6 mb-8">
+                        <div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-900/30">
+                                {isArabic ? 'بنك الأسئلة / نموذج امتحان' : 'Question Bank / Exam'}
+                            </span>
+                            <h1 className="text-2xl md:text-4xl font-black text-gray-900 dark:text-white tracking-tight mt-3">
+                                {mainTopic}
+                            </h1>
+                        </div>
+                        <button
+                            onClick={() => setShowAnswers(!showAnswers)}
+                            className="px-6 py-3 bg-slate-900 dark:bg-white text-white dark:text-black rounded-xl font-bold text-sm hover:opacity-90 transition-all self-start"
+                        >
+                            {showAnswers ? (isArabic ? 'إخفاء الإجابات النموذجية' : 'Hide Answer Key') : (isArabic ? 'عرض الإجابات النموذجية' : 'Show Answer Key')}
+                        </button>
+                    </div>
+                    <div className="space-y-8">
+                        {flatTopics.map((item, idx) => {
+                            const hasContent = item.subtopicObj.content || item.subtopicObj.theory;
+                            const isGeneratingThis = loading && generatingSectionTitle === item.subtopicTitle;
+                            const sectionId = `section-${item.subtopicTitle.replace(/\s+/g, '-')}`;
+                            return (
+                                <div key={idx} id={sectionId} className="border-b border-gray-100 dark:border-gray-850 pb-8 last:border-0 last:pb-0 scroll-mt-24">
+                                    <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+                                        <span className="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-black flex items-center justify-center shrink-0">
+                                            {idx + 1}
+                                        </span>
+                                        <span>{item.subtopicTitle}</span>
+                                    </h3>
+                                    {isGeneratingThis ? (
+                                        <div className="py-6 flex flex-col items-center justify-center">
+                                            <FiLoader size={32} className="animate-spin text-blue-600 mb-4" />
+                                            <div className="w-full max-w-md bg-slate-950 text-slate-300 font-mono text-[10px] p-4 rounded-xl text-left border border-slate-800">
+                                                {prepLogLines.map((line, i) => (
+                                                    <div key={i} className="flex gap-1">
+                                                        <span className="text-blue-500 font-bold">~</span>
+                                                        <span>{line}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : hasContent ? (
+                                        <div className="prose prose-lg dark:prose-invert max-w-none ml-8">
+                                            {renderContentWithPlaceholders(item.subtopicObj.theory || item.subtopicObj.content, isArabic)}
+                                            {showAnswers && item.subtopicObj.examples && (
+                                                <div className="not-prose mt-6 bg-green-50/50 dark:bg-green-950/10 border border-green-100 dark:border-green-900/30 rounded-2xl p-6">
+                                                    <h4 className="text-xs font-black text-green-700 dark:text-green-400 mb-3 uppercase tracking-wider">
+                                                        {isArabic ? 'الإجابة النموذجية وتوزيع الدرجات' : 'Model Answer & Rubric'}
+                                                    </h4>
+                                                    {renderContentWithPlaceholders(item.subtopicObj.examples, isArabic)}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="py-6 ml-8 text-start flex items-center justify-between bg-slate-50 dark:bg-white/5 p-6 rounded-2xl">
+                                            <span className="text-xs text-gray-400">{isArabic ? 'الأسئلة لم يتم توليدها بعد.' : 'Questions have not been generated yet.'}</span>
+                                            <button
+                                                onClick={() => handlePrepareLessonInternal(item.chapterTitle, item.subtopicTitle, item.subtopicObj)}
+                                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shadow-sm transition-all"
+                                            >
+                                                {isArabic ? 'توليد الأسئلة' : 'Generate'}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const renderStoryLayout = () => {
+        return (
+            <div className="w-full max-w-3xl mx-auto py-10" dir={isArabic ? 'rtl' : 'ltr'}>
+                <div className="bg-[#fcfbf7] dark:bg-[#141414] border border-amber-100/50 dark:border-gray-800 rounded-[32px] p-8 md:p-12 shadow-xl mb-12 text-start font-serif">
+                    <div className="text-center border-b border-amber-100 dark:border-gray-800/80 pb-8 mb-12">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full border border-amber-100 dark:border-amber-900/30">
+                            {isArabic ? 'رواية / قصة مصورة' : 'Novel / Illustrated Story'}
+                        </span>
+                        <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight mt-6 mb-4">
+                            {mainTopic}
+                        </h1>
+                    </div>
+                    <div className="space-y-12">
+                        {flatTopics.map((item, idx) => {
+                            const hasContent = item.subtopicObj.content || item.subtopicObj.theory;
+                            const isGeneratingThis = loading && generatingSectionTitle === item.subtopicTitle;
+                            const sectionId = `section-${item.subtopicTitle.replace(/\s+/g, '-')}`;
+                            return (
+                                <div key={idx} id={sectionId} className="space-y-6 scroll-mt-24">
+                                    <h3 className="text-xl md:text-2xl font-black text-amber-800 dark:text-amber-500 border-b border-amber-50 dark:border-gray-800 pb-3">
+                                        {item.subtopicTitle}
+                                    </h3>
+                                    {isGeneratingThis ? (
+                                        <div className="py-6 flex flex-col items-center justify-center">
+                                            <FiLoader size={32} className="animate-spin text-amber-600 mb-4" />
+                                            <div className="w-full max-w-md bg-slate-950 text-slate-300 font-mono text-[10px] p-4 rounded-xl text-left border border-slate-800">
+                                                {prepLogLines.map((line, i) => (
+                                                    <div key={i} className="flex gap-1">
+                                                        <span className="text-blue-500 font-bold">~</span>
+                                                        <span>{line}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : hasContent ? (
+                                        <div className="prose prose-lg dark:prose-invert max-w-none text-slate-800 dark:text-slate-300 leading-relaxed text-[18px] md:text-[20px]">
+                                            {renderContentWithPlaceholders(item.subtopicObj.theory || item.subtopicObj.content, isArabic)}
+                                        </div>
+                                    ) : (
+                                        <div className="py-6 text-center bg-amber-50/20 dark:bg-white/5 p-6 rounded-2xl border border-dashed border-amber-100 dark:border-gray-800">
+                                            <p className="text-sm text-gray-500 mb-4">{isArabic ? 'هذا الفصل لم يكتب بعد.' : 'This chapter has not been written yet.'}</p>
+                                            <button
+                                                onClick={() => handlePrepareLessonInternal(item.chapterTitle, item.subtopicTitle, item.subtopicObj)}
+                                                className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs transition-all shadow-md"
+                                            >
+                                                {isArabic ? 'اكتب هذا الفصل الآن' : 'Write Chapter Now'}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     // Derived topics array
     const topics = useMemo(() => {
         if (!jsonData) return [];
@@ -289,6 +617,7 @@ const Course = () => {
     }, [courseId, navigate]);
 
     const handlePrepareLessonInternal = useCallback(async (chapterTitle, subtopicTitle, subtopicObj) => {
+        setGeneratingSectionTitle(subtopicTitle);
         setLoading(true);
         setShowPrepButton(false);
         setPrepProgress(0);
@@ -391,6 +720,7 @@ const Course = () => {
         } finally {
             clearInterval(progressInterval);
             clearInterval(logInterval);
+            setGeneratingSectionTitle('');
             setTimeout(() => setLoading(false), 1000);
         }
     }, [jsonData, mainTopic, syncProgress, courseId, t]);
@@ -631,20 +961,22 @@ const Course = () => {
                         {isSidebarOpen ? <LuX size={24} /> : <LuMenu size={24} />}
                     </button>
 
-                    <div className="hidden min-[360px]:block w-[38px] h-[38px] flex-shrink-0 drop-shadow-sm">
-                        <CircularProgressbar
-                            value={percentage}
-                            text={`${percentage}%`}
-                            strokeWidth={10}
-                            styles={buildStyles({
-                                textSize: '28px',
-                                pathColor: '#3b82f6',
-                                textColor: isDarkMode ? '#e5e7eb' : '#111827',
-                                trailColor: isDarkMode ? '#333' : '#e5e7eb',
-                                strokeLinecap: 'round'
-                            })}
-                        />
-                    </div>
+                    {layoutMode === 'course' && (
+                        <div className="hidden min-[360px]:block w-[38px] h-[38px] flex-shrink-0 drop-shadow-sm">
+                            <CircularProgressbar
+                                value={percentage}
+                                text={`${percentage}%`}
+                                strokeWidth={10}
+                                styles={buildStyles({
+                                    textSize: '28px',
+                                    pathColor: '#3b82f6',
+                                    textColor: isDarkMode ? '#e5e7eb' : '#111827',
+                                    trailColor: isDarkMode ? '#333' : '#e5e7eb',
+                                    strokeLinecap: 'round'
+                                })}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -653,12 +985,12 @@ const Course = () => {
                             { icon: LuHouse, label: t('nav.home'), action: () => navigate('/dashboard') },
                             { icon: LuHeadphones, label: t('footer.audio'), action: () => navigate(`/audio-player/${courseId}`, { state: { lessonTitle: selectedSubtopic, sectionTitle: mainTopic, lessonContent: lessonContent.theory, photo: jsonData?.photo } }) },
                             { icon: LuDownload, label: t('footer.export'), action: () => setIsExportModalOpen(true) },
-                            {
+                            ...(layoutMode === 'course' ? [{
                                 icon: LuAward,
                                 label: t('footer.certificate'),
                                 action: () => (percentage === 100 && quizResult?.passed) ? navigate(`/course/${courseId}/certificate`, { state: { quizResult } }) : toast.warning(t('footer.cert_locked')),
                                 disabled: !(percentage === 100 && quizResult?.passed)
-                            },
+                            }] : []),
                             { icon: LuShare2, label: t('footer.share'), action: handleShare },
                             { icon: isDarkMode ? LuSun : LuMoon, label: isDarkMode ? t('footer.light') : t('footer.dark'), action: () => setIsDarkMode(!isDarkMode) },
                         ].map((item, idx) => (
@@ -708,7 +1040,9 @@ const Course = () => {
                 >
                     {/* Fixed Sidebar Header: Layer Indicator */}
                     <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-white/95 dark:bg-[#0f0f0f]/95 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between shadow-sm">
-                        <span className="text-[11px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500">{getDynamicLabel('progress')}</span>
+                        <span className="text-[11px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500">
+                            {layoutMode === 'course' ? getDynamicLabel('progress') : (isArabic ? 'محتويات الوثيقة' : 'Document Contents')}
+                        </span>
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-[11px] font-bold uppercase tracking-wider border border-blue-100 dark:border-blue-900/30">
                             {getDynamicLabel('layer')} {currentIndex + 1} <span className="text-blue-300 dark:text-blue-600">/</span> {flatTopics.length}
                         </div>
@@ -753,7 +1087,11 @@ const Course = () => {
                                                         <button
                                                             key={j}
                                                             onClick={() => {
-                                                                handleSelect(topic.title, sub.title, sub);
+                                                                if (layoutMode === 'course') {
+                                                                    handleSelect(topic.title, sub.title, sub);
+                                                                } else {
+                                                                    scrollToSection(sub.title);
+                                                                }
                                                                 if (window.innerWidth < 1024) setIsSidebarOpen(false);
                                                             }}
                                                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200
@@ -761,12 +1099,16 @@ const Course = () => {
                                                                     ? 'bg-blue-50 dark:bg-blue-900/10 text-blue-700 dark:text-blue-400 font-bold shadow-sm'
                                                                     : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'}`}
                                                         >
-                                                            {sub.done ? (
-                                                                <div className="w-5 h-5 shrink-0 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/30">
-                                                                    <LuCheck size={12} className="text-white" strokeWidth={4} />
-                                                                </div>
+                                                            {layoutMode === 'course' ? (
+                                                                sub.done ? (
+                                                                    <div className="w-5 h-5 shrink-0 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/30">
+                                                                        <LuCheck size={12} className="text-white" strokeWidth={4} />
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-700'}`} />
+                                                                )
                                                             ) : (
-                                                                <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-700'}`} />
+                                                                <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-blue-600 dark:bg-blue-400' : 'bg-gray-300 dark:bg-gray-700'}`} />
                                                             )}
                                                             <span className="text-[13px] leading-snug" dir="auto">
                                                                 {/* BiDi Isolation: Wrap English/Code terms (including parens) in LTR spans */}
@@ -784,18 +1126,20 @@ const Course = () => {
                             </div>
                         ))}
 
-                        <div className="pt-8 border-t border-gray-100 dark:border-gray-800/50 mt-4">
-                            <button
-                                onClick={() => percentage === 100 ? navigate(`/course/${courseId}/quiz`, { state: { courseId, courseTitle: mainTopic, generateNew: true } }) : toast.info(t('footer.exam_locked'))}
-                                className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-3 text-sm transition-all shadow-lg
-                                    ${percentage === 100
-                                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:scale-[1.02] shadow-blue-500/25'
-                                        : 'bg-white dark:bg-white/5 text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-white/5 cursor-not-allowed'}`}
-                            >
-                                <LuBookOpen size={18} />
-                                <span>{getDynamicLabel('exam_btn')}</span>
-                            </button>
-                        </div>
+                        {layoutMode === 'course' && (
+                            <div className="pt-8 border-t border-gray-100 dark:border-gray-800/50 mt-4">
+                                <button
+                                    onClick={() => percentage === 100 ? navigate(`/course/${courseId}/quiz`, { state: { courseId, courseTitle: mainTopic, generateNew: true } }) : toast.info(t('footer.exam_locked'))}
+                                    className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-3 text-sm transition-all shadow-lg
+                                        ${percentage === 100
+                                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:scale-[1.02] shadow-blue-500/25'
+                                            : 'bg-white dark:bg-white/5 text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-white/5 cursor-not-allowed'}`}
+                                >
+                                    <LuBookOpen size={18} />
+                                    <span>{getDynamicLabel('exam_btn')}</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </aside>
 
@@ -929,41 +1273,25 @@ const Course = () => {
                                                 );
                                             })}
                                         </div>
-
-                                        <div className="bg-white dark:bg-gray-800/20 border border-gray-100 dark:border-gray-800 p-6 rounded-3xl shadow-sm">
-                                            <div className="flex justify-between items-end mb-4 font-black">
-                                                <div>
-                                                    <span className="text-xs uppercase tracking-widest text-gray-400 mb-1 block">{t('footer.intensity')}</span>
-                                                    <span className="text-2xl text-blue-600 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-                                                        {Math.round(prepProgress)}%
-                                                    </span>
+                                        <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                                            <div
+                                                className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500"
+                                                style={{ width: `${Math.min(100, Math.max(0, prepProgress))}%` }}
+                                            />
+                                        </div>
+                                                <div className="mt-4 flex items-center gap-2 text-gray-400 dark:text-gray-500 text-[10px] font-bold uppercase tracking-widest">
+                                                    <FiActivity className="text-blue-500 animate-pulse" />
+                                                    <span>{t('footer.gpu_sync')}</span>
                                                 </div>
-                                                <div className="flex gap-1 items-end h-6">
-                                                    {[...Array(8)].map((_, i) => (
-                                                        <div
-                                                            key={i}
-                                                            className={`w-1 rounded-full bg-blue-500 transition-all duration-300 ${i < Math.floor(prepProgress / 12) ? 'opacity-100' : 'opacity-20'}`}
-                                                            style={{ height: `${(i + 1) * 12}%`, transitionDelay: `${i * 50}ms` }}
-                                                        ></div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div className="h-2.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                                                <motion.div
-                                                    className="h-full bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-400 rounded-full"
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${prepProgress}%` }}
-                                                    transition={{ duration: 0.5 }}
-                                                />
-                                            </div>
-                                            <div className="mt-4 flex items-center gap-2 text-gray-400 dark:text-gray-500 text-[10px] font-bold uppercase tracking-widest">
-                                                <FiActivity className="text-blue-500 animate-pulse" />
-                                                <span>{t('footer.gpu_sync')}</span>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
+                        ) : layoutMode === 'document' ? (
+                            renderDocumentLayout()
+                        ) : layoutMode === 'question' ? (
+                            renderQuestionLayout()
+                        ) : layoutMode === 'story' ? (
+                            renderStoryLayout()
                         ) : (
                             <motion.div
                                 key={selectedSubtopic}
