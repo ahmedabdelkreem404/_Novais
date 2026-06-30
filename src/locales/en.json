@@ -3,6 +3,8 @@
         "login": "Login",
         "signup": "Sign Up",
         "signin": "Sign In",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
         "logout": "Logout",
         "dashboard": "Dashboard",
         "admin_panel": "Admin Panel",

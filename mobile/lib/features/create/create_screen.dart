@@ -33,6 +33,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
   final _languages = [
     'English',
     'Arabic',
+    'Egyptian Arabic',
     'French',
     'Spanish',
     'German',
@@ -47,6 +48,67 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
     'Polish',
     'Dutch',
   ];
+
+  String _getLanguageLabel(String langName, bool isAr) {
+    if (langName == 'Arabic') {
+      return isAr ? 'العربية الفصحى' : 'Modern Standard Arabic';
+    }
+    if (langName == 'Egyptian Arabic') {
+      return isAr ? 'العامية المصرية' : 'Egyptian Arabic';
+    }
+    if (isAr) {
+      final translations = {
+        'English': 'الإنجليزية',
+        'French': 'الفرنسية',
+        'Spanish': 'الإسبانية',
+        'German': 'الألمانية',
+        'Italian': 'الإيطالية',
+        'Portuguese': 'البرتغالية',
+        'Russian': 'الروسية',
+        'Japanese': 'اليابانية',
+        'Chinese': 'الصينية',
+        'Korean': 'الكورية',
+        'Hindi': 'الهندية',
+        'Turkish': 'التركية',
+        'Polish': 'البولندية',
+        'Dutch': 'الهولندية',
+      };
+      return translations[langName] ?? langName;
+    }
+    return langName;
+  }
+
+  String _getDynamicTopicLabel(String slug, bool isAr) {
+    if (slug == 'book') {
+      return isAr ? 'عنوان أو موضوع الكتاب' : 'Book Title or Topic';
+    }
+    if (slug == 'exam-builder' || slug == 'question-bank') {
+      return isAr ? 'موضوع الامتحان / المادة' : 'Exam Subject / Topic';
+    }
+    if (slug == 'graduation-project' || slug == 'master-thesis') {
+      return isAr ? 'عنوان أو مجال البحث' : 'Research Field / Project Topic';
+    }
+    if (slug == 'lesson-plan') {
+      return isAr ? 'موضوع الدرس' : 'Lesson Topic';
+    }
+    return isAr ? 'موضوع الكورس / المحتوى' : 'Course Topic / Content';
+  }
+
+  String _getDynamicTopicPlaceholder(String slug, bool isAr) {
+    if (slug == 'book') {
+      return isAr ? 'مثال: تاريخ مصر القديمة، أساسيات الفيزياء...' : 'e.g., History of Ancient Egypt, Physics Fundamentals...';
+    }
+    if (slug == 'exam-builder' || slug == 'question-bank') {
+      return isAr ? 'مثال: رياضيات الصف الأول الثانوي، كيمياء عضوية...' : 'e.g., High School Math, Organic Chemistry...';
+    }
+    if (slug == 'graduation-project' || slug == 'master-thesis') {
+      return isAr ? 'مثال: تطبيق الذكاء الاصطناعي في الطب، بلوكشين...' : 'e.g., AI in Healthcare, Blockchain in Finance...';
+    }
+    if (slug == 'lesson-plan') {
+      return isAr ? 'مثال: دورة المياه في الطبيعة، الجهاز الهضمي...' : 'e.g., Water Cycle, Digestion System...';
+    }
+    return isAr ? 'مثال: أساسيات لغة بايثون، تصميم الويب...' : 'e.g., Python Basics, Web Design...';
+  }
 
   void _onFeatureSelect(String feature, dynamic value, PlatformConfig? config) {
     final user = ref.read(authProvider).user;
@@ -180,7 +242,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
     final label = field.labelFor(languageCode);
     final value = _blueprintFields[field.keyName];
     final inputDecoration = InputDecoration(
-      hintText: field.placeholder ?? label,
+      hintText: field.placeholderFor(languageCode) ?? label,
       filled: true,
       fillColor: isDark ? const Color(0xFF1F1F1F) : const Color(0xFFF9FAFB),
       border: OutlineInputBorder(
@@ -480,14 +542,13 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                       ),
                     ),
 
-                  // Topic
-                  const _SectionHeader(
-                      label: 'TOPIC', icon: Icons.lightbulb_outline),
+                   _SectionHeader(
+                      label: _getDynamicTopicLabel(_blueprintSlug, l10n.isAr).toUpperCase(), icon: Icons.lightbulb_outline),
                   NvTextField(
                     label: '',
                     fieldKey: const Key('create_topic_input'),
                     controller: _topicCtrl,
-                    hint: 'e.g. Advanced Flutter Patterns',
+                    hint: _getDynamicTopicPlaceholder(_blueprintSlug, l10n.isAr),
                     maxLines: 1,
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? 'Required' : null,
@@ -605,8 +666,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                     const SizedBox(height: 10),
                   ],
 
-                  // Language
-                  const _SectionHeader(label: 'LANGUAGE', icon: Icons.language),
+                  _SectionHeader(label: l10n.t('language').toUpperCase(), icon: Icons.language),
                   DropdownButtonFormField<String>(
                     value: selectedLanguage,
                     decoration: InputDecoration(
@@ -630,7 +690,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                       return DropdownMenuItem(
                         value: l,
                         child: Row(children: [
-                          Text(l),
+                          Text(_getLanguageLabel(l, l10n.isAr)),
                           if (isPrem && !isPro) ...[
                             const SizedBox(width: 8),
                             const Icon(Icons.workspace_premium,

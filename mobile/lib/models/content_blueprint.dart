@@ -61,7 +61,7 @@ class BlueprintFormField {
   final String type;
   final Map<String, dynamic> label;
   final bool required;
-  final String? placeholder;
+  final dynamic placeholder;
   final List<dynamic> options;
 
   const BlueprintFormField({
@@ -79,7 +79,7 @@ class BlueprintFormField {
       type: json['type']?.toString() ?? 'text',
       label: Map<String, dynamic>.from(json['label'] ?? {}),
       required: json['required'] == true,
-      placeholder: json['placeholder']?.toString(),
+      placeholder: json['placeholder'],
       options: List<dynamic>.from(json['options'] ?? []),
     );
   }
@@ -89,6 +89,18 @@ class BlueprintFormField {
       return label['ar']?.toString() ?? label['en']?.toString() ?? keyName;
     }
     return label['en']?.toString() ?? label['ar']?.toString() ?? keyName;
+  }
+
+  String? placeholderFor(String languageCode) {
+    if (placeholder == null) return null;
+    if (placeholder is Map) {
+      final pMap = Map<String, dynamic>.from(placeholder);
+      if (languageCode == 'ar') {
+        return pMap['ar']?.toString() ?? pMap['en']?.toString();
+      }
+      return pMap['en']?.toString() ?? pMap['ar']?.toString();
+    }
+    return placeholder.toString();
   }
 
   List<Map<String, dynamic>> get parsedOptions {

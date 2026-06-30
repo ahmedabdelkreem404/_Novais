@@ -41,15 +41,26 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
     if (key == 'lessons') {
       switch (blueprintSlug) {
         case 'book':
+        case 'story':
           return isAr ? 'فصول' : 'Chapters';
         case 'exam':
+        case 'exam-builder':
+        case 'question-bank':
           return isAr ? 'أسئلة' : 'Questions';
         case 'research-paper':
+        case 'master-thesis':
+        case 'academic-lecture':
+        case 'academic-course':
           return isAr ? 'أقسام' : 'Sections';
         case 'graduation-project':
+        case 'project-based-learning':
           return isAr ? 'مراحل' : 'Phases';
-        case 'academic-lecture':
-          return isAr ? 'أقسام' : 'Sections';
+        case 'study-review':
+          return isAr ? 'موضوعات' : 'Topics';
+        case 'lesson-plan':
+          return isAr ? 'خطوات' : 'Steps';
+        case 'assignment-builder':
+          return isAr ? 'مهام' : 'Tasks';
         default:
           return isAr ? 'دروس' : 'Lessons';
       }
@@ -57,15 +68,26 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
     if (key == 'previous') {
       switch (blueprintSlug) {
         case 'book':
+        case 'story':
           return isAr ? 'الفصل السابق' : 'Previous Chapter';
         case 'exam':
+        case 'exam-builder':
+        case 'question-bank':
           return isAr ? 'السؤال السابق' : 'Previous Question';
         case 'research-paper':
+        case 'master-thesis':
+        case 'academic-lecture':
+        case 'academic-course':
           return isAr ? 'القسم السابق' : 'Previous Section';
         case 'graduation-project':
+        case 'project-based-learning':
           return isAr ? 'المرحلة السابقة' : 'Previous Phase';
-        case 'academic-lecture':
-          return isAr ? 'القسم السابق' : 'Previous Section';
+        case 'study-review':
+          return isAr ? 'الموضوع السابق' : 'Previous Topic';
+        case 'lesson-plan':
+          return isAr ? 'الخطوة السابقة' : 'Previous Step';
+        case 'assignment-builder':
+          return isAr ? 'المهمة السابقة' : 'Previous Task';
         default:
           return isAr ? 'الدرس السابق' : 'Previous Lesson';
       }
@@ -73,15 +95,26 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
     if (key == 'next') {
       switch (blueprintSlug) {
         case 'book':
+        case 'story':
           return isAr ? 'الفصل التالي' : 'Next Chapter';
         case 'exam':
+        case 'exam-builder':
+        case 'question-bank':
           return isAr ? 'السؤال التالي' : 'Next Question';
         case 'research-paper':
+        case 'master-thesis':
+        case 'academic-lecture':
+        case 'academic-course':
           return isAr ? 'القسم التالي' : 'Next Section';
         case 'graduation-project':
+        case 'project-based-learning':
           return isAr ? 'المرحلة التالية' : 'Next Phase';
-        case 'academic-lecture':
-          return isAr ? 'القسم التالي' : 'Next Section';
+        case 'study-review':
+          return isAr ? 'الموضوع التالي' : 'Next Topic';
+        case 'lesson-plan':
+          return isAr ? 'الخطوة التالية' : 'Next Step';
+        case 'assignment-builder':
+          return isAr ? 'المهمة التالية' : 'Next Task';
         default:
           return isAr ? 'الدرس التالي' : 'Next Lesson';
       }

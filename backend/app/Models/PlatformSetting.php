@@ -29,6 +29,7 @@ class PlatformSetting extends Model
             'enabled_languages' => [
                 'English',
                 'Arabic',
+                'Egyptian Arabic',
                 'French',
                 'Spanish',
                 'German',

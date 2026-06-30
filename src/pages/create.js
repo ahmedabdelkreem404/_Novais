@@ -8,31 +8,32 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Input from '../components/ui/Input';
 
 const languagesList = [
-    { name: "English", isPremium: false },
-    { name: "Arabic", isPremium: true },
-    { name: "Spanish", isPremium: true },
-    { name: "French", isPremium: true },
-    { name: "German", isPremium: true },
-    { name: "Italian", isPremium: true },
-    { name: "Portuguese", isPremium: true },
-    { name: "Russian", isPremium: true },
-    { name: "Japanese", isPremium: true },
-    { name: "Chinese (Simplified)", isPremium: true },
-    { name: "Hindi", isPremium: true },
-    { name: "Bengali", isPremium: true },
-    { name: "Korean", isPremium: true },
-    { name: "Turkish", isPremium: true },
-    { name: "Vietnamese", isPremium: true },
-    { name: "Polish", isPremium: true },
-    { name: "Dutch", isPremium: true },
-    { name: "Indonesian", isPremium: true },
-    { name: "Thai", isPremium: true },
-    { name: "Swedish", isPremium: true },
-    { name: "Greek", isPremium: true },
-    { name: "Czech", isPremium: true },
-    { name: "Romanian", isPremium: true },
-    { name: "Hungarian", isPremium: true },
-    { name: "Ukrainian", isPremium: true }
+    { name: "English", displayName: { en: "English", ar: "الإنجليزية" }, isPremium: false },
+    { name: "Arabic", displayName: { en: "Modern Standard Arabic", ar: "العربية الفصحى" }, isPremium: true },
+    { name: "Egyptian Arabic", displayName: { en: "Egyptian Arabic", ar: "العامية المصرية" }, isPremium: true },
+    { name: "Spanish", displayName: { en: "Spanish", ar: "الإسبانية" }, isPremium: true },
+    { name: "French", displayName: { en: "French", ar: "الفرنسية" }, isPremium: true },
+    { name: "German", displayName: { en: "German", ar: "الألمانية" }, isPremium: true },
+    { name: "Italian", displayName: { en: "Italian", ar: "الإيطالية" }, isPremium: true },
+    { name: "Portuguese", displayName: { en: "Portuguese", ar: "البرتغالية" }, isPremium: true },
+    { name: "Russian", displayName: { en: "Russian", ar: "الروسية" }, isPremium: true },
+    { name: "Japanese", displayName: { en: "Japanese", ar: "اليابانية" }, isPremium: true },
+    { name: "Chinese (Simplified)", displayName: { en: "Chinese (Simplified)", ar: "الصينية (المبسطة)" }, isPremium: true },
+    { name: "Hindi", displayName: { en: "Hindi", ar: "الهندية" }, isPremium: true },
+    { name: "Bengali", displayName: { en: "Bengali", ar: "البنغالية" }, isPremium: true },
+    { name: "Korean", displayName: { en: "Korean", ar: "الكورية" }, isPremium: true },
+    { name: "Turkish", displayName: { en: "Turkish", ar: "التركية" }, isPremium: true },
+    { name: "Vietnamese", displayName: { en: "Vietnamese", ar: "الفيتنامية" }, isPremium: true },
+    { name: "Polish", displayName: { en: "Polish", ar: "البولندية" }, isPremium: true },
+    { name: "Dutch", displayName: { en: "Dutch", ar: "الهولندية" }, isPremium: true },
+    { name: "Indonesian", displayName: { en: "Indonesian", ar: "الإندونيسية" }, isPremium: true },
+    { name: "Thai", displayName: { en: "Thai", ar: "التايلاندية" }, isPremium: true },
+    { name: "Swedish", displayName: { en: "Swedish", ar: "السويدية" }, isPremium: true },
+    { name: "Greek", displayName: { en: "Greek", ar: "اليونانية" }, isPremium: true },
+    { name: "Czech", displayName: { en: "Czech", ar: "التشيكية" }, isPremium: true },
+    { name: "Romanian", displayName: { en: "Romanian", ar: "الرومانية" }, isPremium: true },
+    { name: "Hungarian", displayName: { en: "Hungarian", ar: "الهنغارية" }, isPremium: true },
+    { name: "Ukrainian", displayName: { en: "Ukrainian", ar: "الأوكرانية" }, isPremium: true }
 ];
 
 const getBilingualValue = (val, lang = 'en', defaultVal = '') => {
@@ -41,6 +42,46 @@ const getBilingualValue = (val, lang = 'en', defaultVal = '') => {
         return val[lang] || val.en || '';
     }
     return String(val);
+};
+
+const getLanguageDisplayName = (langName, locale) => {
+    const langObj = languagesList.find(l => l.name === langName);
+    if (langObj && langObj.displayName) {
+        return getBilingualValue(langObj.displayName, locale, langName);
+    }
+    return langName;
+};
+
+const getDynamicTopicLabel = (slug, lang) => {
+    if (slug === 'book') {
+        return lang === 'ar' ? 'عنوان أو موضوع الكتاب' : 'Book Title or Topic';
+    }
+    if (slug === 'exam-builder' || slug === 'question-bank') {
+        return lang === 'ar' ? 'موضوع الامتحان / المادة' : 'Exam Subject / Topic';
+    }
+    if (slug === 'graduation-project' || slug === 'master-thesis') {
+        return lang === 'ar' ? 'عنوان أو مجال البحث' : 'Research Field / Project Topic';
+    }
+    if (slug === 'lesson-plan') {
+        return lang === 'ar' ? 'موضوع الدرس' : 'Lesson Topic';
+    }
+    return lang === 'ar' ? 'موضوع الكورس / المحتوى' : 'Course Topic / Content';
+};
+
+const getDynamicTopicPlaceholder = (slug, lang) => {
+    if (slug === 'book') {
+        return lang === 'ar' ? 'مثال: تاريخ مصر القديمة، أساسيات الفيزياء...' : 'e.g., History of Ancient Egypt, Physics Fundamentals...';
+    }
+    if (slug === 'exam-builder' || slug === 'question-bank') {
+        return lang === 'ar' ? 'مثال: رياضيات الصف الأول الثانوي، كيمياء عضوية...' : 'e.g., High School Math, Organic Chemistry...';
+    }
+    if (slug === 'graduation-project' || slug === 'master-thesis') {
+        return lang === 'ar' ? 'مثال: تطبيق الذكاء الاصطناعي في الطب، بلوكشين...' : 'e.g., AI in Healthcare, Blockchain in Finance...';
+    }
+    if (slug === 'lesson-plan') {
+        return lang === 'ar' ? 'مثال: دورة المياه في الطبيعة، الجهاز الهضمي...' : 'e.g., Water Cycle, Digestion System...';
+    }
+    return lang === 'ar' ? 'مثال: أساسيات لغة بايثون، تصميم الويب...' : 'e.g., Python Basics, Web Design...';
 };
 
 const getFieldLabel = (field, lang = 'en') => {
@@ -332,6 +373,7 @@ const CreateCourse = () => {
     const renderBlueprintField = (field) => {
         const value = blueprintFields[field.key];
         const title = getFieldLabel(field, i18n.language?.startsWith('ar') ? 'ar' : 'en');
+        const placeholderText = field.placeholder ? getBilingualValue(field.placeholder, i18n.language?.startsWith('ar') ? 'ar' : 'en') : title;
         const baseClass = 'w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-xl p-3.5 text-sm font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500';
 
         if (field.type === 'textarea') {
@@ -340,7 +382,7 @@ const CreateCourse = () => {
                     rows={3}
                     value={value || ''}
                     onChange={(e) => updateBlueprintField(field.key, e.target.value)}
-                    placeholder={field.placeholder || title}
+                    placeholder={placeholderText}
                     className={baseClass}
                 />
             );
@@ -352,7 +394,7 @@ const CreateCourse = () => {
                     type="number"
                     value={value || ''}
                     onChange={(e) => updateBlueprintField(field.key, e.target.value)}
-                    placeholder={field.placeholder || title}
+                    placeholder={placeholderText}
                     className={baseClass}
                 />
             );
@@ -395,13 +437,18 @@ const CreateCourse = () => {
         }
 
         if (field.type === 'boolean') {
+            const enabledText = t('common.enabled');
+            const disabledText = t('common.disabled');
+            const displayVal = value 
+                ? (enabledText && enabledText !== 'common.enabled' ? enabledText : 'Enabled') 
+                : (disabledText && disabledText !== 'common.disabled' ? disabledText : 'Disabled');
             return (
                 <button
                     type="button"
                     onClick={() => updateBlueprintField(field.key, !value)}
                     className={`w-full rounded-xl border p-3.5 text-start text-sm font-bold transition ${value ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-200' : 'border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-[#151515] dark:text-gray-300'}`}
                 >
-                    {value ? t('common.enabled') || 'Enabled' : t('common.disabled') || 'Disabled'}
+                    {displayVal}
                 </button>
             );
         }
@@ -410,7 +457,7 @@ const CreateCourse = () => {
             <input
                 value={value || ''}
                 onChange={(e) => updateBlueprintField(field.key, e.target.value)}
-                placeholder={field.placeholder || title}
+                placeholder={placeholderText}
                 className={baseClass}
             />
         );
@@ -449,10 +496,10 @@ const CreateCourse = () => {
                     <div className="space-y-8">
                         <div>
                             <label className="text-sm font-bold text-gray-900 dark:text-white mb-2 block uppercase tracking-wide">
-                                {t('create_page.topic_label')}
+                                {getDynamicTopicLabel(selectedBlueprint, i18n.language?.startsWith('ar') ? 'ar' : 'en')}
                             </label>
                             <Input
-                                placeholder={t('create_page.topic_placeholder')}
+                                placeholder={getDynamicTopicPlaceholder(selectedBlueprint, i18n.language?.startsWith('ar') ? 'ar' : 'en')}
                                 value={formData.topic}
                                 onChange={e => setFormData({ ...formData, topic: e.target.value })}
                                 className="!bg-gray-50 dark:!bg-[#151515] !border-gray-200 dark:!border-gray-700 !py-4 !text-base focus:!ring-blue-500/20"
@@ -508,7 +555,7 @@ const CreateCourse = () => {
                                 className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-xl p-3.5 md:p-4 text-sm font-medium flex items-center justify-between cursor-pointer hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
                             >
                                 <span className="text-gray-700 dark:text-gray-200 flex items-center gap-2">
-                                    {formData.language}
+                                    {getLanguageDisplayName(formData.language, i18n.language?.startsWith('ar') ? 'ar' : 'en')}
                                     {/* Show gem if selected language is premium and user is NOT premium */}
                                     {!isPremiumUser && formData.language !== 'English' && <LuGem className="text-amber-500 text-xs" />}
                                 </span>
@@ -536,7 +583,7 @@ const CreateCourse = () => {
                                                     `}
                                                 >
                                                     <span className="flex items-center gap-2">
-                                                        {lang.name}
+                                                        {getLanguageDisplayName(lang.name, i18n.language?.startsWith('ar') ? 'ar' : 'en')}
                                                     </span>
                                                     {showPremiumBadge ? (
                                                         <span className="flex items-center gap-1 text-[10px] font-bold text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full">

@@ -90,7 +90,7 @@ class DeepSeekService implements AIProviderInterface
         $citationText = $citationRequired ? 'strictly required' : 'optional';
         $quizText = $includeQuiz ? 'required' : 'optional';
 
-        $prompt = <<<MODE
+        $prompt = <<<BLUEPRINT_PROMPT
 ────────────────────────────
 MODE: NOVAIS CONTENT GENERATOR (DYNAMIC BLUEPRINT ENGINE)
 INPUT:
@@ -131,7 +131,7 @@ OUTPUT JSON (Strictly follow this structure. Do not change key names to maintain
     }
   ]
 }
-MODE;
+BLUEPRINT_PROMPT;
 
         return $this->chatRequest($base . $prompt, true, "You are NOVAIS, an intelligent learning coach generating content for a {$blueprintName}.");
     }
@@ -215,11 +215,23 @@ PROMPT;
     }
 
 
+    private function getLanguageInstruction(string $language): string
+    {
+        if (strtolower($language) === 'egyptian arabic') {
+            return "Egyptian Arabic Colloquial dialect (العامية المصرية). You MUST write all explanations, instructions, examples, and texts in standard Egyptian colloquial dialect (using words like 'عشان', 'إزاي', 'هيعمل', 'ليه', 'شوية') rather than Modern Standard Arabic, while keeping it clear, educational, and high quality.";
+        }
+        if (strtolower($language) === 'arabic') {
+            return "Modern Standard Arabic (العربية الفصحى). Do NOT use any colloquial dialect.";
+        }
+        return $language;
+    }
+
     /**
      * The Base Instructions for Professional Bootcamp Mode.
      */
     private function getProfessionalBasePrompt(string $language): string
     {
+        $langInstruction = $this->getLanguageInstruction($language);
         return <<<PROMPT
 ENTERPRISE ACADEMIC + PROFESSIONAL BOOTCAMP MODE (EXTREME RIGOR POLICY)
 You are a Senior Academic Professor and Technical Lead. You are not generating casual content.
@@ -233,7 +245,7 @@ You are designing a university-level academic curriculum combined with professio
 - Structure: Use structured sections with logical, building-block flow.
 
 🔴 RULE 2: LANGUAGE & TONE
-- PRIMARY EXPLANATION TEXT: Formal, technically accurate English.
+- PRIMARY EXPLANATION TEXT: Formal, technically accurate English (or the requested language: $langInstruction).
 - TECHNICAL TERMINOLOGY: Use precise, standard industry terms.
 - VOICE: Deliver content as a serious university lecture or professional lead developer briefing.
 PROMPT;
@@ -244,6 +256,7 @@ PROMPT;
      */
     private function getBasePrompt(string $language): string
     {
+        $langInstruction = $this->getLanguageInstruction($language);
         return <<<PROMPT
 🎯 INSTRUCTIONAL FRAMEWORK — NOVAIS: Interactive Learning Engine
 You are NOVAIS, an advanced AI Learning Coach and Interactive Experience Designer.
@@ -254,7 +267,7 @@ Your goal is to generate practical, engaging courses based on experience.
    - You are NOVAIS.
    - You are a "Learning Coach", NOT a "Professor" or "Teacher".
 2. Language & Tone:
-   - Write in EXACTLY this language: $language.
+   - Write in EXACTLY this language: $langInstruction.
    - Tone: Enthusiastic, clear, and action-oriented.
 3. Content Integrity:
    - Focus on "Learning by Doing".
