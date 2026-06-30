@@ -14,6 +14,36 @@ methodology notes, testing evidence, and honest limitations.
 - `shahd-shehab-ui-testing-electron.html` - UI/UX, testing evidence, desktop Electron wrapper.
 - `mariam-kholoud-mobile-app.html` - Flutter mobile app, Riverpod, Dio, GoRouter, cache, mobile flows.
 
+## Real Screenshots Captured
+
+The `screenshots/` folder contains live screenshots captured from the current
+workspace run:
+
+- `web-landing-desktop.png` - real React web landing page in desktop viewport.
+- `web-landing-mobile.png` - real React web landing page in mobile viewport.
+- `web-signin-desktop.png` - real sign-in page.
+- `web-create-desktop.png` - real create route capture after the current JSX fix.
+- `web-pricing-desktop.png` - real pricing page.
+- `desktop-electron-home.png` - real Electron BrowserWindow capture.
+- `mobile-emulator-home.png` - real Flutter Android emulator screenshot.
+
+During screenshot capture, the current `src/pages/course.js` worktree had a JSX
+compile error in the new multi-mode course layout. A minimal JSX closing-tag fix
+was applied in the working tree so the app could compile and screenshots could be
+captured. That code file still contains broader uncommitted worktree changes
+outside these documentation commits.
+
+After that working-tree fix, the web production build was verified with
+PowerShell syntax:
+
+```powershell
+$env:CI='true'; npm run build
+```
+
+The build completed successfully. CRA still reported the existing large-bundle
+advisory, which is a performance/code-splitting note rather than a compile
+failure.
+
 ## Evidence Notes
 
 - Backend uses Laravel 12, JWT auth, DeepSeek AI service, content blueprints,

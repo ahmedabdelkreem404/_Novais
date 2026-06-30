@@ -175,6 +175,11 @@
       </svg>
     </div>
     <div class="card">
+      <h3>صور UI حقيقية بدل الموكابس</h3>
+      <figure><img src="screenshots/web-signin-desktop.png" alt="NOVAIS sign in page" style="width:100%;border-radius:14px;border:1px solid #dde5f0"><figcaption>Sign in: branding حقيقي، ألوان المشروع، spacing، وCTA واضح.</figcaption></figure>
+      <figure><img src="screenshots/desktop-electron-home.png" alt="NOVAIS Electron desktop window" style="width:100%;border-radius:14px;border:1px solid #dde5f0"><figcaption>Electron desktop: نفس React UI داخل BrowserWindow حقيقي.</figcaption></figure>
+    </div>
+    <div class="card">
       <h3>Electron Runtime Diagram</h3>
       <svg viewBox="0 0 980 390" role="img" aria-label="Electron desktop architecture" style="width:100%;height:auto;border:1px solid #dde5f0;border-radius:14px;background:#fff">
         <defs><style>.a{fill:#ecfeff;stroke:#0f766e;stroke-width:2}.b{fill:#fff1f2;stroke:#dc2626;stroke-width:2}.c{fill:#eff6ff;stroke:#2563eb;stroke-width:2}.tx{font:16px Tahoma;fill:#111827}.sm{font:13px Tahoma;fill:#64748b}.ln{stroke:#334155;stroke-width:2;marker-end:url(#e)}</style><marker id="e" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#334155"/></marker></defs>
@@ -205,6 +210,17 @@
         <tr><td>Desktop</td><td class="file">npm run electron:build</td><td>بناء تطبيق Windows.</td><td>مش اختبار كل flow بعد التثبيت.</td></tr>
         <tr><td>Manual Smoke</td><td class="file">docs/final-readiness-check.md</td><td>تشغيل سريع موثق.</td><td>لا يغني عن QA matrix كاملة.</td></tr>
       </table>
+    </div>
+    <div class="card">
+      <h3>Full UI/Testing/Electron Flow</h3>
+      <ol>
+        <li>UI تبدأ من visual identity: logo، navy background، blue CTA، typography كبيرة في hero، cards للpricing.</li>
+        <li>Responsive verification: desktop landing، mobile landing، pricing، signin، create route.</li>
+        <li>لو compile error ظهر، ده blocker UI حقيقي؛ أثناء الالتقاط ظهر error في <span class="file">course.js</span> واتعمل fix محدود لإغلاق JSX زائد.</li>
+        <li>Electron flow: main process يفتح BrowserWindow، preload يعرض bridge محدود، renderer يشغل React.</li>
+        <li>Desktop screenshot اتاخد من Electron capturePage، مش مجرد Chrome.</li>
+        <li>Testing evidence يتقسم: build != full QA. build يثبت إن الكود يترجم، manual screenshots تثبت إن UI بيظهر، tests تثبت business logic.</li>
+      </ol>
     </div>
     <div class="card">
       <h3>UI Inventory: إيه العناصر الموجودة؟</h3>

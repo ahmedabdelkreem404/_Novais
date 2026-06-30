@@ -193,6 +193,29 @@
       </table>
     </div>
     <div class="card">
+      <h3>صور حقيقية من الويب الحالي</h3>
+      <figure><img src="screenshots/web-landing-desktop.png" alt="NOVAIS web landing desktop" style="width:100%;border-radius:14px;border:1px solid #dde5f0"><figcaption>Landing page desktop: الهوية الحقيقية dark navy + NOVAIS blue + logo.</figcaption></figure>
+      <figure><img src="screenshots/web-landing-mobile.png" alt="NOVAIS web landing mobile" style="width:100%;max-width:390px;border-radius:14px;border:1px solid #dde5f0;display:block;margin:auto"><figcaption>Responsive mobile viewport: nav مختصر، hero متكدس بشكل مناسب.</figcaption></figure>
+      <figure><img src="screenshots/web-pricing-desktop.png" alt="NOVAIS pricing page" style="width:100%;border-radius:14px;border:1px solid #dde5f0"><figcaption>Pricing page: cards للخطط Free/Pro/Elite وmonthly/yearly toggle.</figcaption></figure>
+    </div>
+    <div class="card">
+      <h3>Full Frontend Flow & Logic</h3>
+      <ol>
+        <li>الزائر يفتح landing أو pricing أو signin. دي public routes.</li>
+        <li>عند login، الواجهة تخزن JWT/role وتضيفهم في Axios headers.</li>
+        <li>Dashboard يجلب profile وcourses ويعرض حدود الاشتراك.</li>
+        <li>Create page يجلب <span class="file">/platform-settings</span> و<span class="file">/content-blueprints</span> ويبني form ديناميكي.</li>
+        <li>لو المستخدم اختار graduation project، fields زي university/faculty/students/supervisors تظهر من blueprint schema.</li>
+        <li>Generating page يرسل <span class="file">POST /generate-course</span> ومعاه blueprint_slug وblueprint_fields.</li>
+        <li>Topics page يعرض outline للمراجعة، ثم <span class="file">POST /courses</span> يحفظ في database.</li>
+        <li>Course viewer يقرأ <span class="file">blueprint_slug</span> ويختار layoutMode: document/question/story/course.</li>
+        <li>Document mode يعرض cover sheet + TOC + sections مستمرة، وcourse widgets زي certificate/quiz تختفي.</li>
+        <li>Question mode يعرض الأسئلة والإجابات مع show/hide answer key.</li>
+        <li>Story mode يعرض reader مناسب للقصص.</li>
+        <li>Export modal يطلب PDF/PPT، وWord ظاهر disabled لأنه coming soon.</li>
+      </ol>
+    </div>
+    <div class="card">
       <h3>UI Flow Diagram: من أول Create لحد Viewer</h3>
       <svg viewBox="0 0 980 360" role="img" aria-label="Frontend UI flow" style="width:100%;height:auto;border:1px solid #dde5f0;border-radius:14px;background:#fff">
         <defs><style>.n{fill:#f3f4ff;stroke:#7c3aed;stroke-width:2}.m{fill:#eff6ff;stroke:#2563eb;stroke-width:2}.txt{font:16px Tahoma,Arial;fill:#111827}.sub{font:13px Tahoma,Arial;fill:#64748b}.arr{stroke:#334155;stroke-width:2;marker-end:url(#a)}</style><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#334155"/></marker></defs>

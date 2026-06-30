@@ -277,6 +277,68 @@
       </table>
     </div>
     <div class="card">
+      <h3>العلاقات Cardinality: One-to-One ولا One-to-Many؟</h3>
+      <table><tr><th>العلاقة</th><th>النوع</th><th>الشرح بالبلدي</th><th>دليلها في الكود</th></tr>
+        <tr><td class="file">User -> Courses</td><td>One-to-Many</td><td>يوزر واحد يقدر يعمل كورسات/مستندات كتير، وكل Course ليه user واحد.</td><td class="file">User::courses(), Course::user()</td></tr>
+        <tr><td class="file">Course -> Lessons</td><td>One-to-Many</td><td>المنتج الواحد جواه lessons/chapters كتير، وكل lesson تابع لcourse واحد.</td><td class="file">Course::lessons(), Lesson::course()</td></tr>
+        <tr><td class="file">Course -> Quizzes</td><td>One-to-Many</td><td>الكورس ممكن يبقى له quiz أو أكتر، خصوصا لو اتولد أكتر من مرة.</td><td class="file">Course::quizzes()</td></tr>
+        <tr><td class="file">Quiz -> QuizQuestions</td><td>One-to-Many</td><td>كل quiz جواه أسئلة كتير، وكل سؤال تابع لاختبار واحد.</td><td class="file">Quiz::questions(), QuizQuestion::quiz()</td></tr>
+        <tr><td class="file">User -> Payments</td><td>One-to-Many</td><td>المستخدم ممكن يعمل عمليات دفع كتير عبر الزمن.</td><td class="file">User::payments(), Payment::user()</td></tr>
+        <tr><td class="file">User -> Subscriptions</td><td>One-to-Many عمليًا</td><td>ممكن يبقى عنده history اشتراكات، لكن business logic بيخلي active واحد غالبًا.</td><td class="file">User::subscriptions()</td></tr>
+        <tr><td class="file">User -> OfflinePaymentRequests</td><td>One-to-Many</td><td>يوزر واحد ممكن يبعت كذا طلب دفع يدوي، وكل طلب مربوط بخطة.</td><td class="file">OfflinePaymentRequest::user(), ::plan(), ::admin()</td></tr>
+        <tr><td class="file">Plan -> OfflinePaymentRequests</td><td>One-to-Many</td><td>خطة واحدة ممكن يطلبها مستخدمين كتير.</td><td class="file">OfflinePaymentRequest::plan()</td></tr>
+        <tr><td class="file">User -> AppNotifications</td><td>One-to-Many أو Broadcast nullable</td><td>إشعارات شخصية لها user_id، والبث العام ممكن user_id يكون null.</td><td class="file">AppNotification::user()</td></tr>
+        <tr><td class="file">Course -> CourseShare</td><td>One-to-Many محتمل</td><td>الكورس ممكن يتعمله share tokens أكتر من مرة.</td><td class="file">CourseShare::course()</td></tr>
+        <tr><td class="file">PlatformSetting</td><td>Key-Value مستقل</td><td>مش علاقة تقليدية؛ جدول إعدادات بمفتاح unique وقيمة JSON.</td><td class="file">platform_settings.key unique</td></tr>
+        <tr><td class="file">ContentBlueprint -> Course</td><td>Reference by slug</td><td>مش foreign key صريح؛ course يخزن blueprint_slug عشان يفضل عارف نوعه.</td><td class="file">courses.blueprint_slug</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Class Diagram حقيقي مبسط للـ Backend</h3>
+      <svg viewBox="0 0 1100 620" role="img" aria-label="Backend class diagram" style="width:100%;height:auto;border:1px solid #dbe3ef;border-radius:14px;background:#fff">
+        <defs><style>.cl{fill:#f8fafc;stroke:#1d4ed8;stroke-width:2}.svc{fill:#ecfdf5;stroke:#0f766e;stroke-width:2}.txt{font:15px Tahoma;fill:#0f172a}.small{font:12px Tahoma;fill:#475569}.rel{stroke:#334155;stroke-width:2;marker-end:url(#ca)}.dash{stroke:#64748b;stroke-width:2;stroke-dasharray:6 5;marker-end:url(#ca)}</style><marker id="ca" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#334155"/></marker></defs>
+        <rect x="40" y="50" width="180" height="95" rx="10" class="cl"/><text x="130" y="78" text-anchor="middle" class="txt">User</text><text x="130" y="105" text-anchor="middle" class="small">role, sub_status</text><text x="130" y="128" text-anchor="middle" class="small">hasMany()</text>
+        <rect x="310" y="50" width="190" height="95" rx="10" class="cl"/><text x="405" y="78" text-anchor="middle" class="txt">Course</text><text x="405" y="105" text-anchor="middle" class="small">blueprint_slug, metadata</text><text x="405" y="128" text-anchor="middle" class="small">lessons(), quizzes()</text>
+        <rect x="590" y="50" width="180" height="95" rx="10" class="cl"/><text x="680" y="78" text-anchor="middle" class="txt">Lesson</text><text x="680" y="105" text-anchor="middle" class="small">content, media, metadata</text><text x="680" y="128" text-anchor="middle" class="small">belongsTo Course</text>
+        <rect x="860" y="50" width="180" height="95" rx="10" class="cl"/><text x="950" y="78" text-anchor="middle" class="txt">ContentBlueprint</text><text x="950" y="105" text-anchor="middle" class="small">form_schema, prompts</text><text x="950" y="128" text-anchor="middle" class="small">toPublicArray()</text>
+        <rect x="310" y="230" width="180" height="95" rx="10" class="cl"/><text x="400" y="258" text-anchor="middle" class="txt">Payment</text><text x="400" y="285" text-anchor="middle" class="small">status, amount, HMAC</text><text x="400" y="308" text-anchor="middle" class="small">belongsTo User</text>
+        <rect x="560" y="230" width="180" height="95" rx="10" class="cl"/><text x="650" y="258" text-anchor="middle" class="txt">Subscription</text><text x="650" y="285" text-anchor="middle" class="small">plan_id, status, dates</text><text x="650" y="308" text-anchor="middle" class="small">belongsTo User</text>
+        <rect x="810" y="230" width="220" height="95" rx="10" class="cl"/><text x="920" y="258" text-anchor="middle" class="txt">OfflinePaymentRequest</text><text x="920" y="285" text-anchor="middle" class="small">method, proof, admin_id</text><text x="920" y="308" text-anchor="middle" class="small">user(), plan(), admin()</text>
+        <rect x="70" y="430" width="220" height="105" rx="10" class="svc"/><text x="180" y="458" text-anchor="middle" class="txt">CourseService</text><text x="180" y="485" text-anchor="middle" class="small">subscription checks</text><text x="180" y="508" text-anchor="middle" class="small">save/generate/lesson</text>
+        <rect x="390" y="430" width="220" height="105" rx="10" class="svc"/><text x="500" y="458" text-anchor="middle" class="txt">DeepSeekService</text><text x="500" y="485" text-anchor="middle" class="small">prompts + JSON parse</text><text x="500" y="508" text-anchor="middle" class="small">outline/lesson/quiz/chat</text>
+        <rect x="710" y="430" width="220" height="105" rx="10" class="svc"/><text x="820" y="458" text-anchor="middle" class="txt">ExportController</text><text x="820" y="485" text-anchor="middle" class="small">course_pdf/document_pdf</text><text x="820" y="508" text-anchor="middle" class="small">PDF/PPT download</text>
+        <line x1="220" y1="98" x2="310" y2="98" class="rel"/><text x="265" y="88" text-anchor="middle" class="small">1..*</text>
+        <line x1="500" y1="98" x2="590" y2="98" class="rel"/><text x="545" y="88" text-anchor="middle" class="small">1..*</text>
+        <line x1="500" y1="122" x2="860" y2="122" class="dash"/><text x="680" y="150" text-anchor="middle" class="small">blueprint_slug reference</text>
+        <line x1="150" y1="145" x2="380" y2="230" class="rel"/><text x="260" y="188" text-anchor="middle" class="small">1..*</text>
+        <line x1="170" y1="145" x2="625" y2="230" class="rel"/><text x="430" y="190" text-anchor="middle" class="small">1..*</text>
+        <line x1="190" y1="145" x2="900" y2="230" class="rel"/><text x="610" y="190" text-anchor="middle" class="small">1..*</text>
+        <line x1="250" y1="430" x2="375" y2="145" class="dash"/><line x1="390" y1="460" x2="250" y2="145" class="dash"/><line x1="820" y1="430" x2="445" y2="145" class="dash"/>
+      </svg>
+    </div>
+    <div class="card">
+      <h3>توثيق Software Engineering اللي تقوله في المناقشة</h3>
+      <table><tr><th>الوثيقة/الرسم</th><th>موجود إزاي في NOVAIS؟</th><th>تقول إيه لو اتسألت؟</th></tr>
+        <tr><td>SRS</td><td>متوزع بين docs/api-inventory، readiness docs، والكود نفسه.</td><td>المتطلبات: توليد محتوى AI، إدارة مستخدمين، دفع، Admin، Web/Mobile/Desktop.</td></tr>
+        <tr><td>Use Case Diagram</td><td>Actors: Guest, User, Premium User, Admin, Paymob, AI Provider.</td><td>Guest يسجل، User يولد ويحفظ، Admin يدير، Paymob يؤكد، AI يولد.</td></tr>
+        <tr><td>DFD Level 0</td><td>Clients -> Laravel API -> Database/AI/Payment/Mail/PDF.</td><td>الـ API هو مركز الحركة وكل clients مجرد واجهات.</td></tr>
+        <tr><td>Sequence Diagrams</td><td>موجودة هنا لتوليد AI ودفع Paymob.</td><td>ركز إن webhook هو مصدر truth للدفع.</td></tr>
+        <tr><td>ERD</td><td>موجود هنا مع cardinality.</td><td>أهم محور: users -> courses -> lessons و users -> payments/subscriptions.</td></tr>
+        <tr><td>Deployment Diagram</td><td>React/Electron/Flutter clients، Laravel API، DB، DeepSeek، Paymob.</td><td>Desktop مش backend منفصل؛ Electron wrapper لنفس الويب.</td></tr>
+        <tr><td>Testing Plan</td><td>PHPUnit، Flutter tests، React/Electron build، manual smoke docs.</td><td>الاختبارات تثبت build/business logic، لكنها لا تثبت production بنسبة 100%.</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>التغييرات الحديثة التي راجعتها الآن</h3>
+      <ul>
+        <li><span class="file">course.js</span>: layoutMode بيقسم المحتوى إلى document/question/story/course، وفيه academic cover وTOC وanswer key toggle.</li>
+        <li><span class="file">ExportModal.js</span>: زر Word ظاهر لكنه disabled برسالة "تصدير Word قريبًا / Word export is coming soon".</li>
+        <li><span class="file">ContentBlueprint.php</span>: graduation-project/master-thesis أضيف لهم university/faculty/department/student/supervisor/academic_year fields.</li>
+        <li><span class="file">DeepSeekService.php</span>: prompt upgrades للـ placeholders، وعدم إدخال UML/DevOps/Agile إلا لو المشروع software فعلا.</li>
+        <li><span class="file">document_pdf.blade.php</span> و <span class="file">ExportController.php</span>: PDF document layout بcover وTOC وchapters مستمرة.</li>
+      </ul>
+    </div>
+    <div class="card">
       <h3>Sequence Diagram: توليد محتوى AI</h3>
       <svg viewBox="0 0 980 430" role="img" aria-label="AI generation sequence" style="width:100%;height:auto;border:1px solid #dbe3ef;border-radius:14px;background:#fff">
         <defs><style>.life{stroke:#94a3b8;stroke-dasharray:6 6}.box{fill:#eff6ff;stroke:#2563eb;stroke-width:2}.txt{font:15px Tahoma,Arial;fill:#0f172a}.msg{stroke:#0f172a;stroke-width:2;marker-end:url(#ar)} </style><marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#0f172a"/></marker></defs>
