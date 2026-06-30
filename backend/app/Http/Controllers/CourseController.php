@@ -459,13 +459,18 @@ class CourseController extends Controller
         // Depth validation
         if ($request->has('numModules')) {
             $depth = (int) $request->input('numModules');
-            $enabledDepths = $config['enabled_depths'] ?? [5, 10];
-            if (!in_array($depth, $enabledDepths, true)) {
-                return response()->json(['message' => 'platform.depth_disabled'], 403);
-            }
-            $freeDepthLimit = (int) ($config['free_depth_limit'] ?? 5);
-            if (!$isPaid && $depth > $freeDepthLimit) {
-                return response()->json(['message' => 'platform.depth_requires_upgrade'], 403);
+            $blueprintSlug = $request->input('blueprint_slug', $request->input('content_type'));
+            
+            // Only enforce strict enabled_depths array and free depth limits if it is NOT a custom blueprint
+            if (!$blueprintSlug || $blueprintSlug === 'normal-course' || $blueprintSlug === 'leveled-course') {
+                $enabledDepths = $config['enabled_depths'] ?? [5, 10];
+                if (!in_array($depth, $enabledDepths, true)) {
+                    return response()->json(['message' => 'platform.depth_disabled'], 403);
+                }
+                $freeDepthLimit = (int) ($config['free_depth_limit'] ?? 5);
+                if (!$isPaid && $depth > $freeDepthLimit) {
+                    return response()->json(['message' => 'platform.depth_requires_upgrade'], 403);
+                }
             }
         }
 

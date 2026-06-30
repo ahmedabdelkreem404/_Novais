@@ -114,6 +114,7 @@ OUTLINING CONSTRAINTS:
 5. Language: All titles, descriptions, and structural nodes MUST be written in "$language".
 6. Citation Requirements: Academic citations and references are $citationText.
 7. Final Assessment: A quiz or review section is $quizText.
+8. Auto-inference: If any parameter or preference under "SUBMITTED PARAMETERS" is empty, blank, or unspecified, you must dynamically generate and design those details yourself to fit the topic and educational context.
 
 OUTPUT JSON (Strictly follow this structure. Do not change key names to maintain compatibility with the NOVAIS engine):
 {

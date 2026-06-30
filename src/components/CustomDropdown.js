@@ -55,13 +55,16 @@ export default function CustomDropdown({
         opt.value.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const isRtl = document.documentElement.dir === 'rtl';
+    const computedSearchPlaceholder = searchPlaceholder || (isRtl ? 'بحث...' : 'Search...');
+
     return (
         <div className={`relative w-full ${className}`} ref={dropdownRef}>
             <div
                 onClick={() => !disabled && setIsOpen(!isOpen)}
                 className={`w-full bg-gray-50 dark:bg-[#151515] border ${isOpen ? 'border-blue-500 ring-1 ring-blue-500/20' : 'border-gray-200 dark:border-gray-700'} rounded-xl p-3.5 md:p-4 text-sm font-medium flex items-center justify-between cursor-pointer hover:border-blue-300 dark:hover:border-blue-700 transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-                <span className="text-gray-700 dark:text-gray-200 flex items-center gap-2 max-w-[85%] truncate">
+                <span className="text-gray-700 dark:text-gray-200 flex items-center gap-2 max-w-[85%] truncate text-start w-full">
                     {Icon && <Icon className="text-blue-500 shrink-0" size={16} />}
                     {selectedOption ? (
                         renderOption ? renderOption(selectedOption) : selectedOption.label
@@ -81,14 +84,14 @@ export default function CustomDropdown({
                         className="absolute z-50 w-full mt-2 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-gray-800 rounded-xl shadow-xl max-h-64 overflow-hidden flex flex-col"
                     >
                         {showSearch && (
-                            <div className="p-2 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
-                                <LuSearch className="text-gray-400" size={16} />
+                            <div className="p-2.5 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
+                                <LuSearch className="text-gray-400 shrink-0" size={16} />
                                 <input
                                     type="text"
-                                    placeholder={searchPlaceholder}
+                                    placeholder={computedSearchPlaceholder}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full bg-transparent text-sm text-gray-700 dark:text-gray-200 outline-none placeholder-gray-400"
+                                    className="w-full bg-transparent text-sm text-gray-700 dark:text-gray-200 outline-none placeholder-gray-400 text-start"
                                 />
                             </div>
                         )}

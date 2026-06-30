@@ -72,32 +72,50 @@ const getDynamicTopicLabel = (slug, lang) => {
     if (slug === 'book') {
         return lang === 'ar' ? 'عنوان أو موضوع الكتاب' : 'Book Title or Topic';
     }
-    if (slug === 'exam-builder' || slug === 'question-bank') {
-        return lang === 'ar' ? 'موضوع الامتحان / المادة' : 'Exam Subject / Topic';
+    if (slug === 'story') {
+        return lang === 'ar' ? 'عنوان أو فكرة الرواية القصصية' : 'Novel / Story Title or Concept';
+    }
+    if (slug === 'exam-builder' || slug === 'question-bank' || slug === 'assignment-builder') {
+        return lang === 'ar' ? 'موضوع الامتحان / المادة الدراسية' : 'Exam Subject / Course Topic';
     }
     if (slug === 'graduation-project' || slug === 'master-thesis') {
-        return lang === 'ar' ? 'عنوان أو مجال البحث' : 'Research Field / Project Topic';
+        return lang === 'ar' ? 'عنوان أو مجال البحث العلمي' : 'Research Field / Project Topic';
     }
     if (slug === 'lesson-plan') {
-        return lang === 'ar' ? 'موضوع الدرس' : 'Lesson Topic';
+        return lang === 'ar' ? 'موضوع الدرس التعليمي' : 'Lesson Topic';
     }
-    return lang === 'ar' ? 'موضوع الكورس / المحتوى' : 'Course Topic / Content';
+    if (slug === 'project-based-learning') {
+        return lang === 'ar' ? 'موضوع التعلم القائم على المشاريع' : 'Project-Based Learning Topic';
+    }
+    if (slug === 'study-review') {
+        return lang === 'ar' ? 'المادة المراد مراجعتها' : 'Study Review Topic';
+    }
+    return lang === 'ar' ? 'موضوع الكورس / المحتوى التعليمي' : 'Course Topic / Content';
 };
 
 const getDynamicTopicPlaceholder = (slug, lang) => {
     if (slug === 'book') {
-        return lang === 'ar' ? 'مثال: تاريخ مصر القديمة، أساسيات الفيزياء...' : 'e.g., History of Ancient Egypt, Physics Fundamentals...';
+        return lang === 'ar' ? 'مثال: تاريخ مصر القديمة، أساسيات الفيزياء الحديثة...' : 'e.g., History of Ancient Egypt, Modern Physics Fundamentals...';
     }
-    if (slug === 'exam-builder' || slug === 'question-bank') {
-        return lang === 'ar' ? 'مثال: رياضيات الصف الأول الثانوي، كيمياء عضوية...' : 'e.g., High School Math, Organic Chemistry...';
+    if (slug === 'story') {
+        return lang === 'ar' ? 'مثال: رحلة استكشافية داخل الجهاز الهضمي، أسرار الرياضيات...' : "e.g., A Journey inside the Human Body, The Time Traveler's Math Guide...";
+    }
+    if (slug === 'exam-builder' || slug === 'question-bank' || slug === 'assignment-builder') {
+        return lang === 'ar' ? 'مثال: رياضيات الصف الأول الثانوي، مبادئ كيمياء عضوية...' : 'e.g., High School Algebra, Introduction to Organic Chemistry...';
     }
     if (slug === 'graduation-project' || slug === 'master-thesis') {
-        return lang === 'ar' ? 'مثال: تطبيق الذكاء الاصطناعي في الطب، بلوكشين...' : 'e.g., AI in Healthcare, Blockchain in Finance...';
+        return lang === 'ar' ? 'مثال: تطبيق الذكاء الاصطناعي في تشخيص الأمراض، الأمن السيبراني للبنوك...' : 'e.g., Smart IoT Agriculture System, Blockchain for Secure Health Records...';
     }
     if (slug === 'lesson-plan') {
-        return lang === 'ar' ? 'مثال: دورة المياه في الطبيعة، الجهاز الهضمي...' : 'e.g., Water Cycle, Digestion System...';
+        return lang === 'ar' ? 'مثال: خطة درس عملية البناء الضوئي، دورة المياه في الطبيعة...' : 'e.g., Photosynthesis Process, The Water Cycle for 5th Grade...';
     }
-    return lang === 'ar' ? 'مثال: أساسيات لغة بايثون، تصميم الويب...' : 'e.g., Python Basics, Web Design...';
+    if (slug === 'project-based-learning') {
+        return lang === 'ar' ? 'مثال: تصميم نموذج فلتر لتنقية المياه، بناء روبوت منزلي...' : 'e.g., Designing a Solar-Powered Water Filter, Building a Smart Home Robot...';
+    }
+    if (slug === 'study-review') {
+        return lang === 'ar' ? 'مثال: مراجعة شاملة لاختبار رخصة القيادة، مراجعة قواعد النحو...' : 'e.g., Biology MCAT Review, Arabic Grammar Exam Revision...';
+    }
+    return lang === 'ar' ? 'مثال: أساسيات لغة بايثون وتطوير الويب، مهارات التفاوض...' : 'e.g., Python Web Development Basics, Effective Negotiation Skills...';
 };
 
 const getFieldLabel = (field, lang = 'en') => {
@@ -711,11 +729,16 @@ const CreateCourse = () => {
                                     />
                                     <button
                                         onClick={addSubTopic}
-                                        className="bg-gray-900 dark:bg-gray-700 hover:bg-black dark:hover:bg-gray-600 text-white px-5 rounded-xl flex items-center justify-center transition-colors shrink-0"
+                                        className="bg-[#151515] dark:bg-white text-white dark:text-[#151515] hover:bg-gray-800 dark:hover:bg-gray-100 p-4 rounded-xl flex items-center justify-center transition-all aspect-square border border-gray-200 dark:border-gray-700"
                                     >
                                         <LuPlus size={20} />
                                     </button>
                                 </div>
+                                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 font-medium">
+                                    {isAr 
+                                        ? '⚠️ تأكد من الضغط على زر (+) لحفظ التفصيل المكتوب قبل الانتقال للخطوة التالية!' 
+                                        : '⚠️ Make sure to click the (+) button to save the detail before continuing!'}
+                                </p>
 
                                 {/* Tags list */}
                                 <div className="flex flex-wrap gap-2 mt-3 min-h-[30px]">
@@ -764,7 +787,18 @@ const CreateCourse = () => {
                             </button>
                             <button
                                 disabled={!formData.topic}
-                                onClick={() => setStep(3)}
+                                onClick={() => {
+                                    let updatedSubTopics = [...formData.subTopics];
+                                    if (formData.subTopic.trim()) {
+                                        updatedSubTopics.push(formData.subTopic.trim());
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            subTopics: updatedSubTopics,
+                                            subTopic: ''
+                                        }));
+                                    }
+                                    setStep(3);
+                                }}
                                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isAr ? 'التالي' : 'Next'} <LuChevronRight className={isAr ? 'rotate-180' : ''} />

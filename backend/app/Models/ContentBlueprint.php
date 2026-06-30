@@ -370,11 +370,37 @@ class ContentBlueprint extends Model
         ], fn ($value) => $value !== null && $value !== []);
     }
 
-    public function toPublicArray(): array
+    public function getFormSchemaAttribute($value)
     {
         $nameVal = $this->name;
         $nameStr = is_array($nameVal) ? ($nameVal['en'] ?? 'course') : ($nameVal ?? 'course');
+        $defaultSchema = self::defaultFormSchema($this->slug, $nameStr);
 
+        $schema = null;
+        if ($value) {
+            $schema = is_string($value) ? json_decode($value, true) : $value;
+        }
+
+        if (!$schema) {
+            return $defaultSchema;
+        }
+
+        if (isset($schema['fields']) && is_array($schema['fields'])) {
+            foreach ($schema['fields'] as $idx => $field) {
+                if (isset($field['key']) && isset($field['type']) && ($field['type'] === 'select' || $field['type'] === 'multiselect') && empty($field['options'])) {
+                    $defaultField = collect($defaultSchema['fields'] ?? [])->firstWhere('key', $field['key']);
+                    if ($defaultField && !empty($defaultField['options'])) {
+                        $schema['fields'][$idx]['options'] = $defaultField['options'];
+                    }
+                }
+            }
+        }
+
+        return $schema;
+    }
+
+    public function toPublicArray(): array
+    {
         return [
             'name' => $this->name,
             'slug' => $this->slug,
@@ -383,7 +409,7 @@ class ContentBlueprint extends Model
             'target_academic_level' => $this->target_academic_level,
             'output_structure' => $this->output_structure ?? [],
             'default_count' => $this->default_count,
-            'form_schema' => $this->form_schema ?? self::defaultFormSchema($this->slug, $nameStr),
+            'form_schema' => $this->form_schema,
         ];
     }
 
