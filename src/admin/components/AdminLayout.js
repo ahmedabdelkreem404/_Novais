@@ -17,7 +17,8 @@ import {
     LuArrowLeft,
     LuShare2,
     LuReceipt,
-    LuSettings
+    LuSettings,
+    LuBell
 } from "react-icons/lu";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -75,6 +76,7 @@ const AdminLayout = () => {
         { name: t('admin.plans'), icon: LuLayers, path: '/admin/plans' },
         { name: t('admin.platform_settings') || 'Platform Settings', icon: LuSettings, path: '/admin/platform-settings' },
         { name: t('admin.content_blueprints') || 'AI Blueprints', icon: LuLayers, path: '/admin/content-blueprints' },
+        { name: t('admin.notifications') || 'Notifications', icon: LuBell, path: '/admin/notifications' },
         {
             name: t('admin.legal'), icon: LuFileText, subItems: [
                 { name: t('admin.terms'), path: '/admin/editterms' },

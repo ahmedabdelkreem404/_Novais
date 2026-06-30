@@ -73,6 +73,7 @@ import PlatformSettings from './admin/platformsettings';
 import ContentBlueprints from './admin/contentblueprints';
 import SocialLinks from './admin/sociallinks';
 import OfflinePayments from './admin/offlinepayments';
+import AdminNotifications from './admin/notifications';
 
 import Error from './pages/error';
 
@@ -287,6 +288,7 @@ function AnimatedRoutes() {
           <Route path="platform-settings" element={<PlatformSettings />} />
           <Route path="content-blueprints" element={<ContentBlueprints />} />
           <Route path="offline-payments" element={<OfflinePayments />} />
+          <Route path="notifications" element={<AdminNotifications />} />
           <Route path="social-links" element={<SocialLinks />} />
         </Route>
 

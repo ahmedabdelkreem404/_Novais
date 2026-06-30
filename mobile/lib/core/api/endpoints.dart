@@ -46,6 +46,10 @@ class ApiEndpoints {
   static const offlinePayments = '/offline-payments';
   static String offlinePayment(int id) => '/offline-payments/$id';
   static String cancelOfflinePayment(int id) => '/offline-payments/$id/cancel';
+  static const notifications = '/notifications';
+  static const notificationDevices = '/notification-devices';
+  static const readAllNotifications = '/notifications/read-all';
+  static String readNotification(int id) => '/notifications/$id/read';
 
   // Public
   static String sharedCourse(String token) => '/share/$token';

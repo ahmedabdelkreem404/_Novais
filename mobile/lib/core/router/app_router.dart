@@ -48,6 +48,7 @@ import '../../features/payment/pricing_screen.dart'
 
 // ── Notes
 import '../../features/notes/notes_screen.dart';
+import '../../features/notifications/notifications_screen.dart';
 
 // ── Stub public pages (blog, contact, about, features, shared course)
 // ── Stub public pages (blog, contact, about, features)
@@ -118,6 +119,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
               path: '/audio', builder: (_, __) => const AudioCoursesScreen()),
           GoRoute(path: '/notes', builder: (_, __) => const NotesScreen()),
+          GoRoute(
+              path: '/notifications',
+              builder: (_, __) => const NotificationsScreen()),
           GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
           GoRoute(path: '/signin', builder: (_, __) => const SignInScreen()),
           GoRoute(path: '/signup', builder: (_, __) => const SignUpScreen()),
@@ -205,6 +209,7 @@ String? mobileAuthRedirect(AuthStatus status, String location) {
       '/payment',
       '/subscription',
       '/notes',
+      '/notifications',
       '/audio',
     ];
     final isProtected = protectedPaths.any((path) => location.startsWith(path));
@@ -227,6 +232,7 @@ String? mobileAuthRedirect(AuthStatus status, String location) {
     '/payment',
     '/subscription',
     '/notes',
+    '/notifications',
     '/audio',
   ];
 

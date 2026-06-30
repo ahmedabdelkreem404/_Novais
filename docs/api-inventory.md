@@ -30,6 +30,10 @@ This inventory documents the web, Flutter mobile, and desktop-web-wrapper API su
 | Paymob | POST | `/api/payment/webhook` | No | No | Server | No | Paymob payload | status | No | Signature validation expected | Payment callback |
 | Offline payments | GET | `/api/offline-payments/instructions` | Yes | No | Yes | Yes | none | instructions/methods | Mobile GET cache | Public user-safe instructions | Offline payment |
 | Offline payments | GET/POST | `/api/offline-payments` | Yes | No | Yes | Yes | plan/proof/reference | requests/request | GET cached mobile | Own requests only | Offline payment |
+| Notifications | GET | `/api/notifications` | Yes | No | Planned | Yes | per_page | notifications, unread_count | Mobile GET cache | Own notifications only | Mobile notifications |
+| Notifications | POST | `/api/notifications/{id}/read` | Yes | No | Planned | Yes | id | success, notification | No | Own notification only | Mobile notifications |
+| Notifications | POST | `/api/notifications/read-all` | Yes | No | Planned | Yes | none | success | No | Own notifications only | Mobile notifications |
+| Notification devices | POST | `/api/notification-devices` | Yes | No | No | Yes | device_id, platform, push_token | device | No | User-scoped device registration; push token optional | Mobile bootstrap |
 | Platform settings | GET | `/api/platform-settings` | No | No | Yes | Yes | none | safe platform settings | Backend cache 5 min, mobile GET cache | Secrets stripped by key policy | All clients |
 | Platform settings legacy | GET | `/api/platform-config` | No | No | Yes legacy | Yes legacy | none | same as platform-settings | Same | Compatibility alias | Existing screens |
 | Admin settings | GET | `/api/admin/platform-settings` | Yes | Yes | Yes | No | none | editable settings | No | Admin middleware | Admin platform settings |
@@ -43,6 +47,8 @@ This inventory documents the web, Flutter mobile, and desktop-web-wrapper API su
 | Admin courses | GET/PUT/DELETE | `/api/admin/courses` | Yes | Yes | Yes | No | metadata/status | courses/status | No | Admin only | Admin courses |
 | Admin payments | GET | `/api/admin/paid-users` | Yes | Yes | Yes | No | none | users/payments | No | Admin only | Admin payments |
 | Admin offline payments | GET/POST | `/api/admin/offline-payments` | Yes | Yes | Yes | No | status/admin_note | requests/status | No | Admin only, proof endpoint protected | Admin offline payments |
+| Admin notifications | GET | `/api/admin/notifications` | Yes | Yes | Yes | No | none | notifications | No | Admin only | Admin notifications |
+| Admin notifications | POST | `/api/admin/notifications` | Yes | Yes | Yes | No | target, user_id, title, body, type, data | created_count, notification | No | Admin only; broadcast creates per-user rows | Admin notifications |
 | Admin plans | GET/PUT | `/api/admin/plans` | Yes | Yes | Yes | No | plan fields | plans/status | No | Admin only | Admin plans |
 | CMS blogs | GET | `/api/blogs`, `/api/blogs/{slug}` | No | No | Yes | Yes | slug | blog(s) | Mobile GET cache | Public | Blog |
 | CMS pages | GET | `/api/pages/{slug}`, `/api/policies` | No | No | Yes | Yes | slug | page/policies | Mobile GET cache | Public | Policy pages |

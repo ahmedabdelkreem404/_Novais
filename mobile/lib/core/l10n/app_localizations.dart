@@ -36,6 +36,9 @@ class AppLocalizations {
       'profile': 'Profile',
       'pricing': 'Pricing',
       'notes': 'Notes',
+      'notifications': 'Notifications',
+      'no_notifications': 'No notifications yet',
+      'mark_all_read': 'Mark all read',
       'logout': 'Log Out',
       'generate': 'Generate',
       'topic': 'Topic',
@@ -181,7 +184,8 @@ class AppLocalizations {
       'feature_lang_body':
           'Generate courses in 15+ languages including Arabic.',
       'features_title': 'Why NOVAIS?',
-      'disabled_warning': 'Course generation is temporarily disabled by the administrator.',
+      'disabled_warning':
+          'Course generation is temporarily disabled by the administrator.',
     },
     'ar': {
       'app_name': 'نوفايس',
@@ -206,6 +210,9 @@ class AppLocalizations {
       'profile': 'الملف الشخصي',
       'pricing': 'الأسعار',
       'notes': 'ملاحظاتي',
+      'notifications': 'الإشعارات',
+      'no_notifications': 'لا توجد إشعارات بعد',
+      'mark_all_read': 'تعليم الكل كمقروء',
       'logout': 'تسجيل الخروج',
       'generate': 'إنشاء',
       'topic': 'الموضوع',

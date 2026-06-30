@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/api/platform_config_provider.dart';
+import '../../core/api/notifications_provider.dart';
 
 import '../../widgets/app_sidebar.dart';
 
@@ -17,6 +18,18 @@ class ShellScreen extends ConsumerStatefulWidget {
 
 class _ShellScreenState extends ConsumerState<ShellScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() async {
+      try {
+        await ref.read(notificationActionsProvider).registerDevice();
+      } catch (_) {
+        // Notification device registration should never block the shell.
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +87,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
             key: const Key('shell_notification_button'),
             tooltip: 'Notifications',
             icon: const Icon(Icons.notifications_none_outlined),
-            onPressed: () => _showNotificationsDialog(context),
+            onPressed: () => context.go('/notifications'),
           ),
           IconButton(
             icon: const Icon(Icons.home_outlined),
@@ -116,6 +129,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     );
   }
 
+  // ignore: unused_element
   void _showNotificationsDialog(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(

@@ -92,6 +92,10 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/offline-payments', [\App\Http\Controllers\OfflinePaymentController::class, 'store'])->middleware('throttle:5,1');
     Route::get('/offline-payments/{offlinePaymentRequest}', [\App\Http\Controllers\OfflinePaymentController::class, 'show']);
     Route::post('/offline-payments/{offlinePaymentRequest}/cancel', [\App\Http\Controllers\OfflinePaymentController::class, 'cancel']);
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index']);
+    Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{notification}/read', [\App\Http\Controllers\NotificationController::class, 'markRead']);
+    Route::post('/notification-devices', [\App\Http\Controllers\NotificationController::class, 'registerDevice']);
 });
 
 // Public Share Route (via Token)
@@ -231,4 +235,6 @@ Route::middleware(['auth:api', 'is_admin'])->prefix('admin')->group(function () 
     Route::post('/content-blueprints', [\App\Http\Controllers\ContentBlueprintController::class, 'store']);
     Route::put('/content-blueprints/{contentBlueprint}', [\App\Http\Controllers\ContentBlueprintController::class, 'update']);
     Route::delete('/content-blueprints/{contentBlueprint}', [\App\Http\Controllers\ContentBlueprintController::class, 'destroy']);
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'adminIndex']);
+    Route::post('/notifications', [\App\Http\Controllers\NotificationController::class, 'adminStore']);
 });

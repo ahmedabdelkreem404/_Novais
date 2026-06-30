@@ -5,6 +5,7 @@ import '../core/auth/auth_provider.dart';
 import '../core/l10n/app_localizations.dart';
 import '../core/theme/app_theme.dart';
 import '../core/api/platform_config_provider.dart';
+import '../core/api/notifications_provider.dart';
 
 class AppSidebar extends ConsumerWidget {
   const AppSidebar({super.key});
@@ -25,6 +26,8 @@ class AppSidebar extends ConsumerWidget {
     final showThemeToggle = !configAsync.hasValue ||
         (configAsync.value!.systemThemeMode != 'light_only' &&
             configAsync.value!.systemThemeMode != 'dark_only');
+    final unreadNotifications =
+        ref.watch(notificationsProvider).valueOrNull?.unreadCount ?? 0;
     const Radius edgeRadius = Radius.circular(16);
 
     return Drawer(
@@ -75,6 +78,7 @@ class AppSidebar extends ConsumerWidget {
           ),
           Expanded(
             child: ListView(
+              cacheExtent: 900,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
               children: [
                 if (isAuthenticated) ...[
@@ -84,25 +88,7 @@ class AppSidebar extends ConsumerWidget {
                     labelKey: 'dashboard',
                     path: '/dashboard',
                   ),
-                  const _NavItem(
-                    icon: Icons.headphones_outlined,
-                    selectedIcon: Icons.headphones,
-                    labelKey: 'audio_courses',
-                    path: '/audio',
-                  ),
-                  const _NavItem(
-                    icon: Icons.person_outline,
-                    selectedIcon: Icons.person,
-                    labelKey: 'profile',
-                    path: '/profile',
-                  ),
-                  const _NavItem(
-                    icon: Icons.monetization_on_outlined,
-                    selectedIcon: Icons.monetization_on,
-                    labelKey: 'pricing',
-                    path: '/pricing',
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   ElevatedButton(
                     key: const Key('drawer_create_button'),
                     onPressed: () {
@@ -135,8 +121,35 @@ class AppSidebar extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
                   _UsageCard(isDark: isDark),
+                  const SizedBox(height: 12),
+                  _NavItem(
+                    icon: Icons.notifications_outlined,
+                    selectedIcon: Icons.notifications,
+                    labelKey: 'notifications',
+                    path: '/notifications',
+                    badgeCount: unreadNotifications,
+                  ),
+                  const _NavItem(
+                    icon: Icons.headphones_outlined,
+                    selectedIcon: Icons.headphones,
+                    labelKey: 'audio_courses',
+                    path: '/audio',
+                  ),
+                  const _NavItem(
+                    icon: Icons.person_outline,
+                    selectedIcon: Icons.person,
+                    labelKey: 'profile',
+                    path: '/profile',
+                  ),
+                  const _NavItem(
+                    icon: Icons.monetization_on_outlined,
+                    selectedIcon: Icons.monetization_on,
+                    labelKey: 'pricing',
+                    path: '/pricing',
+                  ),
+                  const SizedBox(height: 20),
                 ] else ...[
                   const _NavItem(
                     icon: Icons.login_outlined,
@@ -329,12 +342,14 @@ class _NavItem extends StatelessWidget {
   final IconData selectedIcon;
   final String labelKey;
   final String path;
+  final int badgeCount;
 
   const _NavItem({
     required this.icon,
     required this.selectedIcon,
     required this.labelKey,
     required this.path,
+    this.badgeCount = 0,
   });
 
   @override
@@ -365,15 +380,37 @@ class _NavItem extends StatelessWidget {
               ? (isDark ? Colors.white : Colors.black)
               : (isDark ? Colors.grey[400] : Colors.grey[600]),
         ),
-        title: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected
-                ? (isDark ? Colors.white : Colors.black)
-                : (isDark ? Colors.grey[400] : Colors.grey[600]),
-          ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected
+                      ? (isDark ? Colors.white : Colors.black)
+                      : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                ),
+              ),
+            ),
+            if (badgeCount > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Text(
+                  badgeCount > 99 ? '99+' : '$badgeCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+          ],
         ),
         onTap: () {
           Navigator.of(context).pop();
