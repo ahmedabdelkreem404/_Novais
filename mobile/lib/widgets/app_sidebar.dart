@@ -19,6 +19,8 @@ class AppSidebar extends ConsumerWidget {
     final drawerWidth = (MediaQuery.sizeOf(context).width * 0.84)
         .clamp(300.0, 360.0)
         .toDouble();
+    final auth = ref.watch(authProvider);
+    final isAuthenticated = auth.status == AuthStatus.authenticated;
     final configAsync = ref.watch(platformConfigProvider);
     final showThemeToggle = !configAsync.hasValue ||
         (configAsync.value!.systemThemeMode != 'light_only' &&

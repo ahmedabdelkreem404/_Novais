@@ -128,7 +128,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.between,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       Localizations.localeOf(context).languageCode == 'ar'
