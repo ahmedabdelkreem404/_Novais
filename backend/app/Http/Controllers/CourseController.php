@@ -406,7 +406,7 @@ class CourseController extends Controller
             }
         }
 
-        $language = ucfirst(strtolower($request->input('language', 'English')));
+        $language = ucwords(strtolower($request->input('language', 'English')));
         
         $rawType = $request->input('type', 'Theory & Image Course');
         $type = str_contains(strtolower($rawType), 'video') ? 'Video & Theory Course' : 'Theory & Image Course';

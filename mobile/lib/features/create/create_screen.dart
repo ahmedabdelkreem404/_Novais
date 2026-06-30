@@ -233,6 +233,59 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
     setState(() => _blueprintFields[key] = value);
   }
 
+  String _getFieldCategory(String slug, String fieldKey) {
+    const essentialKeys = [
+      'practical_domain', 'practice_intensity', 'academic_level', 'lecture_count', 
+      'exam_level', 'topics_to_review', 'topics', 'question_count', 'question_types', 
+      'exam_duration', 'total_marks', 'section_count', 'target_reader', 'chapter_count', 
+      'writing_style', 'genre', 'theme', 'domain', 'problem_statement', 'objectives', 
+      'research_problem', 'research_questions', 'grade', 'duration', 'learning_objectives', 
+      'activities', 'assessment_method', 'task_count', 'delivery_style', 'final_deliverable', 
+      'milestones', 'evaluation_criteria'
+    ];
+
+    if (essentialKeys.contains(fieldKey)) {
+      return 'essential';
+    }
+
+    if (['audience', 'outcome', 'difficulty_focus'].contains(fieldKey)) {
+      return 'optional';
+    }
+
+    return 'advanced';
+  }
+
+  Widget _buildTriStateOption(BuildContext context, String key, String label, bool active, VoidCallback onTap) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: active
+                ? AppColors.primary.withOpacity(0.1)
+                : (isDark ? const Color(0xFF1F1F1F) : const Color(0xFFF9FAFB)),
+            border: Border.all(
+              color: active ? AppColors.primary : (isDark ? Colors.grey[800]! : Colors.grey[300]!),
+              width: 1.5,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+              color: active ? AppColors.primary : (isDark ? Colors.grey[400] : Colors.grey[600]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBlueprintField(
     BuildContext context,
     BlueprintFormField field,
@@ -241,8 +294,17 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
     final languageCode = Localizations.localeOf(context).languageCode;
     final label = field.labelFor(languageCode);
     final value = _blueprintFields[field.keyName];
+    final category = _getFieldCategory(_blueprintSlug, field.keyName);
+    final isEssential = category == 'essential';
+    final isAr = languageCode == 'ar';
+    
+    final placeholder = field.placeholderFor(languageCode) ?? 
+        (isEssential 
+            ? label 
+            : (isAr ? '$label (تلقائي / اتركه للذكاء الاصطناعي)' : '$label (Auto / Let AI decide)'));
+
     final inputDecoration = InputDecoration(
-      hintText: field.placeholderFor(languageCode) ?? label,
+      hintText: placeholder,
       filled: true,
       fillColor: isDark ? const Color(0xFF1F1F1F) : const Color(0xFFF9FAFB),
       border: OutlineInputBorder(
@@ -277,8 +339,18 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
             : null,
       );
     } else if (field.type == 'select') {
-      final parsed = field.parsedOptions;
-      final selectedValue = parsed.any((o) => o['value'] == value) ? value?.toString() : null;
+      final parsed = List<Map<String, dynamic>>.from(field.parsedOptions);
+      if (!field.required) {
+        parsed.insert(0, {
+          'value': 'auto',
+          'label': {
+            'en': 'Auto / Let AI decide',
+            'ar': 'تلقائي / اتركه للذكاء الاصطناعي',
+          }
+        });
+      }
+      final currentValue = value ?? (field.required ? null : 'auto');
+      final selectedValue = parsed.any((o) => o['value'] == currentValue) ? currentValue.toString() : null;
       control = DropdownButtonFormField<String>(
         value: selectedValue,
         decoration: inputDecoration,
@@ -295,7 +367,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
               );
             })
             .toList(),
-        onChanged: (next) => _setBlueprintField(field.keyName, next ?? ''),
+        onChanged: (next) => _setBlueprintField(field.keyName, next == 'auto' ? null : next),
         validator: field.required
             ? (next) => (next == null || next.isEmpty) ? AppLocalizations.of(context).t('required') : null
             : null,
@@ -331,12 +403,37 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
         }).toList(),
       );
     } else if (field.type == 'boolean') {
-      control = SwitchListTile(
-        contentPadding: EdgeInsets.zero,
-        title: Text(label),
-        value: value == true,
-        activeColor: AppColors.primary,
-        onChanged: (next) => _setBlueprintField(field.keyName, next),
+      final currentValue = value;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _buildTriStateOption(context, 'auto', isAr ? 'تلقائي' : 'Auto', currentValue == null, () {
+                _setBlueprintField(field.keyName, null);
+              }),
+              const SizedBox(width: 8),
+              _buildTriStateOption(context, 'true', isAr ? 'نعم' : 'Yes', currentValue == true, () {
+                _setBlueprintField(field.keyName, true);
+              }),
+              const SizedBox(width: 8),
+              _buildTriStateOption(context, 'false', isAr ? 'لا' : 'No', currentValue == false, () {
+                _setBlueprintField(field.keyName, false);
+              }),
+            ],
+          ),
+        ],
       );
     } else {
       control = TextFormField(
@@ -657,13 +754,62 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                           .toUpperCase(),
                       icon: Icons.tune_outlined,
                     ),
-                    ...activeBlueprintFields.map(
+                    // Render essential fields directly
+                    ...activeBlueprintFields.where((f) => _getFieldCategory(_blueprintSlug, f.keyName) == 'essential').map(
                       (field) => Padding(
                         padding: const EdgeInsets.only(bottom: 14),
                         child: _buildBlueprintField(context, field, isDark),
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    
+                    // Group optional/advanced fields inside a premium ExpansionTile
+                    if (activeBlueprintFields.any((f) => _getFieldCategory(_blueprintSlug, f.keyName) != 'essential')) ...[
+                      const SizedBox(height: 10),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB),
+                              width: 1,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            color: isDark ? const Color(0xFF151515) : Colors.white,
+                          ),
+                          child: Theme(
+                            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                            child: ExpansionTile(
+                              collapsedBackgroundColor: isDark ? const Color(0xFF151515) : Colors.white,
+                              backgroundColor: isDark ? const Color(0xFF151515) : Colors.white,
+                              title: Text(
+                                languageCode == 'ar'
+                                    ? 'خيارات متقدمة وهيكل المحتوى (تلقائي)'
+                                    : 'Advanced Options & Structure (Auto)',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white70 : Colors.black87,
+                                ),
+                              ),
+                              leading: const Icon(
+                                Icons.tune_outlined,
+                                color: AppColors.primary,
+                                size: 20,
+                              ),
+                              childrenPadding: const EdgeInsets.all(16),
+                              children: activeBlueprintFields
+                                  .where((f) => _getFieldCategory(_blueprintSlug, f.keyName) != 'essential')
+                                  .map((field) => Padding(
+                                        padding: const EdgeInsets.only(bottom: 14),
+                                        child: _buildBlueprintField(context, field, isDark),
+                                      ))
+                                  .toList(),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
                   ],
 
                   _SectionHeader(label: l10n.t('language').toUpperCase(), icon: Icons.language),
