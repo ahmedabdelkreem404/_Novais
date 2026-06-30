@@ -55,11 +55,10 @@ const NotesSidebar = ({ isOpen, onClose, courseId }) => {
                     'Accept': 'application/json'
                 }
             };
-            const res = await axios.get(`${serverURL}/notes`, config);
-            const filtered = res.data.filter(n => parseInt(n.course_id) === parseInt(courseId));
-            setNotes(filtered);
-            if (filtered.length > 0) {
-                setNewNote(filtered[0].content);
+            const res = await axios.get(`${serverURL}/notes?course_id=${courseId}`, config);
+            setNotes(res.data);
+            if (res.data.length > 0) {
+                setNewNote(res.data[0].content);
             }
         } catch (error) {
             console.error(error);

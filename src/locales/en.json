@@ -728,18 +728,18 @@
         }
     },
     "home": {
-        "my_courses": "My Courses",
-        "subtitle": "Continue learning where you left off",
-        "generate_new": "Generate New Course"
+        "my_courses": "My Library",
+        "subtitle": "Continue reading and learning where you left off",
+        "generate_new": "Create New Content"
     },
     "dashboard_comp": {
-        "no_courses": "No Courses Yet",
-        "empty_desc": "You haven't generated any AI courses yet. Start your learning journey today!",
-        "create_first": "Create Your First Course",
+        "no_courses": "No content generated yet",
+        "empty_desc": "You haven't generated any AI books or courses yet. Start your journey today!",
+        "create_first": "Create Your First Content",
         "ai_generated": "AI Generated",
         "recent": "Recent",
         "chapters": "Chapters",
-        "continue": "Continue Learning",
+        "continue": "Continue Reading",
         "completed": "Completed"
     },
     "sidebar": {

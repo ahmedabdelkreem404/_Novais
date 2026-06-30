@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             PlanSeeder::class,
             ContentBlueprintSeeder::class,
+            SocialLinkSeeder::class,
+            PageSeeder::class,
         ]);
     }
 }

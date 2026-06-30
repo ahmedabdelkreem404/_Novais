@@ -1133,24 +1133,24 @@ const CreateCourse = () => {
                         </div>
 
                         {/* Summary Card */}
-                        <div className="bg-gray-50 dark:bg-gray-905 border border-gray-100 dark:border-gray-800 p-6 rounded-3xl text-start space-y-4 mt-6">
+                        <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200/50 dark:border-slate-800 p-6 rounded-3xl text-start space-y-4 mt-6">
                             <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
-                                <span className="text-xs text-gray-450 font-bold uppercase tracking-wider">{isAr ? 'نوع المحتوى المخطط' : 'Content Type'}</span>
+                                <span className="text-xs text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider">{isAr ? 'نوع المحتوى المخطط' : 'Content Type'}</span>
                                 <span className="text-sm font-extrabold text-blue-600 dark:text-blue-400">
                                     {getBilingualValue(activeBlueprint?.name, isAr ? 'ar' : 'en')}
                                 </span>
                             </div>
 
                             <div className="flex flex-col border-b border-gray-100 dark:border-gray-800 pb-3 gap-1">
-                                <span className="text-xs text-gray-455 font-bold uppercase tracking-wider">{isAr ? 'الموضوع الأساسي' : 'Topic'}</span>
-                                <span className="text-base font-extrabold text-gray-900 dark:text-white leading-normal">
+                                <span className="text-xs text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider">{isAr ? 'الموضوع الأساسي' : 'Topic'}</span>
+                                <span className="text-base font-extrabold text-slate-800 dark:text-slate-200 leading-normal">
                                     {formData.topic}
                                 </span>
                             </div>
 
                             <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
-                                <span className="text-xs text-gray-460 font-bold uppercase tracking-wider">{t('create_page.lang_label')}</span>
-                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                                <span className="text-xs text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider">{t('create_page.lang_label')}</span>
+                                <span className="text-sm font-extrabold text-slate-700 dark:text-slate-300">
                                     {getLanguageDisplayName(formData.language, isAr ? 'ar' : 'en')}
                                 </span>
                             </div>

@@ -215,9 +215,20 @@ class CourseService
 
     public function fallbackCourseCoverImage(string $title): string
     {
-        $text = trim($title) !== '' ? $title : 'NOVAIS Course';
-
-        return 'https://placehold.co/1200x675/1d4ed8/ffffff.png?text=' . rawurlencode($text);
+        $text = strtolower(trim($title));
+        
+        // Technology / Software / AI / CS
+        if (str_contains($text, 'novais') || str_contains($text, 'ai') || str_contains($text, 'ذكاء') || str_contains($text, 'حاسب') || str_contains($text, 'برمج') || str_contains($text, 'computer') || str_contains($text, 'software') || str_contains($text, 'code') || str_contains($text, 'system')) {
+            return 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=800&auto=format&fit=crop';
+        }
+        
+        // Medical / Healthcare
+        if (str_contains($text, 'عياد') || str_contains($text, 'طب') || str_contains($text, 'medical') || str_contains($text, 'clinic') || str_contains($text, 'health') || str_contains($text, 'مستشفى')) {
+            return 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=800&auto=format&fit=crop';
+        }
+        
+        // General Academic / Books / Research
+        return 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=800&auto=format&fit=crop';
     }
 
     public function extractPersistableLessonMedia(array $lessonData, string $courseType): array

@@ -18,6 +18,34 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
         { role: 'assistant', content: t('chatbot.welcome', { topic: mainTopic }) || `Hi! I'm your AI tutor for "${mainTopic}". Ask me anything about this lesson or the platform! 🎓` }
     ]);
     const [input, setInput] = useState('');
+    const containerRef = useRef(null);
+    const [positionStyle, setPositionStyle] = useState({
+        flexDirection: 'column',
+        alignItems: 'flex-end'
+    });
+
+    const updatePositionStyle = () => {
+        if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            const isTop = rect.top < viewportHeight / 2;
+            const isLeft = rect.left < viewportWidth / 2;
+            
+            setPositionStyle({
+                flexDirection: isTop ? 'column' : 'column-reverse',
+                alignItems: isLeft ? 'flex-start' : 'flex-end'
+            });
+        }
+    };
+
+    useEffect(() => {
+        if (isOpen) {
+            setTimeout(updatePositionStyle, 50);
+        }
+    }, [isOpen]);
+
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef(null);
 
@@ -126,125 +154,135 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
     };
 
     return (
-        <div className="flex flex-col items-end pointer-events-none">
-            <AnimatePresence>
-                {isOpen && (
-                    <>
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setIsOpen(false)}
-                        className="fixed inset-0 z-[120] pointer-events-auto bg-black/20 md:bg-transparent"
-                    />
-                    <motion.div
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        onClick={(event) => event.stopPropagation()}
-                        className="fixed md:static left-3 right-3 bottom-20 md:left-auto md:right-auto md:bottom-auto z-[130] pointer-events-auto bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl shadow-2xl w-auto md:w-[400px] max-w-[calc(100vw-24px)] mb-0 md:mb-4 flex flex-col overflow-hidden"
-                        style={{ height: 'min(560px, calc(100vh - 110px))' }}
-                        dir={i18n.dir()}
-                    >
-                        {/* Header */}
-                        <div className="bg-slate-900 dark:bg-slate-950 p-5 flex justify-between items-center border-b border-white/5">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white">
-                                    <LuBot size={22} />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-white text-[13px]">{t('chatbot.title') || 'AI Professor'}</h3>
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                        <span className="text-[10px] text-green-500 font-bold uppercase tracking-wider">{t('chatbot.status') || 'Active Helper'}</span>
+        <>
+            {isOpen && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setIsOpen(false)}
+                    className="fixed inset-0 z-[125] bg-transparent pointer-events-auto cursor-default"
+                />
+            )}
+            <motion.div
+                ref={containerRef}
+                drag
+                dragMomentum={false}
+                onDrag={updatePositionStyle}
+                className="fixed right-6 bottom-28 z-[130] flex gap-3 pointer-events-auto"
+                style={{ 
+                    touchAction: 'none',
+                    flexDirection: positionStyle.flexDirection,
+                    alignItems: positionStyle.alignItems
+                }}
+            >
+                <AnimatePresence>
+                    {isOpen && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 15, scale: 0.96 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 15, scale: 0.96 }}
+                            onClick={(event) => event.stopPropagation()}
+                            className="w-[350px] sm:w-[380px] max-w-[calc(100vw-32px)] bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-[24px] shadow-2xl flex flex-col overflow-hidden"
+                            style={{ height: 'min(460px, calc(100vh - 200px))' }}
+                            dir={i18n.dir()}
+                        >
+                            {/* Header */}
+                            <div className="bg-slate-900 dark:bg-slate-950 p-4 flex justify-between items-center border-b border-white/5 cursor-move">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white">
+                                        <LuBot size={20} />
                                     </div>
-                                </div>
-                            </div>
-                            <button onClick={() => setIsOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 text-gray-400 hover:text-white transition-colors">
-                                <LuMinimize2 size={16} />
-                            </button>
-                        </div>
-
-                        {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-gray-50/50 dark:bg-slate-900/50 custom-scrollbar">
-                            {messages.map((msg, idx) => {
-                                const msgIsArabic = isArabic(msg.content);
-                                const isUser = msg.role === 'user';
-                                // Physical alignment: User always on Right, Bot always on Left
-                                // In RTL container: Right = justify-start, Left = justify-end
-                                // In LTR container: Right = justify-end, Left = justify-start
-                                const alignment = isRTL
-                                    ? (isUser ? 'justify-start' : 'justify-end')
-                                    : (isUser ? 'justify-end' : 'justify-start');
-
-                                return (
-                                    <div key={idx} className={`flex ${alignment}`}>
-                                        <div
-                                            dir={msgIsArabic ? 'rtl' : 'ltr'}
-                                            className={`max-w-[88%] min-w-0 rounded-2xl p-4 text-[13px] font-medium leading-relaxed shadow-sm break-words overflow-hidden ${isUser
-                                                ? 'bg-blue-600 text-white rounded-tr-none'
-                                                : 'bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-200 rounded-tl-none'
-                                                }`}
-                                        >
-                                            <ReactMarkdown
-                                                remarkPlugins={[remarkGfm]}
-                                                components={{
-                                                    p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
-                                                    ul: ({ node, ...props }) => <ul className="list-disc ms-5 mb-2" {...props} />,
-                                                    ol: ({ node, ...props }) => <ol className="list-decimal ms-5 mb-2" {...props} />,
-                                                    li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                                                    strong: ({ node, ...props }) => <strong className="font-bold text-blue-600 dark:text-blue-400" {...props} />,
-                                                    code: ({ node, ...props }) => <code className="break-words whitespace-pre-wrap bg-black/5 dark:bg-white/10 rounded px-1" {...props} />,
-                                                    pre: ({ node, ...props }) => <pre className="max-w-full overflow-x-auto whitespace-pre-wrap break-words" {...props} />,
-                                                }}
-                                            >
-                                                {msg.content}
-                                            </ReactMarkdown>
+                                    <div>
+                                        <h3 className="font-bold text-white text-[13px]">{t('chatbot.title') || 'AI Professor'}</h3>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                            <span className="text-[10px] text-green-500 font-bold uppercase tracking-wider">{t('chatbot.status') || 'Active Helper'}</span>
                                         </div>
                                     </div>
-                                );
-                            })}
-                            {loading && (
-                                <div className={`flex ${isRTL ? 'justify-end' : 'justify-start'}`}>
-                                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-gray-100 dark:border-slate-700 flex gap-1">
-                                        <span className="w-1.5 h-1.5 bg-gray-300 dark:bg-slate-500 rounded-full animate-bounce" />
-                                        <span className="w-1.5 h-1.5 bg-gray-300 dark:bg-slate-500 rounded-full animate-bounce delay-75" />
-                                        <span className="w-1.5 h-1.5 bg-gray-300 dark:bg-slate-500 rounded-full animate-bounce delay-150" />
-                                    </div>
                                 </div>
-                            )}
-                            <div ref={messagesEndRef} />
-                        </div>
+                                <button onClick={() => setIsOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 text-gray-400 hover:text-white transition-colors">
+                                    <LuMinimize2 size={16} />
+                                </button>
+                            </div>
 
-                        {/* Input */}
-                        <form onSubmit={handleSend} className="p-3 sm:p-4 bg-white dark:bg-slate-950 border-t border-gray-100 dark:border-slate-800 flex gap-2">
-                            <input
-                                type="text"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                placeholder={t('chatbot.placeholder') || "Ask about this lesson..."}
-                                className="flex-1 bg-gray-50 dark:bg-slate-900 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-600/20 dark:text-white outline-none transition-all"
-                            />
-                            <button
-                                type="submit"
-                                disabled={!input.trim() || loading}
-                                className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-500/20"
-                            >
-                                <LuSend size={18} />
-                            </button>
-                        </form>
-                    </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
+                            {/* Messages */}
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 dark:bg-slate-900/50 custom-scrollbar">
+                                {messages.map((msg, idx) => {
+                                    const msgIsArabic = isArabic(msg.content);
+                                    const isUser = msg.role === 'user';
+                                    const alignment = isRTL
+                                        ? (isUser ? 'justify-start' : 'justify-end')
+                                        : (isUser ? 'justify-end' : 'justify-start');
 
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="pointer-events-auto w-14 h-14 bg-blue-600 rounded-2xl text-white shadow-2xl shadow-blue-500/40 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
-            >
-                {isOpen ? <LuX size={24} /> : <LuMessageSquare size={24} />}
-            </button>
-        </div>
+                                    return (
+                                        <div key={idx} className={`flex ${alignment}`}>
+                                            <div
+                                                dir={msgIsArabic ? 'rtl' : 'ltr'}
+                                                className={`max-w-[85%] min-w-0 rounded-2xl p-3.5 text-[13px] font-medium leading-relaxed shadow-sm break-words overflow-hidden ${isUser
+                                                    ? 'bg-blue-600 text-white rounded-tr-none'
+                                                    : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-gray-700 dark:text-gray-200 rounded-tl-none'
+                                                    }`}
+                                            >
+                                                <ReactMarkdown
+                                                    remarkPlugins={[remarkGfm]}
+                                                    components={{
+                                                        p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                                                        ul: ({ node, ...props }) => <ul className="list-disc ms-5 mb-2" {...props} />,
+                                                        ol: ({ node, ...props }) => <ol className="list-decimal ms-5 mb-2" {...props} />,
+                                                        li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                                                        strong: ({ node, ...props }) => <strong className="font-bold text-blue-600 dark:text-blue-400" {...props} />,
+                                                        code: ({ node, ...props }) => <code className="break-words whitespace-pre-wrap bg-black/5 dark:bg-white/10 rounded px-1" {...props} />,
+                                                        pre: ({ node, ...props }) => <pre className="max-w-full overflow-x-auto whitespace-pre-wrap break-words" {...props} />,
+                                                    }}
+                                                >
+                                                    {msg.content}
+                                                </ReactMarkdown>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                {loading && (
+                                    <div className={`flex ${isRTL ? 'justify-end' : 'justify-start'}`}>
+                                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 flex gap-1">
+                                            <span className="w-1.5 h-1.5 bg-gray-300 dark:bg-slate-500 rounded-full animate-bounce" />
+                                            <span className="w-1.5 h-1.5 bg-gray-300 dark:bg-slate-500 rounded-full animate-bounce delay-75" />
+                                            <span className="w-1.5 h-1.5 bg-gray-300 dark:bg-slate-500 rounded-full animate-bounce delay-150" />
+                                        </div>
+                                    </div>
+                                )}
+                                <div ref={messagesEndRef} />
+                            </div>
+
+                            {/* Input */}
+                            <form onSubmit={handleSend} className="p-3 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+                                <input
+                                    type="text"
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    placeholder={t('chatbot.placeholder') || "Ask about this lesson..."}
+                                    className="flex-1 bg-gray-50 dark:bg-slate-900 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-600/20 dark:text-white outline-none transition-all"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!input.trim() || loading}
+                                    className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-500/20"
+                                >
+                                    <LuSend size={18} />
+                                </button>
+                            </form>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="w-14 h-14 bg-blue-600 rounded-full text-white shadow-2xl shadow-blue-500/40 flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                >
+                    {isOpen ? <LuX size={24} /> : <LuMessageSquare size={24} />}
+                </button>
+            </motion.div>
+        </>
     );
 };
 

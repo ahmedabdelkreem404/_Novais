@@ -10,9 +10,13 @@ use Illuminate\Support\Facades\Auth;
 
 class NoteController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $notes = Auth::user()->personalNotes()->with(['course:id,title', 'lesson:id,title'])->latest()->get();
+        $query = Auth::user()->personalNotes();
+        if ($request->has('course_id')) {
+            $query->where('course_id', $request->course_id);
+        }
+        $notes = $query->with(['course:id,title', 'lesson:id,title'])->latest()->get();
         return response()->json($notes);
     }
 
