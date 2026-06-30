@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AdminSeeder::class,
             PlanSeeder::class,
+            ContentBlueprintSeeder::class,
         ]);
     }
 }

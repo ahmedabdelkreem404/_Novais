@@ -67,5 +67,6 @@ class ApiEndpoints {
   static const translateTitle = '/translate-title';
 
   // Platform Config
-  static const platformConfig = '/platform-config';
+  static const platformConfig = '/platform-settings';
+  static const contentBlueprints = '/content-blueprints';
 }

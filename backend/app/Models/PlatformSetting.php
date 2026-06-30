@@ -2,17 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 
 class PlatformSetting extends Model
 {
-    protected $fillable = ['key', 'value'];
+    protected $fillable = ['key', 'value', 'group', 'is_public', 'description'];
 
     protected $casts = [
         'value' => 'array',
+        'is_public' => 'boolean',
     ];
 
     public const CONFIG_KEY = 'platform_config';
+    public const CACHE_KEY = 'platform_settings.public';
+    public const CACHE_TTL = 300;
 
     public static function defaults(): array
     {
@@ -77,6 +82,7 @@ class PlatformSetting extends Model
             'hero_media_muted' => true,
             'hero_media_loop' => true,
             'hero_media_poster' => null,
+            'hero_media_show_image_until_loaded' => true,
             
             // Branding & Identity
             'branding_platform_name_en' => 'NOVAIS',
@@ -98,6 +104,11 @@ class PlatformSetting extends Model
 
             // Payment visibility
             'payment_methods_visible' => true,
+            'payment_paymob_visible' => true,
+            'payment_wallet_visible' => true,
+            'payment_offline_visible' => true,
+            'payment_vodafone_cash_visible' => true,
+            'payment_instapay_visible' => true,
             'offline_payment_instructions_en' => 'Please send subscription price to bank account XXXX.',
             'offline_payment_instructions_ar' => 'الرجاء إرسال قيمة الاشتراك إلى الحساب البنكي XXXX.',
 
@@ -108,6 +119,7 @@ class PlatformSetting extends Model
             'feature_quiz_enabled' => true,
             'feature_chat_enabled' => true,
             'feature_audio_courses_enabled' => true,
+            'feature_certificates_enabled' => true,
 
             // SEO / Social
             'seo_meta_title_en' => 'NOVAIS - AI Learning platform',
@@ -126,10 +138,22 @@ class PlatformSetting extends Model
     {
         $row = static::firstOrCreate(
             ['key' => self::CONFIG_KEY],
-            ['value' => static::defaults()]
+            [
+                'value' => static::defaults(),
+                'group' => 'platform',
+                'is_public' => true,
+                'description' => 'Backend-driven platform configuration shared by web, mobile, and desktop.',
+            ]
         );
 
         return array_replace_recursive(static::defaults(), $row->value ?? []);
+    }
+
+    public static function publicConfig(): array
+    {
+        return Cache::remember(self::CACHE_KEY, self::CACHE_TTL, function () {
+            return static::sanitizeForPublic(static::currentConfig());
+        });
     }
 
     public static function updateConfig(array $value): array
@@ -138,9 +162,30 @@ class PlatformSetting extends Model
 
         static::updateOrCreate(
             ['key' => self::CONFIG_KEY],
-            ['value' => $config]
+            [
+                'value' => $config,
+                'group' => 'platform',
+                'is_public' => true,
+                'description' => 'Backend-driven platform configuration shared by web, mobile, and desktop.',
+            ]
         );
 
+        Cache::forget(self::CACHE_KEY);
+        Log::info('platform_settings.updated', [
+            'keys' => array_keys($value),
+            'admin_id' => auth('api')->id(),
+        ]);
+
         return $config;
+    }
+
+    public static function sanitizeForPublic(array $config): array
+    {
+        return collect($config)
+            ->reject(fn ($value, $key) => str_starts_with((string) $key, 'secret_')
+                || str_contains((string) $key, 'private')
+                || str_contains((string) $key, 'api_key')
+                || str_contains((string) $key, 'token'))
+            ->all();
     }
 }

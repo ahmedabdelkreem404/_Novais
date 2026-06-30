@@ -15,7 +15,7 @@ const DownloadApp = () => {
     useEffect(() => {
         const fetchConfig = async () => {
             try {
-                const res = await axios.get(`${serverURL}/platform-config`);
+                const res = await axios.get(`${serverURL}/platform-settings`);
                 setConfig(res.data);
             } catch (err) {
                 console.error("Failed to fetch download config", err);

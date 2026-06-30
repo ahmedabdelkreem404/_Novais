@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../widgets/widgets.dart';
 import '../../core/api/platform_config_provider.dart';
+import '../../core/api/content_blueprints_provider.dart';
 import '../../models/platform_config.dart';
 
 class CreateScreen extends ConsumerStatefulWidget {
@@ -21,6 +22,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
 
   // Selection state
   String _type = 'Theory & Image Course';
+  String _blueprintSlug = 'normal-course';
   String _language = 'English';
   String _level = 'Beginner';
   int _modules = 5;
@@ -99,6 +101,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
         'topic': _topicCtrl.text.trim(),
         'subTopics': _subTopics,
         'type': _type,
+        'blueprint_slug': _blueprintSlug,
         'language': _language,
         'level': _level,
         'numModules': _modules,
@@ -142,19 +145,26 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
 
     final configAsync = ref.watch(platformConfigProvider);
     final config = configAsync.valueOrNull;
+    final blueprints = ref.watch(contentBlueprintsProvider).valueOrNull ?? [];
+    if (blueprints.isNotEmpty &&
+        !blueprints.any((item) => item.slug == _blueprintSlug)) {
+      _blueprintSlug = blueprints.first.slug;
+    }
 
     final languages = config?.enabledLanguages ?? _languages;
-    final courseTypes = config?.enabledCourseTypes ?? [
-      'Theory & Image Course',
-      'Video & Theory Course',
-    ];
+    final courseTypes = config?.enabledCourseTypes ??
+        [
+          'Theory & Image Course',
+          'Video & Theory Course',
+        ];
     final creationEnabled = config?.courseCreationEnabled ?? true;
 
     // Verify current selection is still in the active list
     String selectedLanguage = _language;
     if (languages.isNotEmpty) {
       if (!languages.contains(selectedLanguage)) {
-        selectedLanguage = languages.contains('English') ? 'English' : languages.first;
+        selectedLanguage =
+            languages.contains('English') ? 'English' : languages.first;
       }
     } else {
       selectedLanguage = 'English';
@@ -262,7 +272,8 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                          const Icon(Icons.warning_amber_rounded,
+                              color: Colors.red),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -341,6 +352,44 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                   const SizedBox(height: 24),
 
                   // Language
+                  if (blueprints.isNotEmpty) ...[
+                    const _SectionHeader(
+                        label: 'CONTENT BLUEPRINT',
+                        icon: Icons.dashboard_customize_outlined),
+                    DropdownButtonFormField<String>(
+                      value:
+                          blueprints.any((item) => item.slug == _blueprintSlug)
+                              ? _blueprintSlug
+                              : blueprints.first.slug,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: isDark
+                            ? const Color(0xFF1F1F1F)
+                            : const Color(0xFFF9FAFB),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                      ),
+                      dropdownColor:
+                          isDark ? const Color(0xFF1F1F1F) : Colors.white,
+                      items: blueprints
+                          .map((blueprint) => DropdownMenuItem(
+                                value: blueprint.slug,
+                                child: Text(blueprint.name),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _blueprintSlug = value);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Language
                   const _SectionHeader(label: 'LANGUAGE', icon: Icons.language),
                   DropdownButtonFormField<String>(
                     value: selectedLanguage,
@@ -359,7 +408,9 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                     dropdownColor:
                         isDark ? const Color(0xFF1F1F1F) : Colors.white,
                     items: languages.map((l) {
-                      final isPrem = config != null ? config.isPremiumLanguage(l) : l != 'English';
+                      final isPrem = config != null
+                          ? config.isPremiumLanguage(l)
+                          : l != 'English';
                       return DropdownMenuItem(
                         value: l,
                         child: Row(children: [
@@ -438,7 +489,9 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                       label: 'FORMAT', icon: Icons.auto_stories_outlined),
                   Column(
                     children: courseTypes.map((t) {
-                      final isPrem = config != null ? config.isPremiumCourseType(t) : t.contains('Video');
+                      final isPrem = config != null
+                          ? config.isPremiumCourseType(t)
+                          : t.contains('Video');
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: _TypeCard(
@@ -469,12 +522,15 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                     child: ElevatedButton(
                       key: const Key('create_generate_button'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: creationEnabled ? AppColors.primary : Colors.grey,
+                        backgroundColor:
+                            creationEnabled ? AppColors.primary : Colors.grey,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16)),
                         elevation: creationEnabled ? 4 : 0,
-                        shadowColor: creationEnabled ? AppColors.primary.withAlpha(80) : Colors.transparent,
+                        shadowColor: creationEnabled
+                            ? AppColors.primary.withAlpha(80)
+                            : Colors.transparent,
                       ),
                       onPressed: creationEnabled ? _generate : null,
                       child: const Row(

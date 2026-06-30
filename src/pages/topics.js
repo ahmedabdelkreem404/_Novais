@@ -41,6 +41,7 @@ const Topics = () => {
                 mainTopic: mainTopic,
                 type: type === 'Video & Theory Course' ? 'video' : 'image',
                 language: originalFormData.language || 'English',
+                blueprint_slug: originalFormData.blueprint_slug || courseData.blueprint_slug,
                 content: JSON.stringify(courseData)
             }, {
                 headers: {

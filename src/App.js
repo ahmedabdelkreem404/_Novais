@@ -70,6 +70,7 @@ import CreateBlog from './admin/createblog';
 import EditBlog from './admin/editblog';
 import AdminPlans from './admin/plans';
 import PlatformSettings from './admin/platformsettings';
+import ContentBlueprints from './admin/contentblueprints';
 import SocialLinks from './admin/sociallinks';
 import OfflinePayments from './admin/offlinepayments';
 
@@ -117,7 +118,7 @@ function App() {
   useEffect(() => {
     const fetchThemeMode = async () => {
       try {
-        const res = await axios.get(`${serverURL}/platform-config`);
+        const res = await axios.get(`${serverURL}/platform-settings`);
         if (res.data) {
           if (res.data.system_theme_mode) {
             localStorage.setItem('systemThemeMode', res.data.system_theme_mode);
@@ -284,6 +285,7 @@ function AnimatedRoutes() {
           <Route path="edit-blog/:slug" element={<EditBlog />} />
           <Route path="plans" element={<AdminPlans />} />
           <Route path="platform-settings" element={<PlatformSettings />} />
+          <Route path="content-blueprints" element={<ContentBlueprints />} />
           <Route path="offline-payments" element={<OfflinePayments />} />
           <Route path="social-links" element={<SocialLinks />} />
         </Route>

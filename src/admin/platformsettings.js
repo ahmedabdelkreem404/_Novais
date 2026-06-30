@@ -118,7 +118,7 @@ const PlatformSettings = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`${serverURL}/admin/platform-config`, {
+      const res = await axios.get(`${serverURL}/admin/platform-settings`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -154,7 +154,7 @@ const PlatformSettings = () => {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`${serverURL}/admin/platform-config`, form, {
+      await axios.put(`${serverURL}/admin/platform-settings`, form, {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast.success(t('admin.platform_config.saved_success') || 'Platform settings saved');

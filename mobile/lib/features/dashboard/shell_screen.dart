@@ -32,12 +32,17 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         (configAsync.value!.systemThemeMode != 'light_only' &&
             configAsync.value!.systemThemeMode != 'dark_only');
 
+    bool canPop = false;
+    try {
+      canPop = GoRouter.of(context).canPop();
+    } catch (_) {}
+
     return Scaffold(
       key: _scaffoldKey,
       drawerScrimColor: Colors.black.withAlpha(isDark ? 170 : 110),
       drawer: const AppSidebar(),
       appBar: AppBar(
-        leading: context.canPop()
+        leading: canPop
             ? IconButton(
                 key: const Key('shell_back_button'),
                 icon: const Icon(Icons.arrow_back),

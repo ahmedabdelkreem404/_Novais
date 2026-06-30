@@ -72,7 +72,7 @@ const Landing = () => {
             try {
                 const [plansRes, configRes] = await Promise.all([
                     axios.get(`${serverURL}/plans`),
-                    axios.get(`${serverURL}/platform-config`)
+                    axios.get(`${serverURL}/platform-settings`)
                 ]);
                 setPlans(Array.isArray(plansRes.data) ? plansRes.data : []);
                 setConfig(configRes.data);

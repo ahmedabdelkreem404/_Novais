@@ -79,6 +79,8 @@ class _GeneratingScreenState extends ConsumerState<GeneratingScreen>
         final saveRes = await api.dio.post(ApiEndpoints.courses, data: {
           'mainTopic': outline['title'] ?? widget.courseData['topic'],
           'type': widget.courseData['type'],
+          'blueprint_slug':
+              widget.courseData['blueprint_slug'] ?? outline['blueprint_slug'],
           'language': widget.courseData['language'],
           'level': widget.courseData['level'],
           'content': jsonEncode(outline),

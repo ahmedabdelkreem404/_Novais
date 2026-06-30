@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Interfaces\AIProviderInterface;
+use App\Models\ContentBlueprint;
 use App\Models\Course;
 use App\Models\Lesson;
 use Illuminate\Support\Facades\Log;
@@ -64,6 +65,14 @@ class CourseService
             $lang = 'English'; // Fallback for MVP stability
         }
 
+        $blueprint = null;
+        if (!empty($data['blueprint_slug'])) {
+            $blueprint = ContentBlueprint::query()
+                ->where('slug', $data['blueprint_slug'])
+                ->where('enabled', true)
+                ->firstOrFail();
+        }
+
         $outline = null;
         $maxRetries = 1;
 
@@ -71,8 +80,13 @@ class CourseService
         while ($attempts <= $maxRetries) {
             try {
                 // Pass the combined topic + instructions, but safety check was already done on raw topic
+                $topicForPrompt = $data['topic'] . ($extraContext ? ". " . $extraContext : "");
+                if ($blueprint) {
+                    $topicForPrompt .= "\n\nADMIN CONTENT BLUEPRINT:\n" . $blueprint->promptBlock();
+                }
+
                 $outline = $this->aiProvider->generateCourseOutline(
-                    $data['topic'] . ($extraContext ? ". " . $extraContext : ""),
+                    $topicForPrompt,
                     $data['topics_count'] ?? 5,
                     $data['type'] ?? 'text',
                     $lang,
@@ -132,6 +146,11 @@ class CourseService
             : null;
         $photoUrl = $photoUrl ?: $this->fallbackCourseCoverImage($courseTitle);
         $outline['cover_image'] = $photoUrl;
+        if ($blueprint) {
+            $outline['blueprint_slug'] = $blueprint->slug;
+            $outline['blueprint_name'] = $blueprint->name;
+            $outline['blueprint_structure'] = $blueprint->output_structure;
+        }
 
         return $outline;
     }
@@ -203,6 +222,7 @@ class CourseService
             'user_id' => $userId,
             'title' => $courseTitle,
             'type' => $data['type'] ?? 'text',
+            'blueprint_slug' => $data['blueprint_slug'] ?? ($outline['blueprint_slug'] ?? null),
             'language' => $data['language'] ?? 'English',
             'photo' => $photoUrl, // Nullable
             'level' => $data['level'] ?? 'Beginner', // Save Level to DB

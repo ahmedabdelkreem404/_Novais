@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\CurriculumValidator;
 use App\Models\PlatformSetting;
+use App\Models\ContentBlueprint;
 use App\Services\SubscriptionService;
 
 class CourseController extends Controller
@@ -50,7 +51,9 @@ class CourseController extends Controller
             'language' => 'required|string',
             'numModules' => 'required|integer',
             'subTopics' => 'nullable|array',
-            'level' => 'sometimes|string' // New Parameter
+            'level' => 'sometimes|string',
+            'blueprint_slug' => 'sometimes|string',
+            'content_type' => 'sometimes|string',
         ]);
 
         if ($response = $this->platformGateResponse($request)) {
@@ -71,7 +74,8 @@ class CourseController extends Controller
                 'topics_count' => $request->numModules,
                 'type' => $request->type === 'Video & Theory Course' ? 'video' : 'image',
                 'language' => $request->language,
-                'level' => $request->level ?? 'Beginner' // Pass Level
+                'level' => $request->level ?? 'Beginner',
+                'blueprint_slug' => $request->input('blueprint_slug', $request->input('content_type')),
             ];
 
             $outline = $this->courseService->generateOutline($data, auth('api')->id());
@@ -102,6 +106,8 @@ class CourseController extends Controller
             'type' => 'required|string',
             'language' => 'nullable|string',
             'content' => 'required|json', // The full course structure
+            'blueprint_slug' => 'sometimes|string',
+            'content_type' => 'sometimes|string',
         ]);
 
         if ($response = $this->platformGateResponse($request)) {
@@ -131,6 +137,7 @@ class CourseController extends Controller
                 'user_id' => $userId,
                 'title' => $courseTitle,
                 'type' => $request->type,
+                'blueprint_slug' => $request->input('blueprint_slug', $request->input('content_type', $contentData['blueprint_slug'] ?? null)),
                 'language' => $request->language ?? 'English',
                 'photo' => $courseCover ?: $this->courseService->fallbackCourseCoverImage($courseTitle),
                 'level' => $request->level ?? 'Beginner', // Save Level
@@ -344,6 +351,18 @@ class CourseController extends Controller
         }
 
         $config = PlatformSetting::currentConfig();
+        $blueprintSlug = $request->input('blueprint_slug', $request->input('content_type'));
+        if ($blueprintSlug) {
+            $blueprint = ContentBlueprint::query()
+                ->where('slug', $blueprintSlug)
+                ->where('enabled', true)
+                ->first();
+
+            if (!$blueprint) {
+                return response()->json(['message' => 'platform.blueprint_disabled'], 403);
+            }
+        }
+
         $language = ucfirst(strtolower($request->input('language', 'English')));
         
         $rawType = $request->input('type', 'Theory & Image Course');

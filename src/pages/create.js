@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { serverURL } from '../constants';
-import { LuPlus, LuWand, LuLayers, LuVideo, LuBookOpen, LuGlobe, LuX, LuGem, LuCheck, LuRocket, LuChevronDown } from "react-icons/lu";
+import { LuPlus, LuWand, LuLayers, LuVideo, LuBookOpen, LuGlobe, LuX, LuGem, LuCheck, LuRocket, LuChevronDown, LuLayoutTemplate } from "react-icons/lu";
 import { motion, AnimatePresence } from 'framer-motion';
 import Input from '../components/ui/Input';
 
@@ -119,12 +119,23 @@ const CreateCourse = () => {
     ) || localStorage.getItem('role') === 'admin';
 
     const [config, setConfig] = useState(null);
+    const [blueprints, setBlueprints] = useState([]);
+    const [selectedBlueprint, setSelectedBlueprint] = useState(location.state?.blueprint_slug || 'normal-course');
 
     useEffect(() => {
         const fetchConfig = async () => {
             try {
-                const res = await axios.get(`${serverURL}/platform-config`);
+                const [settingsRes, blueprintsRes] = await Promise.all([
+                    axios.get(`${serverURL}/platform-settings`),
+                    axios.get(`${serverURL}/content-blueprints`),
+                ]);
+                const res = settingsRes;
                 setConfig(res.data);
+                const nextBlueprints = Array.isArray(blueprintsRes.data) ? blueprintsRes.data : [];
+                setBlueprints(nextBlueprints);
+                if (nextBlueprints.length > 0 && !nextBlueprints.some((item) => item.slug === selectedBlueprint)) {
+                    setSelectedBlueprint(nextBlueprints[0].slug);
+                }
                 if (res.data) {
                     if (res.data.enabled_course_types && res.data.enabled_course_types.length > 0) {
                         if (!res.data.enabled_course_types.includes(formData.type)) {
@@ -235,7 +246,7 @@ const CreateCourse = () => {
             return;
         }
 
-        navigate('/generating', { state: { ...formData } });
+        navigate('/generating', { state: { ...formData, blueprint_slug: selectedBlueprint } });
     };
 
     const navigateToPricing = () => {
@@ -385,6 +396,24 @@ const CreateCourse = () => {
 
                     {/* Right Column: Configuration */}
                     <div className="space-y-8">
+                        {blueprints.length > 0 && (
+                            <div>
+                                <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block uppercase tracking-wide flex items-center gap-2">
+                                    <LuLayoutTemplate className="text-blue-500" /> Content Blueprint
+                                </label>
+                                <select
+                                    value={selectedBlueprint}
+                                    onChange={(e) => setSelectedBlueprint(e.target.value)}
+                                    className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-xl p-3.5 md:p-4 text-sm font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500"
+                                >
+                                    {blueprints.map((blueprint) => (
+                                        <option key={blueprint.slug} value={blueprint.slug}>
+                                            {blueprint.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
 
                         {/* Complexity Level */}
                         <div>
