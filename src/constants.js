@@ -2,7 +2,7 @@ import logoImg from './res/img/logo.png';
 export const name = 'NOVAIS';
 export const company = 'Inolty';
 const getBaseURL = () => {
-    if (process.env.NODE_ENV === 'development') return 'http://localhost:8000';
+    if (process.env.NODE_ENV === 'development') return 'http://127.0.0.1:8000';
     return window.location.origin;
 };
 
