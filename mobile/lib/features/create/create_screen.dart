@@ -98,17 +98,29 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
   Future<void> _generate() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final Map<String, dynamic> extra = {
+      'topic': _topicCtrl.text.trim(),
+      'subTopics': _subTopics,
+      'type': _type,
+      'blueprint_slug': _blueprintSlug,
+      'blueprint_fields': _blueprintFields,
+      'language': _language,
+      'level': _level,
+      'numModules': _modules,
+    };
+
+    if (_blueprintFields.containsKey('level')) {
+      extra['level'] = _blueprintFields['level'];
+    }
+    if (_blueprintFields.containsKey('numModules')) {
+      extra['numModules'] = int.tryParse(_blueprintFields['numModules'].toString()) ?? _modules;
+    }
+    if (_blueprintFields.containsKey('type')) {
+      extra['type'] = _blueprintFields['type'];
+    }
+
     if (mounted) {
-      context.push('/generating', extra: {
-        'topic': _topicCtrl.text.trim(),
-        'subTopics': _subTopics,
-        'type': _type,
-        'blueprint_slug': _blueprintSlug,
-        'blueprint_fields': _blueprintFields,
-        'language': _language,
-        'level': _level,
-        'numModules': _modules,
-      });
+      context.push('/generating', extra: extra);
     }
   }
 
@@ -203,13 +215,23 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
             : null,
       );
     } else if (field.type == 'select') {
+      final parsed = field.parsedOptions;
+      final selectedValue = parsed.any((o) => o['value'] == value) ? value?.toString() : null;
       control = DropdownButtonFormField<String>(
-        value: field.options.contains(value) ? value?.toString() : null,
+        value: selectedValue,
         decoration: inputDecoration,
         dropdownColor: isDark ? const Color(0xFF1F1F1F) : Colors.white,
-        items: field.options
-            .map((option) =>
-                DropdownMenuItem(value: option, child: Text(option)))
+        items: parsed
+            .map((option) {
+              final optLabelMap = option['label'] as Map<String, dynamic>;
+              final optLabel = languageCode == 'ar'
+                  ? (optLabelMap['ar']?.toString() ?? optLabelMap['en']?.toString() ?? option['value'].toString())
+                  : (optLabelMap['en']?.toString() ?? optLabelMap['ar']?.toString() ?? option['value'].toString());
+              return DropdownMenuItem(
+                value: option['value'].toString(),
+                child: Text(optLabel),
+              );
+            })
             .toList(),
         onChanged: (next) => _setBlueprintField(field.keyName, next ?? ''),
         validator: field.required
@@ -217,23 +239,29 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
             : null,
       );
     } else if (field.type == 'multiselect') {
+      final parsed = field.parsedOptions;
       final selected = (value is List ? value : const [])
           .map((item) => item.toString())
           .toList();
       control = Wrap(
         spacing: 8,
         runSpacing: 8,
-        children: field.options.map((option) {
-          final checked = selected.contains(option);
+        children: parsed.map((option) {
+          final optVal = option['value'].toString();
+          final optLabelMap = option['label'] as Map<String, dynamic>;
+          final optLabel = languageCode == 'ar'
+              ? (optLabelMap['ar']?.toString() ?? optLabelMap['en']?.toString() ?? optVal)
+              : (optLabelMap['en']?.toString() ?? optLabelMap['ar']?.toString() ?? optVal);
+          final checked = selected.contains(optVal);
           return FilterChip(
-            label: Text(option),
+            label: Text(optLabel),
             selected: checked,
             onSelected: (next) {
               final updated = [...selected];
               if (next) {
-                updated.add(option);
+                updated.add(optVal);
               } else {
-                updated.remove(option);
+                updated.remove(optVal);
               }
               _setBlueprintField(field.keyName, updated);
             },
@@ -295,6 +323,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = ref.watch(authProvider).user;
     final isPro = user?.isPro == true;
+    final languageCode = Localizations.localeOf(context).languageCode;
 
     final configAsync = ref.watch(platformConfigProvider);
     final config = configAsync.valueOrNull;
@@ -539,7 +568,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                       items: blueprints
                           .map((blueprint) => DropdownMenuItem(
                                 value: blueprint.slug,
-                                child: Text(blueprint.name),
+                                child: Text(blueprint.nameFor(languageCode)),
                               ))
                           .toList(),
                       onChanged: (value) {
@@ -547,6 +576,13 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                           setState(() {
                             _blueprintSlug = value;
                             _blueprintFields.clear();
+                            final selectedBp = blueprints.firstWhere(
+                              (bp) => bp.slug == value,
+                              orElse: () => blueprints.first,
+                            );
+                            if (value != 'normal-course' && value != 'leveled-course') {
+                              _modules = selectedBp.defaultCount;
+                            }
                           });
                         }
                       },
@@ -556,7 +592,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
 
                   if (activeBlueprintFields.isNotEmpty) ...[
                     _SectionHeader(
-                      label: '${activeBlueprint?.name ?? 'Blueprint'} DETAILS',
+                      label: '${activeBlueprint?.nameFor(languageCode) ?? 'Blueprint'} DETAILS',
                       icon: Icons.tune_outlined,
                     ),
                     ...activeBlueprintFields.map(
@@ -610,87 +646,90 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Complexity (Grid)
-                  const _SectionHeader(
-                      label: 'COMPLEXITY LEVEL',
-                      icon: Icons.rocket_launch_outlined),
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    childAspectRatio: 2.2,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    children: [
-                      'Beginner',
-                      'Intermediate',
-                      'Advanced',
-                      'Professional'
-                    ].map((level) {
-                      final isPrem = level == 'Professional';
-                      return _ComplexityCard(
-                        label: level,
-                        isSelected: _level == level,
-                        isPremium: isPrem,
-                        isLocked: isPrem && !isPro,
-                        onTap: () => _onFeatureSelect('level', level, config),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Depth (Modules)
-                  const _SectionHeader(
-                      label: 'DEPTH', icon: Icons.layers_outlined),
-                  Row(
-                    children: [5, 10].map((m) {
-                      final isPrem = m > 5;
-                      return Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                              right: m == 5 ? 10 : 0), // Spacing
-                          child: _DepthCard(
-                            value: m,
-                            label: 'Modules',
-                            isSelected: _modules == m,
-                            isPremium: isPrem,
-                            isLocked: isPrem && !isPro,
-                            onTap: () => _onFeatureSelect('modules', m, config),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Format (Type)
-                  const _SectionHeader(
-                      label: 'FORMAT', icon: Icons.auto_stories_outlined),
-                  Column(
-                    children: courseTypes.map((t) {
-                      final isPrem = config != null
-                          ? config.isPremiumCourseType(t)
-                          : t.contains('Video');
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _TypeCard(
-                          label: t.contains('Video')
-                              ? 'Video & Theory'
-                              : 'Theory & Image',
-                          desc: t.contains('Video')
-                              ? 'Detailed video explanations'
-                              : 'Comprehensive text & images',
-                          icon: t.contains('Video')
-                              ? Icons.videocam
-                              : Icons.menu_book,
-                          isSelected: selectedType == t,
+                  // Complexity, Depth, and Format inputs - only visible for normal-course or leveled-course blueprints
+                  if (_blueprintSlug == 'normal-course' || _blueprintSlug == 'leveled-course') ...[
+                    // Complexity (Grid)
+                    const _SectionHeader(
+                        label: 'COMPLEXITY LEVEL',
+                        icon: Icons.rocket_launch_outlined),
+                    GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      childAspectRatio: 2.2,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      children: [
+                        'Beginner',
+                        'Intermediate',
+                        'Advanced',
+                        'Professional'
+                      ].map((level) {
+                        final isPrem = level == 'Professional';
+                        return _ComplexityCard(
+                          label: level,
+                          isSelected: _level == level,
                           isPremium: isPrem,
                           isLocked: isPrem && !isPro,
-                          onTap: () => _onFeatureSelect('type', t, config),
-                        ),
-                      );
-                    }).toList(),
-                  ),
+                          onTap: () => _onFeatureSelect('level', level, config),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Depth (Modules)
+                    const _SectionHeader(
+                        label: 'DEPTH', icon: Icons.layers_outlined),
+                    Row(
+                      children: [5, 10].map((m) {
+                        final isPrem = m > 5;
+                        return Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                                right: m == 5 ? 10 : 0), // Spacing
+                            child: _DepthCard(
+                              value: m,
+                              label: 'Modules',
+                              isSelected: _modules == m,
+                              isPremium: isPrem,
+                              isLocked: isPrem && !isPro,
+                              onTap: () => _onFeatureSelect('modules', m, config),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Format (Type)
+                    const _SectionHeader(
+                        label: 'FORMAT', icon: Icons.auto_stories_outlined),
+                    Column(
+                      children: courseTypes.map((t) {
+                        final isPrem = config != null
+                            ? config.isPremiumCourseType(t)
+                            : t.contains('Video');
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _TypeCard(
+                            label: t.contains('Video')
+                                ? 'Video & Theory'
+                                : 'Theory & Image',
+                            desc: t.contains('Video')
+                                ? 'Detailed video explanations'
+                                : 'Comprehensive text & images',
+                            icon: t.contains('Video')
+                                ? Icons.videocam
+                                : Icons.menu_book,
+                            isSelected: selectedType == t,
+                            isPremium: isPrem,
+                            isLocked: isPrem && !isPro,
+                            onTap: () => _onFeatureSelect('type', t, config),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
 
                   const SizedBox(height: 40),
 

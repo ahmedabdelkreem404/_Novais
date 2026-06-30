@@ -35,11 +35,19 @@ const languagesList = [
     { name: "Ukrainian", isPremium: true }
 ];
 
-const getFieldLabel = (field, lang = 'en') => {
-    if (field?.label && typeof field.label === 'object') {
-        return field.label[lang] || field.label.en || field.key;
+const getBilingualValue = (val, lang = 'en', defaultVal = '') => {
+    if (!val) return defaultVal;
+    if (typeof val === 'object') {
+        return val[lang] || val.en || '';
     }
-    return field?.label || field?.key || '';
+    return String(val);
+};
+
+const getFieldLabel = (field, lang = 'en') => {
+    if (field?.label) {
+        return getBilingualValue(field.label, lang, field.key);
+    }
+    return field?.key || '';
 };
 
 const getBlueprintFields = (blueprint) => Array.isArray(blueprint?.form_schema?.fields)
@@ -211,6 +219,15 @@ const CreateCourse = () => {
         });
     }, [activeBlueprintFields]);
 
+    useEffect(() => {
+        if (activeBlueprint && selectedBlueprint !== 'normal-course' && selectedBlueprint !== 'leveled-course') {
+            setFormData(prev => ({
+                ...prev,
+                numModules: activeBlueprint.default_count || 5
+            }));
+        }
+    }, [selectedBlueprint, activeBlueprint]);
+
     const isCourseTypePremium = (type) => {
         if (!config) {
             return type.includes('Video');
@@ -258,6 +275,7 @@ const CreateCourse = () => {
             setShowPremiumModal(true);
             if (feature === 'language') setIsLangOpen(false);
         } else {
+
             setFormData({ ...formData, [feature]: value });
             if (feature === 'language') setIsLangOpen(false);
         }
@@ -282,7 +300,24 @@ const CreateCourse = () => {
             return;
         }
 
-        navigate('/generating', { state: { ...formData, blueprint_slug: selectedBlueprint, blueprint_fields: blueprintFields } });
+        // Map dynamic fields to root params if they exist in blueprintFields
+        const submissionData = {
+            ...formData,
+            blueprint_slug: selectedBlueprint,
+            blueprint_fields: blueprintFields
+        };
+
+        if (blueprintFields.level !== undefined) {
+            submissionData.level = blueprintFields.level;
+        }
+        if (blueprintFields.numModules !== undefined) {
+            submissionData.numModules = Number(blueprintFields.numModules);
+        }
+        if (blueprintFields.type !== undefined) {
+            submissionData.type = blueprintFields.type;
+        }
+
+        navigate('/generating', { state: submissionData });
     };
 
     const navigateToPricing = () => {
@@ -327,7 +362,11 @@ const CreateCourse = () => {
             return (
                 <select value={value || ''} onChange={(e) => updateBlueprintField(field.key, e.target.value)} className={baseClass}>
                     <option value="">{title}</option>
-                    {(field.options || []).map((option) => <option key={option} value={option}>{option}</option>)}
+                    {(field.options || []).map((option) => {
+                        const optVal = typeof option === 'object' ? option.value : option;
+                        const optLabel = typeof option === 'object' ? getBilingualValue(option.label, i18n.language?.startsWith('ar') ? 'ar' : 'en') : option;
+                        return <option key={optVal} value={optVal}>{optLabel}</option>;
+                    })}
                 </select>
             );
         }
@@ -337,15 +376,17 @@ const CreateCourse = () => {
             return (
                 <div className="flex flex-wrap gap-2">
                     {(field.options || []).map((option) => {
-                        const checked = selected.includes(option);
+                        const optVal = typeof option === 'object' ? option.value : option;
+                        const optLabel = typeof option === 'object' ? getBilingualValue(option.label, i18n.language?.startsWith('ar') ? 'ar' : 'en') : option;
+                        const checked = selected.includes(optVal);
                         return (
                             <button
-                                key={option}
+                                key={optVal}
                                 type="button"
-                                onClick={() => updateBlueprintField(field.key, checked ? selected.filter((item) => item !== option) : [...selected, option])}
+                                onClick={() => updateBlueprintField(field.key, checked ? selected.filter((item) => item !== optVal) : [...selected, optVal])}
                                 className={`rounded-lg border px-3 py-2 text-xs font-bold transition ${checked ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-200' : 'border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-700 dark:bg-[#151515] dark:text-gray-300'}`}
                             >
-                                {option}
+                                {optLabel}
                             </button>
                         );
                     })}
@@ -532,7 +573,7 @@ const CreateCourse = () => {
                                 >
                                     {blueprints.map((blueprint) => (
                                         <option key={blueprint.slug} value={blueprint.slug}>
-                                            {blueprint.name}
+                                            {getBilingualValue(blueprint.name, i18n.language?.startsWith('ar') ? 'ar' : 'en')}
                                         </option>
                                     ))}
                                 </select>
@@ -542,7 +583,7 @@ const CreateCourse = () => {
                         {activeBlueprintFields.length > 0 && (
                             <div>
                                 <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block uppercase tracking-wide flex items-center gap-2">
-                                    <LuSettings2 className="text-blue-500" /> {activeBlueprint?.name} Details
+                                    <LuSettings2 className="text-blue-500" /> {getBilingualValue(activeBlueprint?.name, i18n.language?.startsWith('ar') ? 'ar' : 'en')} Details
                                 </label>
                                 <div className="grid grid-cols-1 gap-3">
                                     {activeBlueprintFields.map((field) => (
@@ -560,113 +601,117 @@ const CreateCourse = () => {
                             </div>
                         )}
 
-                        {/* Complexity Level */}
-                        <div>
-                            <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block uppercase tracking-wide flex items-center gap-2">
-                                <LuRocket className="text-blue-500" /> {t('create_page.level_label')}
-                            </label>
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 items-stretch">
-                                {activeLevels.map(val => {
-                                    const showLock = !isPremiumUser && isLevelPremium(val);
+                        {/* Complexity Level, Depth, and Format inputs - only visible for normal-course or leveled-course blueprints */}
+                        {(selectedBlueprint === 'normal-course' || selectedBlueprint === 'leveled-course') && (
+                            <>
+                                {/* Complexity Level */}
+                                <div>
+                                    <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block uppercase tracking-wide flex items-center gap-2">
+                                        <LuRocket className="text-blue-500" /> {t('create_page.level_label')}
+                                    </label>
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 items-stretch">
+                                        {activeLevels.map(val => {
+                                            const showLock = !isPremiumUser && isLevelPremium(val);
 
-                                    return (
-                                        <div
-                                            key={val}
-                                            onClick={() => handleFeatureClick('level', val)}
-                                            className={`relative flex flex-col items-center justify-center p-1.5 md:p-2 border rounded-xl cursor-pointer transition-all duration-200 gap-1 text-center h-full min-h-[72px] md:min-h-[80px] overflow-hidden
-                                                ${formData.level === val
-                                                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-500 ring-1 ring-blue-500'
-                                                    : 'bg-white dark:bg-[#151515] border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'}
-                                            `}
-                                        >
-                                            <span className={`text-[8.5px] sm:text-[10px] md:text-xs font-bold uppercase break-normal whitespace-normal leading-tight tracking-tighter px-0.5 ${formData.level === val ? 'text-blue-700 dark:text-blue-300' : 'text-gray-500'}`}>
-                                                {t(`create_page.levels.${val.toLowerCase()}`) || val}
-                                            </span>
-                                            {showLock && (
-                                                <LuGem className="text-amber-500" size={12} />
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {/* Modules Count */}
-                        <div>
-                            <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block uppercase tracking-wide flex items-center gap-2">
-                                <LuLayers className="text-blue-500" /> {t('create_page.depth_label')}
-                            </label>
-                            <div className="grid grid-cols-2 gap-4">
-                                {activeDepths.map(val => (
-                                    <div
-                                        key={val}
-                                        onClick={() => handleFeatureClick('numModules', val)}
-                                        className={`relative group p-3 md:p-4 border rounded-xl cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-2 text-center min-h-[90px] md:min-h-[100px]
-                                            ${formData.numModules === val
-                                                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-500 ring-1 ring-blue-500'
-                                                : 'bg-white dark:bg-[#151515] border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'}
-                                        `}
-                                    >
-                                        <span className={`text-2xl font-black ${formData.numModules === val ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'}`}>
-                                            {val}
-                                        </span>
-                                        <span className={`text-xs font-bold uppercase ${formData.numModules === val ? 'text-blue-700 dark:text-blue-300' : 'text-gray-500'}`}>
-                                            {t('create_page.depth_unit')}
-                                        </span>
-                                        {!isPremiumUser && isDepthPremium(val) && (
-                                            <div className="absolute top-2 right-2 text-amber-500">
-                                                <LuGem size={16} />
-                                            </div>
-                                        )}
+                                            return (
+                                                <div
+                                                    key={val}
+                                                    onClick={() => handleFeatureClick('level', val)}
+                                                    className={`relative flex flex-col items-center justify-center p-1.5 md:p-2 border rounded-xl cursor-pointer transition-all duration-200 gap-1 text-center h-full min-h-[72px] md:min-h-[80px] overflow-hidden
+                                                        ${formData.level === val
+                                                            ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-500 ring-1 ring-blue-500'
+                                                            : 'bg-white dark:bg-[#151515] border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'}
+                                                    `}
+                                                >
+                                                    <span className={`text-[8.5px] sm:text-[10px] md:text-xs font-bold uppercase break-normal whitespace-normal leading-tight tracking-tighter px-0.5 ${formData.level === val ? 'text-blue-700 dark:text-blue-300' : 'text-gray-500'}`}>
+                                                        {t(`create_page.levels.${val.toLowerCase()}`) || val}
+                                                    </span>
+                                                    {showLock && (
+                                                        <LuGem className="text-amber-500" size={12} />
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                ))}
-                            </div>
-                        </div>
+                                </div>
 
-                        {/* Course Type */}
-                        <div>
-                            <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block uppercase tracking-wide flex items-center gap-2">
-                                <LuBookOpen className="text-blue-500" /> {t('create_page.format_label')}
-                            </label>
-                            <div className="grid grid-cols-1 gap-3">
-                                {activeCourseTypes.map(val => {
-                                    const showLock = !isPremiumUser && isCourseTypePremium(val);
-
-                                    return (
-                                        <div
-                                            key={val}
-                                            onClick={() => handleFeatureClick('type', val)}
-                                            className={`relative flex items-center p-3 md:p-4 border rounded-xl cursor-pointer transition-all duration-200 gap-4
-                                                ${formData.type === val
-                                                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-500 ring-1 ring-blue-500'
-                                                    : 'bg-white dark:bg-[#151515] border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'}
-                                            `}
-                                        >
-                                            <div className={`p-2 rounded-lg ${formData.type === val ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
-                                                {val.toLowerCase().includes('video') ? <LuVideo size={20} /> : <LuBookOpen size={20} />}
-                                            </div>
-                                            <div>
-                                                <span className={`block text-sm font-bold ${formData.type === val ? 'text-blue-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                                {/* Modules Count */}
+                                <div>
+                                    <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block uppercase tracking-wide flex items-center gap-2">
+                                        <LuLayers className="text-blue-500" /> {t('create_page.depth_label')}
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {activeDepths.map(val => (
+                                            <div
+                                                key={val}
+                                                onClick={() => handleFeatureClick('numModules', val)}
+                                                className={`relative group p-3 md:p-4 border rounded-xl cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-2 text-center min-h-[90px] md:min-h-[100px]
+                                                    ${formData.numModules === val
+                                                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-500 ring-1 ring-blue-500'
+                                                        : 'bg-white dark:bg-[#151515] border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'}
+                                                `}
+                                            >
+                                                <span className={`text-2xl font-black ${formData.numModules === val ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'}`}>
                                                     {val}
                                                 </span>
-                                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                                    {val.toLowerCase().includes('video') ? t('create_page.format_video_desc') : t('create_page.format_theory_desc')}
+                                                <span className={`text-xs font-bold uppercase ${formData.numModules === val ? 'text-blue-700 dark:text-blue-300' : 'text-gray-500'}`}>
+                                                    {t('create_page.depth_unit')}
                                                 </span>
+                                                {!isPremiumUser && isDepthPremium(val) && (
+                                                    <div className="absolute top-2 right-2 text-amber-500">
+                                                        <LuGem size={16} />
+                                                    </div>
+                                                )}
                                             </div>
-                                            {formData.type === val && (
-                                                <div className="ml-auto w-4 h-4 rounded-full bg-blue-500 border-2 border-white dark:border-gray-900 shadow-sm"></div>
-                                            )}
-                                            {showLock && (
-                                                <div className="ml-auto flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
-                                                    <LuGem size={10} /> Premium
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                                        ))}
+                                    </div>
+                                </div>
 
+                                {/* Course Type */}
+                                <div>
+                                    <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block uppercase tracking-wide flex items-center gap-2">
+                                        <LuBookOpen className="text-blue-500" /> {t('create_page.format_label')}
+                                    </label>
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {activeCourseTypes.map(val => {
+                                            const showLock = !isPremiumUser && isCourseTypePremium(val);
+
+                                            return (
+                                                <div
+                                                    key={val}
+                                                    onClick={() => handleFeatureClick('type', val)}
+                                                    className={`relative flex items-center p-3 md:p-4 border rounded-xl cursor-pointer transition-all duration-200 gap-4
+                                                        ${formData.type === val
+                                                            ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-500 ring-1 ring-blue-500'
+                                                            : 'bg-white dark:bg-[#151515] border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'}
+                                                    `}
+                                                >
+                                                    <div className={`p-2 rounded-lg ${formData.type === val ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
+                                                        {val.toLowerCase().includes('video') ? <LuVideo size={20} /> : <LuBookOpen size={20} />}
+                                                    </div>
+                                                    <div>
+                                                        <span className={`block text-sm font-bold ${formData.type === val ? 'text-blue-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                                                            {val}
+                                                        </span>
+                                                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                            {val.toLowerCase().includes('video') ? t('create_page.format_video_desc') : t('create_page.format_theory_desc')}
+                                                        </span>
+                                                    </div>
+                                                    {formData.type === val && (
+                                                        <div className="ml-auto w-4 h-4 rounded-full bg-blue-500 border-2 border-white dark:border-gray-900 shadow-sm"></div>
+                                                    )}
+                                                    {showLock && (
+                                                        <div className="ml-auto flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
+                                                            <LuGem size={10} /> Premium
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
 

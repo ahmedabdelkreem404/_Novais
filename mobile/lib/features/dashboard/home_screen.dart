@@ -29,10 +29,19 @@ class HomeScreen extends ConsumerWidget {
 
     return Material(
       color: isDark ? const Color(0xFF050816) : const Color(0xFFF8FAFC),
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
-        children: [
+      child: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(_coursesProvider);
+          ref.invalidate(subscriptionUsageProvider);
+          try {
+            await ref.read(_coursesProvider.future);
+            await ref.read(subscriptionUsageProvider.future);
+          } catch (_) {}
+        },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
+          children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -163,8 +172,9 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _openCreate(BuildContext context) {
     context.go('/create');
@@ -193,6 +203,7 @@ class HomeScreen extends ConsumerWidget {
         final api = ref.read(apiClientProvider);
         await api.dio.delete(ApiEndpoints.deleteCourse(id));
         ref.invalidate(_coursesProvider);
+        ref.invalidate(subscriptionUsageProvider);
       } catch (_) {
         if (ctx.mounted) showSnack(ctx, 'Failed to delete', error: true);
       }

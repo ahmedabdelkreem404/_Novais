@@ -68,7 +68,7 @@ class ContentBlueprintController extends Controller
     private function validated(Request $request, ?int $ignoreId = null): array
     {
         return $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required'],
             'slug' => [
                 'required',
                 'string',
@@ -102,9 +102,8 @@ class ContentBlueprintController extends Controller
             'form_schema.fields.*.label.en' => ['sometimes', 'string', 'max:120'],
             'form_schema.fields.*.label.ar' => ['sometimes', 'string', 'max:120'],
             'form_schema.fields.*.required' => ['sometimes', 'boolean'],
-            'form_schema.fields.*.placeholder' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'form_schema.fields.*.placeholder' => ['sometimes', 'nullable'],
             'form_schema.fields.*.options' => ['sometimes', 'array'],
-            'form_schema.fields.*.options.*' => ['string', 'max:120'],
         ]);
     }
 }

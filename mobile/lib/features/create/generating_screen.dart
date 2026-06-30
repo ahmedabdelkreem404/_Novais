@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'dart:convert';
 import '../../core/auth/auth_provider.dart';
 import '../../core/api/endpoints.dart';
+import '../../core/api/subscription_usage_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/l10n/app_localizations.dart';
 
@@ -94,6 +95,7 @@ class _GeneratingScreenState extends ConsumerState<GeneratingScreen>
       }
 
       if (mounted && _courseId != null) {
+        ref.invalidate(subscriptionUsageProvider);
         context.go('/course/$_courseId');
       }
     } catch (e) {

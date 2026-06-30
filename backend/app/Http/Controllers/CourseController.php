@@ -380,11 +380,29 @@ class CourseController extends Controller
         if ($blueprintSlug) {
             $blueprint = ContentBlueprint::query()
                 ->where('slug', $blueprintSlug)
-                ->where('enabled', true)
                 ->first();
 
             if (!$blueprint) {
+                return response()->json(['message' => 'platform.blueprint_not_found'], 404);
+            }
+            if (!$blueprint->enabled) {
                 return response()->json(['message' => 'platform.blueprint_disabled'], 403);
+            }
+
+            // Validate required fields from the blueprint's form schema
+            $formSchema = $blueprint->form_schema ?? ContentBlueprint::defaultFormSchema($blueprint->slug, is_array($blueprint->name) ? ($blueprint->name['en'] ?? 'course') : $blueprint->name);
+            $fields = $formSchema['fields'] ?? [];
+            $submittedFields = $request->input('blueprint_fields', []);
+            foreach ($fields as $field) {
+                if (!empty($field['required'])) {
+                    $key = $field['key'];
+                    if (!isset($submittedFields[$key]) || $submittedFields[$key] === '' || $submittedFields[$key] === []) {
+                        $label = $field['label']['en'] ?? $key;
+                        return response()->json([
+                            'message' => "The field '{$label}' is required for this content type."
+                        ], 422);
+                    }
+                }
             }
         }
 

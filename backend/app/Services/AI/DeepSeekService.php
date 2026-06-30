@@ -39,9 +39,101 @@ class DeepSeekService implements AIProviderInterface
 
 
 
-    public function generateCourseOutline(string $topic, int $count, string $type, string $language, string $level = 'Beginner'): array
-    {
+    public function generateCourseOutline(
+        string $topic,
+        int $count,
+        string $type,
+        string $language,
+        string $level = 'Beginner',
+        mixed $blueprint = null,
+        array $blueprintFields = []
+    ): array {
+        if ($blueprint) {
+            return $this->generateBlueprintStructure($topic, $language, $count, $level, $blueprint, $blueprintFields);
+        }
         return $this->generateCourseStructure($topic, $type, $language, $count, $level);
+    }
+
+    private function generateBlueprintStructure(
+        string $topic,
+        string $language,
+        int $count,
+        string $level,
+        mixed $blueprint,
+        array $blueprintFields
+    ): array {
+        $base = $this->getBasePrompt($language);
+        
+        $blueprintSlug = $blueprint->slug;
+        $blueprintName = is_array($blueprint->name) ? ($blueprint->name['en'] ?? $blueprintSlug) : $blueprint->name;
+        $requiredSections = $blueprint->required_sections ?? [];
+        $optionalSections = $blueprint->optional_sections ?? [];
+        $citationRequired = !empty($blueprint->citation_rules['required']);
+        $includeQuiz = !empty($blueprint->assessment_rules['include_quiz']);
+        $instructions = $blueprint->prompt_instructions ?? '';
+        
+        // Build fields string
+        $fieldsStr = "";
+        foreach ($blueprintFields as $key => $value) {
+            if (is_array($value)) {
+                $valStr = implode(', ', $value);
+            } elseif (is_bool($value)) {
+                $valStr = $value ? 'Yes' : 'No';
+            } else {
+                $valStr = (string) $value;
+            }
+            $fieldsStr .= "- **{$key}**: {$valStr}\n";
+        }
+
+        $requiredSectionsStr = implode(', ', $requiredSections);
+        $optionalSectionsStr = implode(', ', $optionalSections);
+        $citationText = $citationRequired ? 'strictly required' : 'optional';
+        $quizText = $includeQuiz ? 'required' : 'optional';
+
+        $prompt = <<<MODE
+────────────────────────────
+MODE: NOVAIS CONTENT GENERATOR (DYNAMIC BLUEPRINT ENGINE)
+INPUT:
+Topic/Subject: $topic
+Content Type (Blueprint): $blueprintName ($blueprintSlug)
+Academic Level: $level
+Language: $language
+Requested Chapters/Sections Count: $count
+
+SUBMITTED PARAMETERS & PREFERENCES:
+$fieldsStr
+
+BLUEPRINT INSTRUCTIONS:
+$instructions
+
+OUTLINING CONSTRAINTS:
+1. Generate a structured outline tailored EXACTLY for the content type "$blueprintName". Do not generate a generic learning course if the type is a Book, Exam, or Research Paper.
+2. Structure the output into EXACTLY $count modules/chapters/sections (represented in the JSON output under the "chapters" key).
+3. The content of each chapter/section must follow these required components: $requiredSectionsStr.
+4. Optionally incorporate elements of: $optionalSectionsStr.
+5. Language: All titles, descriptions, and structural nodes MUST be written in "$language".
+6. Citation Requirements: Academic citations and references are $citationText.
+7. Final Assessment: A quiz or review section is $quizText.
+
+OUTPUT JSON (Strictly follow this structure. Do not change key names to maintain compatibility with the NOVAIS engine):
+{
+  "title": "Clean Title of the $blueprintName (Translated to $language)",
+  "description": "Compelling 2-sentence summary/abstract in $language.",
+  "level": "$level",
+  "language": "$language",
+  "total_chapters": $count,
+  "chapters": [
+    {
+      "title": "Title of the Chapter/Section in $language",
+      "subtopics": [
+        { "title": "Subtopic/Subsection Title in $language" }
+      ]
+    }
+  ]
+}
+MODE;
+
+        return $this->chatRequest($base . $prompt, true, "You are NOVAIS, an intelligent learning coach generating content for a {$blueprintName}.");
     }
 
     public function validateTopicSafety(string $topic): bool

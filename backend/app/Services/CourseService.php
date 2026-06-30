@@ -81,21 +81,14 @@ class CourseService
         while ($attempts <= $maxRetries) {
             try {
                 // Pass the combined topic + instructions, but safety check was already done on raw topic
-                $topicForPrompt = $data['topic'] . ($extraContext ? ". " . $extraContext : "");
-                if ($blueprint) {
-                    $topicForPrompt .= "\n\nADMIN CONTENT BLUEPRINT:\n" . $blueprint->promptBlock();
-                }
-                if (!empty($blueprintFields)) {
-                    $topicForPrompt .= "\n\nUSER BLUEPRINT FIELD VALUES:\n"
-                        . json_encode($blueprintFields, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-                }
-
                 $outline = $this->aiProvider->generateCourseOutline(
-                    $topicForPrompt,
+                    $data['topic'] . ($extraContext ? ". " . $extraContext : ""),
                     $data['topics_count'] ?? 5,
                     $data['type'] ?? 'text',
                     $lang,
-                    $data['level'] ?? 'Beginner' // Pass Level
+                    $data['level'] ?? 'Beginner',
+                    $blueprint,
+                    $blueprintFields
                 );
                 
                 // VALIDATION CHECK

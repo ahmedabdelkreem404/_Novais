@@ -1,5 +1,5 @@
 class ContentBlueprint {
-  final String name;
+  final dynamic name;
   final String slug;
   final bool enabled;
   final List<String> languageSupport;
@@ -21,7 +21,7 @@ class ContentBlueprint {
 
   factory ContentBlueprint.fromJson(Map<String, dynamic> json) {
     return ContentBlueprint(
-      name: json['name']?.toString() ?? 'Course',
+      name: json['name'] ?? 'Course',
       slug: json['slug']?.toString() ?? 'normal-course',
       enabled: json['enabled'] ?? true,
       languageSupport: List<String>.from(json['language_support'] ?? []),
@@ -31,6 +31,17 @@ class ContentBlueprint {
       defaultCount: json['default_count'] ?? 5,
       formSchema: Map<String, dynamic>.from(json['form_schema'] ?? {}),
     );
+  }
+
+  String nameFor(String languageCode) {
+    if (name is Map) {
+      final nameMap = Map<String, dynamic>.from(name);
+      if (languageCode == 'ar') {
+        return nameMap['ar']?.toString() ?? nameMap['en']?.toString() ?? slug;
+      }
+      return nameMap['en']?.toString() ?? nameMap['ar']?.toString() ?? slug;
+    }
+    return name.toString();
   }
 
   List<BlueprintFormField> get formFields {
@@ -51,7 +62,7 @@ class BlueprintFormField {
   final Map<String, dynamic> label;
   final bool required;
   final String? placeholder;
-  final List<String> options;
+  final List<dynamic> options;
 
   const BlueprintFormField({
     required this.keyName,
@@ -69,9 +80,7 @@ class BlueprintFormField {
       label: Map<String, dynamic>.from(json['label'] ?? {}),
       required: json['required'] == true,
       placeholder: json['placeholder']?.toString(),
-      options: (json['options'] as List? ?? [])
-          .map((item) => item.toString())
-          .toList(),
+      options: List<dynamic>.from(json['options'] ?? []),
     );
   }
 
@@ -80,5 +89,20 @@ class BlueprintFormField {
       return label['ar']?.toString() ?? label['en']?.toString() ?? keyName;
     }
     return label['en']?.toString() ?? label['ar']?.toString() ?? keyName;
+  }
+
+  List<Map<String, dynamic>> get parsedOptions {
+    return options.map((opt) {
+      if (opt is Map) {
+        return {
+          'value': opt['value']?.toString() ?? '',
+          'label': Map<String, dynamic>.from(opt['label'] ?? {}),
+        };
+      }
+      return {
+        'value': opt.toString(),
+        'label': {'en': opt.toString(), 'ar': opt.toString()},
+      };
+    }).toList();
   }
 }
