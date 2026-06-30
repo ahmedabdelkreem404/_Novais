@@ -3,6 +3,7 @@ class AppNotification {
   final String title;
   final String body;
   final String type;
+  final Map<String, dynamic> data;
   final DateTime? readAt;
   final DateTime? createdAt;
 
@@ -11,6 +12,7 @@ class AppNotification {
     required this.title,
     required this.body,
     required this.type,
+    required this.data,
     this.readAt,
     this.createdAt,
   });
@@ -23,9 +25,28 @@ class AppNotification {
       title: json['title']?.toString() ?? '',
       body: json['body']?.toString() ?? '',
       type: json['type']?.toString() ?? 'info',
+      data: Map<String, dynamic>.from(json['data'] ?? {}),
       readAt: DateTime.tryParse(json['read_at']?.toString() ?? ''),
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
     );
+  }
+
+  String titleFor(String languageCode) {
+    final localized = data['localized'];
+    if (localized is Map && localized[languageCode] is Map) {
+      final value = Map<String, dynamic>.from(localized[languageCode] as Map);
+      return value['title']?.toString() ?? title;
+    }
+    return title;
+  }
+
+  String bodyFor(String languageCode) {
+    final localized = data['localized'];
+    if (localized is Map && localized[languageCode] is Map) {
+      final value = Map<String, dynamic>.from(localized[languageCode] as Map);
+      return value['body']?.toString() ?? body;
+    }
+    return body;
   }
 }
 

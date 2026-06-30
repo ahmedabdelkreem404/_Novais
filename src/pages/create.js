@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { serverURL } from '../constants';
-import { LuPlus, LuWand, LuLayers, LuVideo, LuBookOpen, LuGlobe, LuX, LuGem, LuCheck, LuRocket, LuChevronDown, LuLayoutTemplate } from "react-icons/lu";
+import { LuPlus, LuWand, LuLayers, LuVideo, LuBookOpen, LuGlobe, LuX, LuGem, LuCheck, LuRocket, LuChevronDown, LuLayoutTemplate, LuSettings2 } from "react-icons/lu";
 import { motion, AnimatePresence } from 'framer-motion';
 import Input from '../components/ui/Input';
 
@@ -35,8 +35,19 @@ const languagesList = [
     { name: "Ukrainian", isPremium: true }
 ];
 
+const getFieldLabel = (field, lang = 'en') => {
+    if (field?.label && typeof field.label === 'object') {
+        return field.label[lang] || field.label.en || field.key;
+    }
+    return field?.label || field?.key || '';
+};
+
+const getBlueprintFields = (blueprint) => Array.isArray(blueprint?.form_schema?.fields)
+    ? blueprint.form_schema.fields
+    : [];
+
 const CreateCourse = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const [showPremiumModal, setShowPremiumModal] = useState(false);
     const [isLangOpen, setIsLangOpen] = useState(false);
@@ -121,6 +132,7 @@ const CreateCourse = () => {
     const [config, setConfig] = useState(null);
     const [blueprints, setBlueprints] = useState([]);
     const [selectedBlueprint, setSelectedBlueprint] = useState(location.state?.blueprint_slug || 'normal-course');
+    const [blueprintFields, setBlueprintFields] = useState(location.state?.blueprint_fields || {});
 
     useEffect(() => {
         const fetchConfig = async () => {
@@ -174,6 +186,30 @@ const CreateCourse = () => {
     const activeDepths = config
         ? (config.enabled_depths ?? [5, 10])
         : [5, 10];
+    const activeBlueprint = useMemo(
+        () => blueprints.find((item) => item.slug === selectedBlueprint),
+        [blueprints, selectedBlueprint]
+    );
+    const activeBlueprintFields = useMemo(
+        () => getBlueprintFields(activeBlueprint),
+        [activeBlueprint]
+    );
+
+    useEffect(() => {
+        if (!activeBlueprintFields.length) return;
+        setBlueprintFields((current) => {
+            const next = { ...current };
+            let changed = false;
+            activeBlueprintFields.forEach((field) => {
+                if (next[field.key] !== undefined) return;
+                if (field.type === 'boolean') next[field.key] = false;
+                else if (field.type === 'multiselect') next[field.key] = [];
+                else next[field.key] = '';
+                changed = true;
+            });
+            return changed ? next : current;
+        });
+    }, [activeBlueprintFields]);
 
     const isCourseTypePremium = (type) => {
         if (!config) {
@@ -246,12 +282,97 @@ const CreateCourse = () => {
             return;
         }
 
-        navigate('/generating', { state: { ...formData, blueprint_slug: selectedBlueprint } });
+        navigate('/generating', { state: { ...formData, blueprint_slug: selectedBlueprint, blueprint_fields: blueprintFields } });
     };
 
     const navigateToPricing = () => {
         navigate('/dashboard/pricing');
         setShowPremiumModal(false);
+    };
+
+    const updateBlueprintField = (key, value) => {
+        setBlueprintFields((current) => ({ ...current, [key]: value }));
+    };
+
+    const renderBlueprintField = (field) => {
+        const value = blueprintFields[field.key];
+        const title = getFieldLabel(field, i18n.language?.startsWith('ar') ? 'ar' : 'en');
+        const baseClass = 'w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-xl p-3.5 text-sm font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500';
+
+        if (field.type === 'textarea') {
+            return (
+                <textarea
+                    rows={3}
+                    value={value || ''}
+                    onChange={(e) => updateBlueprintField(field.key, e.target.value)}
+                    placeholder={field.placeholder || title}
+                    className={baseClass}
+                />
+            );
+        }
+
+        if (field.type === 'number') {
+            return (
+                <input
+                    type="number"
+                    value={value || ''}
+                    onChange={(e) => updateBlueprintField(field.key, e.target.value)}
+                    placeholder={field.placeholder || title}
+                    className={baseClass}
+                />
+            );
+        }
+
+        if (field.type === 'select') {
+            return (
+                <select value={value || ''} onChange={(e) => updateBlueprintField(field.key, e.target.value)} className={baseClass}>
+                    <option value="">{title}</option>
+                    {(field.options || []).map((option) => <option key={option} value={option}>{option}</option>)}
+                </select>
+            );
+        }
+
+        if (field.type === 'multiselect') {
+            const selected = Array.isArray(value) ? value : [];
+            return (
+                <div className="flex flex-wrap gap-2">
+                    {(field.options || []).map((option) => {
+                        const checked = selected.includes(option);
+                        return (
+                            <button
+                                key={option}
+                                type="button"
+                                onClick={() => updateBlueprintField(field.key, checked ? selected.filter((item) => item !== option) : [...selected, option])}
+                                className={`rounded-lg border px-3 py-2 text-xs font-bold transition ${checked ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-200' : 'border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-700 dark:bg-[#151515] dark:text-gray-300'}`}
+                            >
+                                {option}
+                            </button>
+                        );
+                    })}
+                </div>
+            );
+        }
+
+        if (field.type === 'boolean') {
+            return (
+                <button
+                    type="button"
+                    onClick={() => updateBlueprintField(field.key, !value)}
+                    className={`w-full rounded-xl border p-3.5 text-start text-sm font-bold transition ${value ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-200' : 'border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-[#151515] dark:text-gray-300'}`}
+                >
+                    {value ? t('common.enabled') || 'Enabled' : t('common.disabled') || 'Disabled'}
+                </button>
+            );
+        }
+
+        return (
+            <input
+                value={value || ''}
+                onChange={(e) => updateBlueprintField(field.key, e.target.value)}
+                placeholder={field.placeholder || title}
+                className={baseClass}
+            />
+        );
     };
 
     return (
@@ -403,7 +524,10 @@ const CreateCourse = () => {
                                 </label>
                                 <select
                                     value={selectedBlueprint}
-                                    onChange={(e) => setSelectedBlueprint(e.target.value)}
+                                    onChange={(e) => {
+                                        setSelectedBlueprint(e.target.value);
+                                        setBlueprintFields({});
+                                    }}
                                     className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-xl p-3.5 md:p-4 text-sm font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500"
                                 >
                                     {blueprints.map((blueprint) => (
@@ -412,6 +536,27 @@ const CreateCourse = () => {
                                         </option>
                                     ))}
                                 </select>
+                            </div>
+                        )}
+
+                        {activeBlueprintFields.length > 0 && (
+                            <div>
+                                <label className="text-sm font-bold text-gray-900 dark:text-white mb-3 block uppercase tracking-wide flex items-center gap-2">
+                                    <LuSettings2 className="text-blue-500" /> {activeBlueprint?.name} Details
+                                </label>
+                                <div className="grid grid-cols-1 gap-3">
+                                    {activeBlueprintFields.map((field) => (
+                                        <div key={field.key} className="space-y-2">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="text-xs font-bold text-gray-600 dark:text-gray-300">
+                                                    {getFieldLabel(field, i18n.language?.startsWith('ar') ? 'ar' : 'en')}
+                                                </span>
+                                                {field.required && <span className="text-[10px] font-black uppercase text-blue-500">Required</span>}
+                                            </div>
+                                            {renderBlueprintField(field)}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
 

@@ -42,6 +42,7 @@ const Topics = () => {
                 type: type === 'Video & Theory Course' ? 'video' : 'image',
                 language: originalFormData.language || 'English',
                 blueprint_slug: originalFormData.blueprint_slug || courseData.blueprint_slug,
+                blueprint_fields: originalFormData.blueprint_fields || courseData.blueprint_fields || {},
                 content: JSON.stringify(courseData)
             }, {
                 headers: {

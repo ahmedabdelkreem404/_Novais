@@ -72,6 +72,7 @@ class CourseService
                 ->where('enabled', true)
                 ->firstOrFail();
         }
+        $blueprintFields = $this->normalizeBlueprintFields($data['blueprint_fields'] ?? []);
 
         $outline = null;
         $maxRetries = 1;
@@ -83,6 +84,10 @@ class CourseService
                 $topicForPrompt = $data['topic'] . ($extraContext ? ". " . $extraContext : "");
                 if ($blueprint) {
                     $topicForPrompt .= "\n\nADMIN CONTENT BLUEPRINT:\n" . $blueprint->promptBlock();
+                }
+                if (!empty($blueprintFields)) {
+                    $topicForPrompt .= "\n\nUSER BLUEPRINT FIELD VALUES:\n"
+                        . json_encode($blueprintFields, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
                 }
 
                 $outline = $this->aiProvider->generateCourseOutline(
@@ -150,9 +155,44 @@ class CourseService
             $outline['blueprint_slug'] = $blueprint->slug;
             $outline['blueprint_name'] = $blueprint->name;
             $outline['blueprint_structure'] = $blueprint->output_structure;
+            $outline['blueprint_fields'] = $blueprintFields;
         }
 
         return $outline;
+    }
+
+    private function normalizeBlueprintFields(mixed $fields): array
+    {
+        if (!is_array($fields)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($fields as $key => $value) {
+            $key = preg_replace('/[^a-zA-Z0-9_-]/', '', (string) $key);
+            if ($key === '') {
+                continue;
+            }
+
+            if (is_array($value)) {
+                $normalized[$key] = array_values(array_filter(array_map(
+                    fn ($item) => is_scalar($item) ? trim((string) $item) : null,
+                    $value
+                ), fn ($item) => $item !== null && $item !== ''));
+                continue;
+            }
+
+            if (is_bool($value)) {
+                $normalized[$key] = $value;
+                continue;
+            }
+
+            if (is_scalar($value)) {
+                $normalized[$key] = trim((string) $value);
+            }
+        }
+
+        return $normalized;
     }
 
     public function fallbackCourseCoverImage(string $title): string

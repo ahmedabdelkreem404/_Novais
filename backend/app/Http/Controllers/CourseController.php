@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Services\CurriculumValidator;
 use App\Models\PlatformSetting;
 use App\Models\ContentBlueprint;
+use App\Models\AppNotification;
 use App\Services\SubscriptionService;
 
 class CourseController extends Controller
@@ -53,6 +54,7 @@ class CourseController extends Controller
             'subTopics' => 'nullable|array',
             'level' => 'sometimes|string',
             'blueprint_slug' => 'sometimes|string',
+            'blueprint_fields' => 'sometimes|array',
             'content_type' => 'sometimes|string',
         ]);
 
@@ -76,6 +78,7 @@ class CourseController extends Controller
                 'language' => $request->language,
                 'level' => $request->level ?? 'Beginner',
                 'blueprint_slug' => $request->input('blueprint_slug', $request->input('content_type')),
+                'blueprint_fields' => $request->input('blueprint_fields', []),
             ];
 
             $outline = $this->courseService->generateOutline($data, auth('api')->id());
@@ -107,6 +110,7 @@ class CourseController extends Controller
             'language' => 'nullable|string',
             'content' => 'required|json', // The full course structure
             'blueprint_slug' => 'sometimes|string',
+            'blueprint_fields' => 'sometimes|array',
             'content_type' => 'sometimes|string',
         ]);
 
@@ -125,6 +129,10 @@ class CourseController extends Controller
             $contentData = $this->curriculumValidator->normalize($contentData, [
                 'mainTopic' => $request->mainTopic,
             ]);
+            $blueprintFields = $request->input('blueprint_fields', $contentData['blueprint_fields'] ?? []);
+            if (is_array($blueprintFields) && !empty($blueprintFields)) {
+                $contentData['blueprint_fields'] = $blueprintFields;
+            }
             $userId = auth('api')->id(); // Use Auth::id instead of request->user for security
             
             $courseTitle = $contentData['title'] ?? $request->mainTopic;
@@ -168,6 +176,23 @@ class CourseController extends Controller
                      }
                  }
             }
+
+            AppNotification::create([
+                'user_id' => $userId,
+                'title' => 'Course created',
+                'body' => "\"{$courseTitle}\" is ready in your dashboard.",
+                'type' => 'course',
+                'data' => [
+                    'trigger' => 'course_created',
+                    'course_id' => $course->public_id,
+                    'localized' => [
+                        'en' => ['title' => 'Course created', 'body' => "\"{$courseTitle}\" is ready in your dashboard."],
+                        'ar' => ['title' => 'تم إنشاء الدورة', 'body' => "الدورة \"{$courseTitle}\" جاهزة في لوحة التحكم."],
+                    ],
+                ],
+                'published_at' => now(),
+                'scheduled_at' => now(),
+            ]);
 
             return response()->json([
                 'success' => true,

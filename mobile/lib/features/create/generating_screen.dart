@@ -81,6 +81,8 @@ class _GeneratingScreenState extends ConsumerState<GeneratingScreen>
           'type': widget.courseData['type'],
           'blueprint_slug':
               widget.courseData['blueprint_slug'] ?? outline['blueprint_slug'],
+          'blueprint_fields': widget.courseData['blueprint_fields'] ??
+              outline['blueprint_fields'],
           'language': widget.courseData['language'],
           'level': widget.courseData['level'],
           'content': jsonEncode(outline),

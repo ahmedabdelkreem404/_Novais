@@ -7,6 +7,7 @@ import '../../core/l10n/app_localizations.dart';
 import '../../widgets/widgets.dart';
 import '../../core/api/platform_config_provider.dart';
 import '../../core/api/content_blueprints_provider.dart';
+import '../../models/content_blueprint.dart';
 import '../../models/platform_config.dart';
 
 class CreateScreen extends ConsumerStatefulWidget {
@@ -27,6 +28,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
   String _level = 'Beginner';
   int _modules = 5;
   final List<String> _subTopics = [];
+  final Map<String, dynamic> _blueprintFields = {};
 
   final _languages = [
     'English',
@@ -102,6 +104,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
         'subTopics': _subTopics,
         'type': _type,
         'blueprint_slug': _blueprintSlug,
+        'blueprint_fields': _blueprintFields,
         'language': _language,
         'level': _level,
         'numModules': _modules,
@@ -136,6 +139,156 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
     );
   }
 
+  void _prepareBlueprintFields(List<BlueprintFormField> fields) {
+    for (final field in fields) {
+      if (field.keyName.isEmpty ||
+          _blueprintFields.containsKey(field.keyName)) {
+        continue;
+      }
+      if (field.type == 'boolean') {
+        _blueprintFields[field.keyName] = false;
+      } else if (field.type == 'multiselect') {
+        _blueprintFields[field.keyName] = <String>[];
+      } else {
+        _blueprintFields[field.keyName] = '';
+      }
+    }
+  }
+
+  void _setBlueprintField(String key, dynamic value) {
+    setState(() => _blueprintFields[key] = value);
+  }
+
+  Widget _buildBlueprintField(
+    BuildContext context,
+    BlueprintFormField field,
+    bool isDark,
+  ) {
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final label = field.labelFor(languageCode);
+    final value = _blueprintFields[field.keyName];
+    final inputDecoration = InputDecoration(
+      hintText: field.placeholder ?? label,
+      filled: true,
+      fillColor: isDark ? const Color(0xFF1F1F1F) : const Color(0xFFF9FAFB),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+
+    Widget control;
+    if (field.type == 'textarea') {
+      control = TextFormField(
+        initialValue: value?.toString() ?? '',
+        minLines: 3,
+        maxLines: 5,
+        decoration: inputDecoration,
+        onChanged: (next) => _blueprintFields[field.keyName] = next,
+        validator: field.required
+            ? (next) =>
+                (next == null || next.trim().isEmpty) ? 'Required' : null
+            : null,
+      );
+    } else if (field.type == 'number') {
+      control = TextFormField(
+        initialValue: value?.toString() ?? '',
+        keyboardType: TextInputType.number,
+        decoration: inputDecoration,
+        onChanged: (next) => _blueprintFields[field.keyName] = next,
+        validator: field.required
+            ? (next) =>
+                (next == null || next.trim().isEmpty) ? 'Required' : null
+            : null,
+      );
+    } else if (field.type == 'select') {
+      control = DropdownButtonFormField<String>(
+        value: field.options.contains(value) ? value?.toString() : null,
+        decoration: inputDecoration,
+        dropdownColor: isDark ? const Color(0xFF1F1F1F) : Colors.white,
+        items: field.options
+            .map((option) =>
+                DropdownMenuItem(value: option, child: Text(option)))
+            .toList(),
+        onChanged: (next) => _setBlueprintField(field.keyName, next ?? ''),
+        validator: field.required
+            ? (next) => (next == null || next.isEmpty) ? 'Required' : null
+            : null,
+      );
+    } else if (field.type == 'multiselect') {
+      final selected = (value is List ? value : const [])
+          .map((item) => item.toString())
+          .toList();
+      control = Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: field.options.map((option) {
+          final checked = selected.contains(option);
+          return FilterChip(
+            label: Text(option),
+            selected: checked,
+            onSelected: (next) {
+              final updated = [...selected];
+              if (next) {
+                updated.add(option);
+              } else {
+                updated.remove(option);
+              }
+              _setBlueprintField(field.keyName, updated);
+            },
+          );
+        }).toList(),
+      );
+    } else if (field.type == 'boolean') {
+      control = SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(label),
+        value: value == true,
+        activeColor: AppColors.primary,
+        onChanged: (next) => _setBlueprintField(field.keyName, next),
+      );
+    } else {
+      control = TextFormField(
+        initialValue: value?.toString() ?? '',
+        decoration: inputDecoration,
+        onChanged: (next) => _blueprintFields[field.keyName] = next,
+        validator: field.required
+            ? (next) =>
+                (next == null || next.trim().isEmpty) ? 'Required' : null
+            : null,
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+              ),
+            ),
+            if (field.required)
+              const Text(
+                'Required',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primary,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        control,
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -150,6 +303,15 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
         !blueprints.any((item) => item.slug == _blueprintSlug)) {
       _blueprintSlug = blueprints.first.slug;
     }
+    ContentBlueprint? activeBlueprint;
+    for (final blueprint in blueprints) {
+      if (blueprint.slug == _blueprintSlug) {
+        activeBlueprint = blueprint;
+        break;
+      }
+    }
+    final activeBlueprintFields = activeBlueprint?.formFields ?? const [];
+    _prepareBlueprintFields(activeBlueprintFields);
 
     final languages = config?.enabledLanguages ?? _languages;
     final courseTypes = config?.enabledCourseTypes ??
@@ -382,11 +544,28 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                           .toList(),
                       onChanged: (value) {
                         if (value != null) {
-                          setState(() => _blueprintSlug = value);
+                          setState(() {
+                            _blueprintSlug = value;
+                            _blueprintFields.clear();
+                          });
                         }
                       },
                     ),
                     const SizedBox(height: 24),
+                  ],
+
+                  if (activeBlueprintFields.isNotEmpty) ...[
+                    _SectionHeader(
+                      label: '${activeBlueprint?.name ?? 'Blueprint'} DETAILS',
+                      icon: Icons.tune_outlined,
+                    ),
+                    ...activeBlueprintFields.map(
+                      (field) => Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: _buildBlueprintField(context, field, isDark),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                   ],
 
                   // Language

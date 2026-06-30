@@ -16,15 +16,13 @@ class NotificationController extends Controller
 
         $notifications = AppNotification::query()
             ->where('user_id', $userId)
-            ->where(function ($query) {
-                $query->whereNull('published_at')
-                    ->orWhere('published_at', '<=', now());
-            })
+            ->readyForDelivery()
             ->latest()
             ->paginate((int) $request->input('per_page', 30));
 
         $unread = AppNotification::query()
             ->where('user_id', $userId)
+            ->readyForDelivery()
             ->whereNull('read_at')
             ->count();
 
@@ -97,15 +95,28 @@ class NotificationController extends Controller
             'type' => ['sometimes', 'string', 'in:info,success,warning,error,payment,course,system'],
             'target' => ['required', 'string', 'in:all,user'],
             'user_id' => ['required_if:target,user', 'nullable', 'exists:users,id'],
+            'title_ar' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'body_ar' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'scheduled_at' => ['sometimes', 'nullable', 'date'],
             'data' => ['sometimes', 'nullable', 'array'],
+        ]);
+
+        $scheduledAt = !empty($data['scheduled_at']) ? \Carbon\Carbon::parse($data['scheduled_at']) : now();
+        $payloadData = $data['data'] ?? [];
+        $payloadData['localized'] = array_filter([
+            'en' => ['title' => $data['title'], 'body' => $data['body']],
+            'ar' => !empty($data['title_ar']) || !empty($data['body_ar'])
+                ? ['title' => $data['title_ar'] ?? $data['title'], 'body' => $data['body_ar'] ?? $data['body']]
+                : null,
         ]);
 
         $base = [
             'title' => $data['title'],
             'body' => $data['body'],
             'type' => $data['type'] ?? 'info',
-            'data' => $data['data'] ?? [],
-            'published_at' => now(),
+            'data' => $payloadData,
+            'published_at' => $scheduledAt,
+            'scheduled_at' => $scheduledAt,
         ];
 
         if ($data['target'] === 'all') {

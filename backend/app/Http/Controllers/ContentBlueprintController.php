@@ -94,6 +94,17 @@ class ContentBlueprintController extends Controller
             'output_format_rules' => ['sometimes', 'nullable', 'array'],
             'prompt_instructions' => ['required', 'string', 'max:10000'],
             'validation_schema' => ['sometimes', 'nullable', 'array'],
+            'form_schema' => ['sometimes', 'nullable', 'array'],
+            'form_schema.fields' => ['sometimes', 'array'],
+            'form_schema.fields.*.key' => ['required_with:form_schema.fields', 'string', 'max:80', 'alpha_dash'],
+            'form_schema.fields.*.type' => ['required_with:form_schema.fields', 'string', 'max:40'],
+            'form_schema.fields.*.label' => ['sometimes', 'array'],
+            'form_schema.fields.*.label.en' => ['sometimes', 'string', 'max:120'],
+            'form_schema.fields.*.label.ar' => ['sometimes', 'string', 'max:120'],
+            'form_schema.fields.*.required' => ['sometimes', 'boolean'],
+            'form_schema.fields.*.placeholder' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'form_schema.fields.*.options' => ['sometimes', 'array'],
+            'form_schema.fields.*.options.*' => ['string', 'max:120'],
         ]);
     }
 }

@@ -6,6 +6,8 @@ import '../core/l10n/app_localizations.dart';
 import '../core/theme/app_theme.dart';
 import '../core/api/platform_config_provider.dart';
 import '../core/api/notifications_provider.dart';
+import '../core/api/subscription_usage_provider.dart';
+import '../models/user.dart';
 
 class AppSidebar extends ConsumerWidget {
   const AppSidebar({super.key});
@@ -28,6 +30,7 @@ class AppSidebar extends ConsumerWidget {
             configAsync.value!.systemThemeMode != 'dark_only');
     final unreadNotifications =
         ref.watch(notificationsProvider).valueOrNull?.unreadCount ?? 0;
+    final usageAsync = ref.watch(subscriptionUsageProvider);
     const Radius edgeRadius = Radius.circular(16);
 
     return Drawer(
@@ -122,7 +125,7 @@ class AppSidebar extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _UsageCard(isDark: isDark),
+                  _UsageCard(isDark: isDark, usageAsync: usageAsync),
                   const SizedBox(height: 12),
                   _NavItem(
                     icon: Icons.notifications_outlined,
@@ -222,12 +225,20 @@ class AppSidebar extends ConsumerWidget {
 
 class _UsageCard extends StatelessWidget {
   final bool isDark;
+  final AsyncValue<SubscriptionUsage> usageAsync;
 
-  const _UsageCard({required this.isDark});
+  const _UsageCard({required this.isDark, required this.usageAsync});
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final usage = usageAsync.valueOrNull;
+    final used = usage?.used ?? 0;
+    final limit = usage?.limit ?? 0;
+    final remaining = usage?.remaining ?? 0;
+    final displayLimit =
+        limit <= 0 && (used > 0 || remaining > 0) ? used + remaining : limit;
+    final isUnlimited = usage?.isUnlimited ?? false;
 
     return Container(
       key: const Key('drawer_usage_card'),
@@ -260,7 +271,7 @@ class _UsageCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '1',
+                usageAsync.isLoading ? '...' : '$used',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -269,7 +280,7 @@ class _UsageCard extends StatelessWidget {
                 ),
               ),
               Text(
-                ' / ∞',
+                ' / ${isUnlimited ? '∞' : displayLimit}',
                 style: TextStyle(
                   fontSize: 14,
                   color: isDark ? Colors.grey[500] : Colors.grey[400],
@@ -290,10 +301,10 @@ class _UsageCard extends StatelessWidget {
           const SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
-            child: const LinearProgressIndicator(
-              value: 0.2,
+            child: LinearProgressIndicator(
+              value: usage?.progress ?? 0,
               backgroundColor: Colors.transparent,
-              valueColor: AlwaysStoppedAnimation(AppColors.primary),
+              valueColor: const AlwaysStoppedAnimation(AppColors.primary),
               minHeight: 4,
             ),
           ),

@@ -20,7 +20,10 @@ const AdminNotifications = () => {
     user_id: '',
     type: 'info',
     title: '',
+    title_ar: '',
     body: '',
+    body_ar: '',
+    scheduled_at: '',
   });
 
   const load = async () => {
@@ -58,8 +61,8 @@ const AdminNotifications = () => {
         user_id: form.target === 'user' ? Number(form.user_id) : null,
       };
       const res = await axios.post(`${serverURL}/admin/notifications`, payload, authConfig());
-      toast.success(`Notification sent to ${res.data.created_count || 1} user(s)`);
-      setForm((current) => ({ ...current, title: '', body: '' }));
+      toast.success(`Notification queued for ${res.data.created_count || 1} user(s)`);
+      setForm((current) => ({ ...current, title: '', title_ar: '', body: '', body_ar: '', scheduled_at: '' }));
       await load();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to send notification');
@@ -77,7 +80,7 @@ const AdminNotifications = () => {
           </div>
           <div>
             <h2 className="text-base font-black text-gray-900 dark:text-white">Send Notification</h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Mobile in-app notifications backed by API.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">API inbox, read/unread, scheduling, and mobile badges. FCM push requires Firebase config.</p>
           </div>
         </div>
 
@@ -126,7 +129,7 @@ const AdminNotifications = () => {
           </label>
 
           <label className="block space-y-2">
-            <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">Title</span>
+            <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">Title English</span>
             <input
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -135,11 +138,39 @@ const AdminNotifications = () => {
           </label>
 
           <label className="block space-y-2">
-            <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">Body</span>
+            <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">Title Arabic</span>
+            <input
+              value={form.title_ar}
+              onChange={(e) => setForm({ ...form, title_ar: e.target.value })}
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-white/5 dark:text-white"
+            />
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">Body English</span>
             <textarea
               value={form.body}
               onChange={(e) => setForm({ ...form, body: e.target.value })}
               className="min-h-[120px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-white/5 dark:text-white"
+            />
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">Body Arabic</span>
+            <textarea
+              value={form.body_ar}
+              onChange={(e) => setForm({ ...form, body_ar: e.target.value })}
+              className="min-h-[90px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-white/5 dark:text-white"
+            />
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-[11px] font-black uppercase tracking-widest text-gray-400">Schedule</span>
+            <input
+              type="datetime-local"
+              value={form.scheduled_at}
+              onChange={(e) => setForm({ ...form, scheduled_at: e.target.value })}
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-white/5 dark:text-white"
             />
           </label>
 

@@ -13,6 +13,7 @@ class NotificationsScreen extends ConsumerWidget {
     final inboxAsync = ref.watch(notificationsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = context.l10n;
+    final languageCode = Localizations.localeOf(context).languageCode;
 
     return Scaffold(
       backgroundColor:
@@ -98,7 +99,7 @@ class NotificationsScreen extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                item.title,
+                                item.titleFor(languageCode),
                                 style: TextStyle(
                                   fontWeight: item.isRead
                                       ? FontWeight.w600
@@ -108,7 +109,7 @@ class NotificationsScreen extends ConsumerWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                item.body,
+                                item.bodyFor(languageCode),
                                 style: TextStyle(
                                   fontSize: 13,
                                   height: 1.35,

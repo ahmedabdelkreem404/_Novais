@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/api/endpoints.dart';
+import '../../core/api/subscription_usage_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../models/course.dart';
+import '../../models/user.dart';
 import '../../widgets/widgets.dart';
 
 final _coursesProvider = FutureProvider<List<Course>>((ref) async {
@@ -22,6 +24,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final coursesAsync = ref.watch(_coursesProvider);
+    final usageAsync = ref.watch(subscriptionUsageProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Material(
@@ -88,7 +91,7 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 26),
-          _UsageCard(isDark: isDark),
+          _UsageCard(isDark: isDark, usageAsync: usageAsync),
           const SizedBox(height: 32),
           coursesAsync.when(
             loading: () => const SizedBox(
@@ -199,11 +202,20 @@ class HomeScreen extends ConsumerWidget {
 
 class _UsageCard extends StatelessWidget {
   final bool isDark;
+  final AsyncValue<SubscriptionUsage> usageAsync;
 
-  const _UsageCard({required this.isDark});
+  const _UsageCard({required this.isDark, required this.usageAsync});
 
   @override
   Widget build(BuildContext context) {
+    final usage = usageAsync.valueOrNull;
+    final used = usage?.used ?? 0;
+    final limit = usage?.limit ?? 0;
+    final remaining = usage?.remaining ?? 0;
+    final displayLimit =
+        limit <= 0 && (used > 0 || remaining > 0) ? used + remaining : limit;
+    final isUnlimited = usage?.isUnlimited ?? false;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -238,7 +250,9 @@ class _UsageCard extends StatelessWidget {
                 ),
               ]),
               Text(
-                '2 / 5',
+                usageAsync.isLoading
+                    ? '...'
+                    : '$used / ${isUnlimited ? '∞' : displayLimit}',
                 style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -249,18 +263,21 @@ class _UsageCard extends StatelessWidget {
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
-            child: const LinearProgressIndicator(
-              value: 0.4,
+            child: LinearProgressIndicator(
+              value: usage?.progress ?? 0,
               minHeight: 8,
               backgroundColor: Colors.transparent,
-              valueColor: AlwaysStoppedAnimation(AppColors.primary),
+              valueColor: const AlwaysStoppedAnimation(AppColors.primary),
             ),
           ),
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              context.l10n.t('remaining_courses').replaceFirst('{count}', '3'),
+              context.l10n.t('remaining_courses').replaceFirst(
+                    '{count}',
+                    isUnlimited ? '∞' : '$remaining',
+                  ),
               style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
