@@ -412,14 +412,23 @@ const PlatformSettings = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Hero Media URL</label>
-                    <input
-                      type="text"
-                      value={form.hero_media_url}
-                      onChange={(e) => setForm({ ...form, hero_media_url: e.target.value })}
-                      placeholder="https://example.com/video.mp4"
-                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Hero Media URL Link</label>
+                      <input
+                        type="text"
+                        value={form.hero_media_url}
+                        onChange={(e) => setForm({ ...form, hero_media_url: e.target.value })}
+                        placeholder="https://example.com/video.mp4"
+                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                      />
+                    </div>
+                    <FileUploaderCard
+                      label={form.hero_media_type === 'video' ? 'Upload Local Video' : 'Upload Local Image'}
+                      fileUrl={form.hero_media_url}
+                      onUploadSuccess={(url) => setForm({ ...form, hero_media_url: url })}
+                      accept={form.hero_media_type === 'video' ? 'video/*' : 'image/*'}
+                      t={t}
                     />
                   </div>
 

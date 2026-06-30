@@ -75,65 +75,86 @@ class AppSidebar extends ConsumerWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
               children: [
-                const _NavItem(
-                  icon: Icons.home_outlined,
-                  selectedIcon: Icons.home,
-                  labelKey: 'dashboard',
-                  path: '/dashboard',
-                ),
-                const _NavItem(
-                  icon: Icons.headphones_outlined,
-                  selectedIcon: Icons.headphones,
-                  labelKey: 'audio_courses',
-                  path: '/audio',
-                ),
-                const _NavItem(
-                  icon: Icons.person_outline,
-                  selectedIcon: Icons.person,
-                  labelKey: 'profile',
-                  path: '/profile',
-                ),
-                const _NavItem(
-                  icon: Icons.monetization_on_outlined,
-                  selectedIcon: Icons.monetization_on,
-                  labelKey: 'pricing',
-                  path: '/pricing',
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  key: const Key('drawer_create_button'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    try {
-                      context.push('/create');
-                    } catch (_) {}
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    minimumSize: const Size.fromHeight(46),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                if (isAuthenticated) ...[
+                  const _NavItem(
+                    icon: Icons.home_outlined,
+                    selectedIcon: Icons.home,
+                    labelKey: 'dashboard',
+                    path: '/dashboard',
+                  ),
+                  const _NavItem(
+                    icon: Icons.headphones_outlined,
+                    selectedIcon: Icons.headphones,
+                    labelKey: 'audio_courses',
+                    path: '/audio',
+                  ),
+                  const _NavItem(
+                    icon: Icons.person_outline,
+                    selectedIcon: Icons.person,
+                    labelKey: 'profile',
+                    path: '/profile',
+                  ),
+                  const _NavItem(
+                    icon: Icons.monetization_on_outlined,
+                    selectedIcon: Icons.monetization_on,
+                    labelKey: 'pricing',
+                    path: '/pricing',
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    key: const Key('drawer_create_button'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      try {
+                        context.push('/create');
+                      } catch (_) {}
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      minimumSize: const Size.fromHeight(46),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.auto_awesome, size: 16),
+                        const SizedBox(width: 8),
+                        Text(
+                          l10n.t('generate_course'),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.auto_awesome, size: 16),
-                      const SizedBox(width: 8),
-                      Text(
-                        l10n.t('generate_course'),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 20),
+                  _UsageCard(isDark: isDark),
+                ] else ...[
+                  const _NavItem(
+                    icon: Icons.login_outlined,
+                    selectedIcon: Icons.login,
+                    labelKey: 'sign_in',
+                    path: '/signin',
                   ),
-                ),
-                const SizedBox(height: 20),
-                _UsageCard(isDark: isDark),
+                  const _NavItem(
+                    icon: Icons.person_add_alt_outlined,
+                    selectedIcon: Icons.person_add_alt_1,
+                    labelKey: 'sign_up',
+                    path: '/signup',
+                  ),
+                  const _NavItem(
+                    icon: Icons.monetization_on_outlined,
+                    selectedIcon: Icons.monetization_on,
+                    labelKey: 'pricing',
+                    path: '/pricing',
+                  ),
+                ],
               ],
             ),
           ),
@@ -163,17 +184,18 @@ class AppSidebar extends ConsumerWidget {
                       ref.read(themeModeProvider.notifier).toggle();
                     },
                   ),
-                _ActionItem(
-                  icon: Icons.logout,
-                  label: l10n.t('logout'),
-                  onTap: () {
-                    ref.read(authProvider.notifier).logout();
-                    Navigator.of(context).pop();
-                    try {
-                      context.go('/signin');
-                    } catch (_) {}
-                  },
-                ),
+                if (isAuthenticated)
+                  _ActionItem(
+                    icon: Icons.logout,
+                    label: l10n.t('logout'),
+                    onTap: () {
+                      ref.read(authProvider.notifier).logout();
+                      Navigator.of(context).pop();
+                      try {
+                        context.go('/signin');
+                      } catch (_) {}
+                    },
+                  ),
               ],
             ),
           ),

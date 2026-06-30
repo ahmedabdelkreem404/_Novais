@@ -93,8 +93,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       // ── Auth ─────────────────────────────────────────────────────────────────
-      GoRoute(path: '/signin', builder: (_, __) => const SignInScreen()),
-      GoRoute(path: '/signup', builder: (_, __) => const SignUpScreen()),
       GoRoute(
           path: '/forgot-password',
           builder: (_, __) => const ForgotPasswordScreen()),
@@ -121,6 +119,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               path: '/audio', builder: (_, __) => const AudioCoursesScreen()),
           GoRoute(path: '/notes', builder: (_, __) => const NotesScreen()),
           GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
+          GoRoute(path: '/signin', builder: (_, __) => const SignInScreen()),
+          GoRoute(path: '/signup', builder: (_, __) => const SignUpScreen()),
         ],
       ),
 

@@ -27,9 +27,16 @@ const Navbar = () => {
         { name: t('nav.features'), hash: '#features' },
         { name: t('landing.sections.process.kicker'), hash: '#how-it-works' },
         { name: t('nav.pricing'), hash: '#pricing' },
+        { name: isRtl ? 'تحميل التطبيق' : 'Download App', path: '/download' },
     ];
 
-    const handleHashNav = (hash) => {
+    const handleHashNav = (link) => {
+        if (link.path) {
+            navigate(link.path);
+            setIsMobileOpen(false);
+            return;
+        }
+        const hash = link.hash;
         if (location.pathname !== '/') {
             navigate('/', { state: { scrollTo: hash } });
             setIsMobileOpen(false);
@@ -68,7 +75,7 @@ const Navbar = () => {
                             key={link.name}
                             type="button"
                             className="public-nav__link"
-                            onClick={() => handleHashNav(link.hash)}
+                            onClick={() => handleHashNav(link)}
                         >
                             {link.name}
                         </button>
@@ -125,7 +132,7 @@ const Navbar = () => {
                                     key={link.name}
                                     type="button"
                                     className="public-nav__mobileLink"
-                                    onClick={() => handleHashNav(link.hash)}
+                                    onClick={() => handleHashNav(link)}
                                 >
                                     {link.name}
                                 </button>

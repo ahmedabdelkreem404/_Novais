@@ -10,7 +10,7 @@ class MediaController extends Controller
     public function upload(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:mp4,mov,avi,wmv,mpeg,png,jpg,jpeg,gif,webp,exe,apk,zip|max:512000',
+            'file' => 'required|file|mimes:mp4,mov,avi,wmv,mpeg,png,jpg,jpeg,gif,webp,exe,apk,zip,ico,svg|max:512000',
         ]);
 
         $path = $request->file('file')->store('media', 'public');

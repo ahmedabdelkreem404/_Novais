@@ -37,11 +37,17 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       drawerScrimColor: Colors.black.withAlpha(isDark ? 170 : 110),
       drawer: const AppSidebar(),
       appBar: AppBar(
-        leading: IconButton(
-          key: const Key('shell_menu_button'),
-          icon: const Icon(Icons.menu),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        ),
+        leading: context.canPop()
+            ? IconButton(
+                key: const Key('shell_back_button'),
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => context.pop(),
+              )
+            : IconButton(
+                key: const Key('shell_menu_button'),
+                icon: const Icon(Icons.menu),
+                onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+              ),
         title: Row(
           children: [
             Image.asset(
@@ -59,6 +65,12 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         ),
         centerTitle: false,
         actions: [
+          IconButton(
+            key: const Key('shell_notification_button'),
+            tooltip: 'Notifications',
+            icon: const Icon(Icons.notifications_none_outlined),
+            onPressed: () => _showNotificationsDialog(context),
+          ),
           IconButton(
             icon: const Icon(Icons.home_outlined),
             onPressed: () => context.go('/dashboard'),
@@ -96,6 +108,92 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         ),
       ),
       body: widget.child,
+    );
+  }
+
+  void _showNotificationsDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.between,
+                  children: [
+                    Text(
+                      Localizations.localeOf(context).languageCode == 'ar'
+                          ? 'الإشعارات'
+                          : 'Notifications',
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const Divider(),
+                const SizedBox(height: 10),
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFF3B82F6),
+                    child:
+                        Icon(Icons.auto_awesome, color: Colors.white, size: 18),
+                  ),
+                  title: Text(
+                    Localizations.localeOf(context).languageCode == 'ar'
+                        ? 'مرحباً بك في نوفايس!'
+                        : 'Welcome to NOVAIS!',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  subtitle: Text(
+                    Localizations.localeOf(context).languageCode == 'ar'
+                        ? 'ابدأ بإنشاء دورتك التعليمية الأولى بالذكاء الاصطناعي الآن.'
+                        : 'Start generating your first AI-powered course today.',
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                  trailing: const Text('Just now',
+                      style: TextStyle(fontSize: 9, color: Colors.grey)),
+                ),
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Colors.green,
+                    child: Icon(Icons.check, color: Colors.white, size: 18),
+                  ),
+                  title: Text(
+                    Localizations.localeOf(context).languageCode == 'ar'
+                        ? 'تم تحديث إعدادات المنصة'
+                        : 'Platform Config Synced',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  subtitle: Text(
+                    Localizations.localeOf(context).languageCode == 'ar'
+                        ? 'تمت مزامنة تفضيلات المظهر والخطوط مع الخادم بنجاح.'
+                        : 'Branding and theme overrides synchronized with server.',
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                  trailing: const Text('5m ago',
+                      style: TextStyle(fontSize: 9, color: Colors.grey)),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
