@@ -19,6 +19,7 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
     ]);
     const [input, setInput] = useState('');
     const containerRef = useRef(null);
+    const constraintsRef = useRef(null);
     const [positionStyle, setPositionStyle] = useState({
         flexDirection: 'column',
         alignItems: 'flex-end'
@@ -34,7 +35,7 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
             const isLeft = rect.left < viewportWidth / 2;
             
             setPositionStyle({
-                flexDirection: isTop ? 'column' : 'column-reverse',
+                flexDirection: isTop ? 'column-reverse' : 'column',
                 alignItems: isLeft ? 'flex-start' : 'flex-end'
             });
         }
@@ -155,6 +156,7 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
 
     return (
         <>
+            <div ref={constraintsRef} className="fixed inset-6 pointer-events-none z-[120]" />
             {isOpen && (
                 <motion.div
                     initial={{ opacity: 0 }}
@@ -167,6 +169,8 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
             <motion.div
                 ref={containerRef}
                 drag
+                dragConstraints={constraintsRef}
+                dragElastic={0}
                 dragMomentum={false}
                 onDrag={updatePositionStyle}
                 className="fixed right-6 bottom-28 z-[130] flex gap-3 pointer-events-auto"

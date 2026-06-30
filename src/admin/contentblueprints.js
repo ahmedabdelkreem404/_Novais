@@ -326,8 +326,59 @@ const ContentBlueprints = () => {
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(false);
   const [advanced, setAdvanced] = useState(false);
+  const [jsonText, setJsonText] = useState('');
 
   const form = useMemo(() => normalizeBlueprint(selected || emptyBlueprint), [selected]);
+
+  useEffect(() => {
+    const currentJson = JSON.stringify({
+      output_structure: { ...(form.output_structure || {}), sections: form.required_sections },
+      validation_schema: form.validation_schema,
+      form_schema: form.form_schema,
+    }, null, 2);
+    setJsonText(currentJson);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.id, form.slug]);
+
+  useEffect(() => {
+    try {
+      const parsed = JSON.parse(jsonText);
+      const stringifiedForm = JSON.stringify({
+        output_structure: { ...(form.output_structure || {}), sections: form.required_sections },
+        validation_schema: form.validation_schema,
+        form_schema: form.form_schema,
+      });
+      const stringifiedParsed = JSON.stringify({
+        output_structure: { ...(parsed.output_structure || {}), sections: parsed.output_structure?.sections || form.required_sections },
+        validation_schema: parsed.validation_schema,
+        form_schema: parsed.form_schema,
+      });
+      if (stringifiedForm !== stringifiedParsed) {
+        setJsonText(JSON.stringify({
+          output_structure: { ...(form.output_structure || {}), sections: form.required_sections },
+          validation_schema: form.validation_schema,
+          form_schema: form.form_schema,
+        }, null, 2));
+      }
+    } catch (e) {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.required_sections, form.validation_schema, form.form_schema]);
+
+  const handleJsonChange = (val) => {
+    setJsonText(val);
+    try {
+      const parsed = JSON.parse(val);
+      if (parsed) {
+        setSelected((current) => ({
+          ...(current || emptyBlueprint),
+          output_structure: parsed.output_structure || current?.output_structure,
+          required_sections: parsed.output_structure?.sections || current?.required_sections,
+          validation_schema: parsed.validation_schema || current?.validation_schema,
+          form_schema: parsed.form_schema || current?.form_schema,
+        }));
+      }
+    } catch (e) {}
+  };
 
   const load = async () => {
     const res = await axios.get(`${serverURL}/admin/content-blueprints`, authConfig());
@@ -513,28 +564,81 @@ const ContentBlueprints = () => {
 
         {advanced && (
           <Card className="p-4">
-            <div className="mb-3 flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white">
-              <LuSettings2 size={16} /> {label('Advanced developer JSON', 'JSON للمطورين')}
+            <div className="mb-3 flex items-center justify-between text-sm font-black text-gray-900 dark:text-white">
+              <span className="flex items-center gap-2">
+                <LuSettings2 size={16} /> {label('Advanced developer JSON (Editable)', 'JSON للمطورين (قابل للتعديل)')}
+              </span>
+              <span className="text-[10px] text-gray-400 font-normal">
+                {label('Paste/Edit JSON to sync form fields instantly', 'الصق/عدل كود JSON لتحديث الحقول فورياً')}
+              </span>
             </div>
-            <pre className="max-h-[360px] overflow-auto rounded-lg bg-gray-950 p-4 text-xs text-gray-100">
-              {JSON.stringify({
-                output_structure: { ...(form.output_structure || {}), sections: form.required_sections },
-                validation_schema: form.validation_schema,
-                form_schema: form.form_schema,
-              }, null, 2)}
-            </pre>
+            <textarea
+              value={jsonText}
+              onChange={(e) => handleJsonChange(e.target.value)}
+              className="w-full min-h-[250px] font-mono text-xs rounded-lg bg-gray-950 p-4 text-green-400 border border-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500 custom-scrollbar"
+              dir="ltr"
+              placeholder='{ "form_schema": ... }'
+            />
           </Card>
         )}
 
         {preview && (
-          <Card className="p-4">
-            <pre className="max-h-[340px] overflow-auto whitespace-pre-wrap text-xs text-gray-700 dark:text-gray-200">
-              {JSON.stringify({
-                blueprint: form.slug,
-                required_sections: form.required_sections,
-                dynamic_fields: fieldsOf(form).map((field) => field.key),
-              }, null, 2)}
-            </pre>
+          <Card className="p-6 border-blue-500/20 bg-blue-50/10 dark:bg-blue-950/5">
+            <h3 className="text-sm font-black text-gray-900 dark:text-white mb-4 border-b pb-2 flex items-center gap-2">
+              <LuEye className="text-blue-500" />
+              {label('Live Generation Form Preview', 'معاينة حية لنموذج التخصيص')}
+            </h3>
+            <div className="space-y-4 max-w-xl">
+              {fieldsOf(form).length === 0 ? (
+                <p className="text-xs text-gray-500 italic">{label('No fields added yet.', 'لم يتم إضافة أي حقول بعد.')}</p>
+              ) : (
+                fieldsOf(form).map((field, idx) => {
+                  const lang = i18n.language?.startsWith('ar') ? 'ar' : 'en';
+                  const fieldLabel = field.label?.[lang] || field.label?.en || field.key;
+                  const fieldPlaceholder = field.placeholder?.[lang] || field.placeholder?.en || '';
+                  const required = !!field.required;
+
+                  return (
+                    <div key={idx} className="space-y-1">
+                      <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
+                        {fieldLabel} {required && <span className="text-red-500 font-bold">*</span>}
+                      </label>
+                      {field.type === 'textarea' ? (
+                        <textarea
+                          placeholder={fieldPlaceholder}
+                          disabled
+                          className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm dark:border-white/10 dark:bg-white/5"
+                        />
+                      ) : field.type === 'select' || field.type === 'multiselect' ? (
+                        <select
+                          disabled
+                          className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm dark:border-white/10 dark:bg-white/5"
+                        >
+                          <option value="">{fieldPlaceholder || label('-- Select option --', '-- اختر خياراً --')}</option>
+                          {asArray(field.options).map((opt, oIdx) => (
+                            <option key={oIdx} value={opt.value}>
+                              {opt.label?.[lang] || opt.label?.en || opt.value}
+                            </option>
+                          ))}
+                        </select>
+                      ) : field.type === 'boolean' ? (
+                        <div className="flex items-center gap-2 pt-1">
+                          <input type="checkbox" disabled className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                          <span className="text-xs text-gray-600 dark:text-gray-400">{label('Enabled', 'مفعّل')}</span>
+                        </div>
+                      ) : (
+                        <input
+                          type={field.type === 'number' ? 'number' : 'text'}
+                          placeholder={fieldPlaceholder}
+                          disabled
+                          className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm dark:border-white/10 dark:bg-white/5"
+                        />
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </Card>
         )}
 

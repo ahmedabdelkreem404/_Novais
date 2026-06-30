@@ -51,6 +51,15 @@ class ExportController extends Controller
         });
         $isRtl = $this->containsArabic($course->title . ' ' . $course->lessons->pluck('content')->implode(' '));
         $blueprintFields = $course->metadata['blueprint_fields'] ?? [];
+        if (($course->language ?? 'English') === 'English' && !empty($course->metadata['translated_fields'])) {
+            $tf = $course->metadata['translated_fields'];
+            if (!empty($tf['university_name'])) $blueprintFields['university'] = $tf['university_name'];
+            if (!empty($tf['faculty'])) $blueprintFields['faculty'] = $tf['faculty'];
+            if (!empty($tf['department'])) $blueprintFields['department'] = $tf['department'];
+            if (!empty($tf['specialization'])) $blueprintFields['specialization'] = $tf['specialization'];
+            if (!empty($tf['student_names'])) $blueprintFields['students'] = $tf['student_names'];
+            if (!empty($tf['supervisor_names'])) $blueprintFields['supervisors'] = $tf['supervisor_names'];
+        }
 
         $documentBlueprints = ['book', 'graduation-project', 'master-thesis'];
         $isDocument = in_array($course->blueprint_slug, $documentBlueprints, true);

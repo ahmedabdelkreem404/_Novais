@@ -12,11 +12,25 @@ class NoteController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Auth::user()->personalNotes();
+        $user = Auth::user();
+        $query = $user->personalNotes();
+        
         if ($request->has('course_id')) {
-            $query->where('course_id', $request->course_id);
+            $courseId = $request->course_id;
+            // Validate course ownership/authorization
+            $courseExists = Course::where('id', $courseId)->where('user_id', $user->id)->exists();
+            if (!$courseExists) {
+                return response()->json(['error' => 'common.unauthorized'], 403);
+            }
+            $query->where('course_id', $courseId);
         }
-        $notes = $query->with(['course:id,title', 'lesson:id,title'])->latest()->get();
+        
+        $limit = (int) $request->input('limit', 50);
+        $notes = $query->with(['course:id,title', 'lesson:id,title'])
+            ->latest()
+            ->take($limit)
+            ->get();
+            
         return response()->json($notes);
     }
 
