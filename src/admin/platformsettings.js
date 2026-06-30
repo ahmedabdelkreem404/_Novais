@@ -275,7 +275,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Platform Name (English)</label>
                   <input
                     type="text"
-                    value={form.branding_platform_name_en}
+                    value={form.branding_platform_name_en || ''}
                     onChange={(e) => setForm({ ...form, branding_platform_name_en: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -284,7 +284,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">اسم المنصة (العربية)</label>
                   <input
                     type="text"
-                    value={form.branding_platform_name_ar}
+                    value={form.branding_platform_name_ar || ''}
                     onChange={(e) => setForm({ ...form, branding_platform_name_ar: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -368,7 +368,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Hero Title (English)</label>
                   <input
                     type="text"
-                    value={form.web_hero_title_en}
+                    value={form.web_hero_title_en || ''}
                     onChange={(e) => setForm({ ...form, web_hero_title_en: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -377,7 +377,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">العنوان الرئيسي للهيرو (العربية)</label>
                   <input
                     type="text"
-                    value={form.web_hero_title_ar}
+                    value={form.web_hero_title_ar || ''}
                     onChange={(e) => setForm({ ...form, web_hero_title_ar: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -386,7 +386,7 @@ const PlatformSettings = () => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Hero Subtitle (English)</label>
                   <textarea
-                    value={form.web_hero_subtitle_en}
+                    value={form.web_hero_subtitle_en || ''}
                     onChange={(e) => setForm({ ...form, web_hero_subtitle_en: e.target.value })}
                     className="w-full min-h-[80px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -394,7 +394,7 @@ const PlatformSettings = () => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">الوصف الفرعي للهيرو (العربية)</label>
                   <textarea
-                    value={form.web_hero_subtitle_ar}
+                    value={form.web_hero_subtitle_ar || ''}
                     onChange={(e) => setForm({ ...form, web_hero_subtitle_ar: e.target.value })}
                     className="w-full min-h-[80px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -404,7 +404,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Hero Badge Label (English)</label>
                   <input
                     type="text"
-                    value={form.web_hero_badge_en}
+                    value={form.web_hero_badge_en || ''}
                     onChange={(e) => setForm({ ...form, web_hero_badge_en: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -413,7 +413,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">نص الشارة العلوية (العربية)</label>
                   <input
                     type="text"
-                    value={form.web_hero_badge_ar}
+                    value={form.web_hero_badge_ar || ''}
                     onChange={(e) => setForm({ ...form, web_hero_badge_ar: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -423,7 +423,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">CTA Button (English)</label>
                   <input
                     type="text"
-                    value={form.web_hero_cta_en}
+                    value={form.web_hero_cta_en || ''}
                     onChange={(e) => setForm({ ...form, web_hero_cta_en: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -432,7 +432,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">نص زر البدء (العربية)</label>
                   <input
                     type="text"
-                    value={form.web_hero_cta_ar}
+                    value={form.web_hero_cta_ar || ''}
                     onChange={(e) => setForm({ ...form, web_hero_cta_ar: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -728,7 +728,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Features Kicker (English)</label>
                   <input
                     type="text"
-                    value={form.landing_features_kicker_en}
+                    value={form.landing_features_kicker_en || ''}
                     onChange={(e) => setForm({ ...form, landing_features_kicker_en: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -737,7 +737,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">الكلام المساعد لقسم المميزات (العربية)</label>
                   <input
                     type="text"
-                    value={form.landing_features_kicker_ar}
+                    value={form.landing_features_kicker_ar || ''}
                     onChange={(e) => setForm({ ...form, landing_features_kicker_ar: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -747,7 +747,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Features Title (English) - use "|" to highlight accent</label>
                   <input
                     type="text"
-                    value={form.landing_features_title_en}
+                    value={form.landing_features_title_en || ''}
                     onChange={(e) => setForm({ ...form, landing_features_title_en: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -756,7 +756,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">عنوان المميزات (العربية) - استخدم "|" لتمييز الكلمة الملونة</label>
                   <input
                     type="text"
-                    value={form.landing_features_title_ar}
+                    value={form.landing_features_title_ar || ''}
                     onChange={(e) => setForm({ ...form, landing_features_title_ar: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -785,7 +785,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Steps Kicker (English)</label>
                   <input
                     type="text"
-                    value={form.landing_steps_kicker_en}
+                    value={form.landing_steps_kicker_en || ''}
                     onChange={(e) => setForm({ ...form, landing_steps_kicker_en: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -794,7 +794,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">نص الكيكر للخطوات (العربية)</label>
                   <input
                     type="text"
-                    value={form.landing_steps_kicker_ar}
+                    value={form.landing_steps_kicker_ar || ''}
                     onChange={(e) => setForm({ ...form, landing_steps_kicker_ar: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -804,7 +804,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Steps Title (English) - use "|" to highlight accent</label>
                   <input
                     type="text"
-                    value={form.landing_steps_title_en}
+                    value={form.landing_steps_title_en || ''}
                     onChange={(e) => setForm({ ...form, landing_steps_title_en: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -813,7 +813,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">عنوان الخطوات (العربية) - استخدم "|" لتمييز الكلمة الملونة</label>
                   <input
                     type="text"
-                    value={form.landing_steps_title_ar}
+                    value={form.landing_steps_title_ar || ''}
                     onChange={(e) => setForm({ ...form, landing_steps_title_ar: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -842,7 +842,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Reviews Kicker (English)</label>
                   <input
                     type="text"
-                    value={form.landing_reviews_kicker_en}
+                    value={form.landing_reviews_kicker_en || ''}
                     onChange={(e) => setForm({ ...form, landing_reviews_kicker_en: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -851,7 +851,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">نص الكيكر للآراء (العربية)</label>
                   <input
                     type="text"
-                    value={form.landing_reviews_kicker_ar}
+                    value={form.landing_reviews_kicker_ar || ''}
                     onChange={(e) => setForm({ ...form, landing_reviews_kicker_ar: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -861,7 +861,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Reviews Title (English) - use "|" to highlight accent</label>
                   <input
                     type="text"
-                    value={form.landing_reviews_title_en}
+                    value={form.landing_reviews_title_en || ''}
                     onChange={(e) => setForm({ ...form, landing_reviews_title_en: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -870,7 +870,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">عنوان الآراء (العربية) - استخدم "|" لتمييز الكلمة الملونة</label>
                   <input
                     type="text"
-                    value={form.landing_reviews_title_ar}
+                    value={form.landing_reviews_title_ar || ''}
                     onChange={(e) => setForm({ ...form, landing_reviews_title_ar: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -899,7 +899,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">CTA Title (English)</label>
                   <input
                     type="text"
-                    value={form.landing_cta_title_en}
+                    value={form.landing_cta_title_en || ''}
                     onChange={(e) => setForm({ ...form, landing_cta_title_en: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -908,7 +908,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">عنوان البانر (العربية)</label>
                   <input
                     type="text"
-                    value={form.landing_cta_title_ar}
+                    value={form.landing_cta_title_ar || ''}
                     onChange={(e) => setForm({ ...form, landing_cta_title_ar: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -917,7 +917,7 @@ const PlatformSettings = () => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">CTA Subtitle (English)</label>
                   <textarea
-                    value={form.landing_cta_subtitle_en}
+                    value={form.landing_cta_subtitle_en || ''}
                     onChange={(e) => setForm({ ...form, landing_cta_subtitle_en: e.target.value })}
                     className="w-full min-h-[80px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -925,7 +925,7 @@ const PlatformSettings = () => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">الوصف الفرعي للبانر (العربية)</label>
                   <textarea
-                    value={form.landing_cta_subtitle_ar}
+                    value={form.landing_cta_subtitle_ar || ''}
                     onChange={(e) => setForm({ ...form, landing_cta_subtitle_ar: e.target.value })}
                     className="w-full min-h-[80px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -935,7 +935,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">CTA Button (English)</label>
                   <input
                     type="text"
-                    value={form.landing_cta_btn_en}
+                    value={form.landing_cta_btn_en || ''}
                     onChange={(e) => setForm({ ...form, landing_cta_btn_en: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -944,7 +944,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">نص زر البانر (العربية)</label>
                   <input
                     type="text"
-                    value={form.landing_cta_btn_ar}
+                    value={form.landing_cta_btn_ar || ''}
                     onChange={(e) => setForm({ ...form, landing_cta_btn_ar: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -994,7 +994,7 @@ const PlatformSettings = () => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Instructions (English)</label>
                   <textarea
-                    value={form.offline_payment_instructions_en}
+                    value={form.offline_payment_instructions_en || ''}
                     onChange={(e) => setForm({ ...form, offline_payment_instructions_en: e.target.value })}
                     className="w-full min-h-[100px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -1002,7 +1002,7 @@ const PlatformSettings = () => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">تعليمات الدفع (العربية)</label>
                   <textarea
-                    value={form.offline_payment_instructions_ar}
+                    value={form.offline_payment_instructions_ar || ''}
                     onChange={(e) => setForm({ ...form, offline_payment_instructions_ar: e.target.value })}
                     className="w-full min-h-[100px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -1065,7 +1065,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Meta Title (English)</label>
                   <input
                     type="text"
-                    value={form.seo_meta_title_en}
+                    value={form.seo_meta_title_en || ''}
                     onChange={(e) => setForm({ ...form, seo_meta_title_en: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -1074,7 +1074,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">عنوان الميتا (العربية)</label>
                   <input
                     type="text"
-                    value={form.seo_meta_title_ar}
+                    value={form.seo_meta_title_ar || ''}
                     onChange={(e) => setForm({ ...form, seo_meta_title_ar: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -1083,7 +1083,7 @@ const PlatformSettings = () => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Meta Description (English)</label>
                   <textarea
-                    value={form.seo_meta_description_en}
+                    value={form.seo_meta_description_en || ''}
                     onChange={(e) => setForm({ ...form, seo_meta_description_en: e.target.value })}
                     className="w-full min-h-[80px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -1091,7 +1091,7 @@ const PlatformSettings = () => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">وصف الميتا (العربية)</label>
                   <textarea
-                    value={form.seo_meta_description_ar}
+                    value={form.seo_meta_description_ar || ''}
                     onChange={(e) => setForm({ ...form, seo_meta_description_ar: e.target.value })}
                     className="w-full min-h-[80px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -1101,7 +1101,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Meta Keywords (English)</label>
                   <input
                     type="text"
-                    value={form.seo_meta_keywords_en}
+                    value={form.seo_meta_keywords_en || ''}
                     onChange={(e) => setForm({ ...form, seo_meta_keywords_en: e.target.value })}
                     placeholder="ai, courses, learning"
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
@@ -1111,7 +1111,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">الكلمات الدلالية للميتا (العربية)</label>
                   <input
                     type="text"
-                    value={form.seo_meta_keywords_ar}
+                    value={form.seo_meta_keywords_ar || ''}
                     onChange={(e) => setForm({ ...form, seo_meta_keywords_ar: e.target.value })}
                     placeholder="تعليم, ذكاء اصطناعي, دورات"
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
@@ -1136,7 +1136,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Download Title (English)</label>
                   <input
                     type="text"
-                    value={form.download_page_title_en}
+                    value={form.download_page_title_en || ''}
                     onChange={(e) => setForm({ ...form, download_page_title_en: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -1145,7 +1145,7 @@ const PlatformSettings = () => {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">عنوان صفحة التحميل (العربية)</label>
                   <input
                     type="text"
-                    value={form.download_page_title_ar}
+                    value={form.download_page_title_ar || ''}
                     onChange={(e) => setForm({ ...form, download_page_title_ar: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
@@ -1154,7 +1154,7 @@ const PlatformSettings = () => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Download Description (English)</label>
                   <textarea
-                    value={form.download_page_desc_en}
+                    value={form.download_page_desc_en || ''}
                     onChange={(e) => setForm({ ...form, download_page_desc_en: e.target.value })}
                     className="w-full min-h-[80px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                   />
@@ -1162,7 +1162,7 @@ const PlatformSettings = () => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">وصف صفحة التحميل (العربية)</label>
                   <textarea
-                    value={form.download_page_desc_ar}
+                    value={form.download_page_desc_ar || ''}
                     onChange={(e) => setForm({ ...form, download_page_desc_ar: e.target.value })}
                     className="w-full min-h-[80px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
                     dir="rtl"
