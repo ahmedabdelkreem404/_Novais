@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,7 +16,14 @@ import '../../models/platform_config.dart';
 
 final plansProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final client = ref.read(apiClientProvider);
-  final res = await client.dio.get(ApiEndpoints.plans);
+  final res = await client.dio.get(
+    ApiEndpoints.plans,
+    options: Options(extra: {
+      'skipAuth': true,
+      'skipDevice': true,
+      'skipCache': true,
+    }),
+  );
   final data = res.data;
   if (data is List) return data.cast<Map<String, dynamic>>();
   return [];
@@ -1770,6 +1778,12 @@ class _HeroMediaWidgetState extends State<_HeroMediaWidget> {
   bool _videoEnded = false;
   bool _hasError = false;
 
+  int get _mediaCacheWidth {
+    final width = MediaQuery.sizeOf(context).width;
+    final ratio = MediaQuery.devicePixelRatioOf(context);
+    return (width * ratio).clamp(720, 1600).round();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1901,6 +1915,8 @@ class _HeroMediaWidgetState extends State<_HeroMediaWidget> {
               width: double.infinity,
               height: 240,
               fit: BoxFit.cover,
+              cacheWidth: _mediaCacheWidth,
+              filterQuality: FilterQuality.medium,
               errorBuilder: (_, __, ___) => _fallbackPlaceholder(),
             ),
           );
@@ -1920,6 +1936,8 @@ class _HeroMediaWidgetState extends State<_HeroMediaWidget> {
           width: double.infinity,
           height: 240,
           fit: BoxFit.cover,
+          cacheWidth: _mediaCacheWidth,
+          filterQuality: FilterQuality.medium,
           errorBuilder: (_, __, ___) => _fallbackPlaceholder(),
         ),
       );
@@ -1934,6 +1952,8 @@ class _HeroMediaWidgetState extends State<_HeroMediaWidget> {
           width: double.infinity,
           height: 240,
           fit: BoxFit.cover,
+          cacheWidth: _mediaCacheWidth,
+          filterQuality: FilterQuality.medium,
           errorBuilder: (_, __, ___) => _fallbackPlaceholder(),
         ),
       );
@@ -1950,6 +1970,8 @@ class _HeroMediaWidgetState extends State<_HeroMediaWidget> {
         width: double.infinity,
         height: 240,
         fit: BoxFit.cover,
+        cacheWidth: _mediaCacheWidth,
+        filterQuality: FilterQuality.medium,
         errorBuilder: (_, __, ___) => Container(
           width: double.infinity,
           height: 240,

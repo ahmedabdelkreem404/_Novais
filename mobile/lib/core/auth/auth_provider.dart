@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +9,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../api/api_client.dart';
 import '../cache/api_cache.dart';
+import '../debug/novais_diagnostics.dart';
 import '../../models/user.dart';
+
+const Duration _secureStorageTimeout = Duration(seconds: 2);
 
 // ─── Singleton providers ────────────────────────────────────────────────────
 
@@ -139,17 +144,30 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _checkToken() async {
+    final watch = NovaisDiagnostics.start('Auth', 'bootstrap token check');
     _debugAuth('bootstrap token check started');
     final token = await _safeRead('jwt_token');
     if (token == null) {
       _debugAuth('bootstrap token missing');
       state = state.copyWith(status: AuthStatus.unauthenticated);
+      NovaisDiagnostics.finish(
+        'Auth',
+        'bootstrap token check',
+        watch,
+        status: 'missing',
+      );
       return;
     }
     try {
       final user = await _fetchAndPersistUser();
       _debugAuth('bootstrap profile loaded user=${user.id}');
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
+      NovaisDiagnostics.finish(
+        'Auth',
+        'bootstrap token check',
+        watch,
+        status: 'authenticated',
+      );
     } catch (e) {
       _debugAuth('bootstrap profile failed: ${_debugError(e)}');
       await _clearSensitiveSession();
@@ -157,19 +175,28 @@ class AuthNotifier extends StateNotifier<AuthState> {
         status: AuthStatus.unauthenticated,
         error: 'Session expired. Please sign in again.',
       );
+      NovaisDiagnostics.finish(
+        'Auth',
+        'bootstrap token check',
+        watch,
+        status: 'failed',
+      );
     }
   }
 
   Future<String> _getDeviceId() async {
+    final watch = NovaisDiagnostics.start('Auth', 'device id load');
     String? deviceId = await _safeRead('device_id');
     if (deviceId == null) {
       deviceId = const Uuid().v4();
       await _safeWrite('device_id', deviceId);
     }
+    NovaisDiagnostics.finish('Auth', 'device id load', watch);
     return deviceId;
   }
 
   Future<bool> login(String email, String password) async {
+    final watch = NovaisDiagnostics.start('Auth', 'login flow');
     try {
       _debugAuth('login started for email=${_maskedEmail(email)}');
       final deviceId = await _getDeviceId();
@@ -189,6 +216,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _safeWrite('user_id', user.id.toString());
       _debugAuth('login completed user=${user.id}');
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
+      NovaisDiagnostics.finish('Auth', 'login flow', watch, status: 'ok');
       return true;
     } on Exception catch (e) {
       _debugAuth('login failed: ${_debugError(e)}');
@@ -197,6 +225,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         status: AuthStatus.unauthenticated,
         error: _friendlyAuthError(e),
       );
+      NovaisDiagnostics.finish('Auth', 'login flow', watch, status: 'failed');
       return false;
     }
   }
@@ -234,6 +263,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    final watch = NovaisDiagnostics.start('Auth', 'logout flow');
     _debugAuth('logout started');
     try {
       await _apiClient.dio.post('/auth/logout');
@@ -241,6 +271,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _clearSensitiveSession();
     _debugAuth('logout completed');
     state = const AuthState(status: AuthStatus.unauthenticated);
+    NovaisDiagnostics.finish('Auth', 'logout flow', watch);
   }
 
   Future<void> refreshUser() async {
@@ -254,6 +285,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<AppUser> _fetchAndPersistUser({dynamic fallback}) async {
+    final watch = NovaisDiagnostics.start('Auth', 'profile fetch');
     try {
       final res = await _apiClient.dio.get('/auth/user-profile');
       final user = AppUser.fromJson(res.data['user'] ?? res.data);
@@ -261,15 +293,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
         throw const FormatException('Profile response is incomplete.');
       }
       await _safeWrite('user_id', user.id.toString());
+      NovaisDiagnostics.finish('Auth', 'profile fetch', watch, status: 'api');
       return user;
     } catch (_) {
       if (fallback is Map && fallback.isNotEmpty) {
         final user = AppUser.fromJson(Map<String, dynamic>.from(fallback));
         if (user.id > 0 && user.email.isNotEmpty) {
           await _safeWrite('user_id', user.id.toString());
+          NovaisDiagnostics.finish(
+            'Auth',
+            'profile fetch',
+            watch,
+            status: 'fallback',
+          );
           return user;
         }
       }
+      NovaisDiagnostics.finish('Auth', 'profile fetch', watch,
+          status: 'failed');
       rethrow;
     }
   }
@@ -281,36 +322,48 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<String?> _safeRead(String key) async {
     try {
-      return await _storage.read(key: key);
+      return await _storage.read(key: key).timeout(_secureStorageTimeout);
+    } on TimeoutException {
+      _debugAuth('secure storage read timed out for $key');
+      return null;
     } on PlatformException catch (error) {
       _debugAuth('secure storage read failed for $key: ${error.code}');
-      await _safeDeleteAll();
+      unawaited(_safeDeleteAll());
       return null;
     }
   }
 
   Future<void> _safeWrite(String key, String value) async {
     try {
-      await _storage.write(key: key, value: value);
+      await _storage
+          .write(key: key, value: value)
+          .timeout(_secureStorageTimeout);
+    } on TimeoutException {
+      _debugAuth('secure storage write timed out for $key');
+      rethrow;
     } on PlatformException catch (error) {
       _debugAuth('secure storage write failed for $key: ${error.code}');
-      await _safeDeleteAll();
+      unawaited(_safeDeleteAll());
       rethrow;
     }
   }
 
   Future<void> _safeDelete(String key) async {
     try {
-      await _storage.delete(key: key);
+      await _storage.delete(key: key).timeout(_secureStorageTimeout);
+    } on TimeoutException {
+      _debugAuth('secure storage delete timed out for $key');
     } on PlatformException catch (error) {
       _debugAuth('secure storage delete failed for $key: ${error.code}');
-      await _safeDeleteAll();
+      unawaited(_safeDeleteAll());
     }
   }
 
   Future<void> _safeDeleteAll() async {
     try {
-      await _storage.deleteAll();
+      await _storage.deleteAll().timeout(_secureStorageTimeout);
+    } on TimeoutException {
+      _debugAuth('secure storage deleteAll timed out');
     } on PlatformException catch (error) {
       _debugAuth('secure storage deleteAll failed: ${error.code}');
     }
@@ -365,9 +418,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   void _debugAuth(String message) {
-    assert(() {
-      debugPrint('[NOVAIS auth] $message');
-      return true;
-    }());
+    NovaisDiagnostics.log('Auth', message);
   }
 }
