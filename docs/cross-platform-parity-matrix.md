@@ -12,6 +12,30 @@ Production readiness claim: **No-Go**.
 
 Reason: builds, unit tests, and focused web blocker closure now pass, but Android emulator parity acceptance plus installed Electron app acceptance are not yet complete across all required flows.
 
+Readiness score: **55/100**.
+
+### 2026-07-01 Final Gate Update
+
+Latest final-gate result remains **Still Draft / No-Go**.
+
+- Mobile fresh emulator proof: **Partial / Blocked**. APK install and first UI launch were proven on a wiped/cold-booted Pixel_8_Pro emulator, but dashboard auth/session/logout proof did not pass and startup remained slow with secure-storage timeouts.
+- Installed Electron desktop: **Partial / Blocked**. Required `npm run electron:build` failed on a locked `app.asar`; an alternate output produced installer/unpacked artifacts but exited 1 during NSIS cleanup. Unpacked `NOVAIS.exe` launched and responded, but installed acceptance was not proven.
+- AI output QA: **Blocked / Not Completed**. Full product-type matrix was not executed, so no production readiness claim is allowed.
+
+Evidence:
+
+```text
+.codex-run-logs/pr6-cross-platform-parity/mobile-emulator/fresh-device-proof/fresh-device-proof-report.md
+.codex-run-logs/pr6-cross-platform-parity/desktop-installed/desktop-installed-acceptance-report.md
+.codex-run-logs/pr6-ai-output-qa/ai-output-qa-report.md
+```
+
+Split decision: **Option B - split PR #6**. The stabilization plan is tracked in:
+
+```text
+docs/pr6-stabilization-and-split-plan.md
+```
+
 ## Status Legend
 
 - Implemented: code path exists and is integrated.
@@ -26,8 +50,9 @@ Reason: builds, unit tests, and focused web blocker closure now pass, but Androi
 |---|---:|---|---|
 | PR #6 state | Open Draft | `gh pr view 6` | Keep Draft. |
 | Mergeability | MERGEABLE | `gh pr view 6 --json mergeable` on 2026-07-01 | Still needs acceptance evidence before ready. |
-| PR size | Very large | 115 changed files, 12014 additions, 1697 deletions | Consider split plan if review becomes unsafe. |
+| PR size | Very large | 124 changed files, 37 commits | Split recommended. |
 | Production readiness | No-Go | This matrix | Needs web/mobile/desktop acceptance. |
+| Split decision | Recommended | `docs/pr6-stabilization-and-split-plan.md` | Option B: split PR #6 into focused Draft PRs. |
 | Existing docs preserved | Implemented | `docs/graduation-defense/*` | No issue found. |
 
 ## Verification Run On 2026-07-01
