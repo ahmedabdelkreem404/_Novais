@@ -20,6 +20,23 @@ final _courseDetailProvider =
   return Course.fromJson(res.data);
 });
 
+const _documentBlueprintSlugs = [
+  'book',
+  'graduation-project',
+  'master-thesis',
+  'research-paper',
+  'academic-course',
+  'study-review',
+];
+
+const _questionBlueprintSlugs = [
+  'question-bank',
+  'exam-builder',
+  'assignment-builder',
+];
+
+const _storyBlueprintSlugs = ['story'];
+
 class CourseScreen extends ConsumerStatefulWidget {
   final String courseId;
   const CourseScreen({super.key, required this.courseId});
@@ -166,18 +183,16 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
 
   Widget _buildCourse(
       BuildContext context, AppLocalizations l10n, Course course) {
+    final blueprintSlug = course.blueprintSlug;
+    final isDocument = _documentBlueprintSlugs.contains(blueprintSlug);
+    final isQuestion = _questionBlueprintSlugs.contains(blueprintSlug);
+    final isStory = _storyBlueprintSlugs.contains(blueprintSlug);
+    final isCourse = !isDocument && !isQuestion && !isStory;
     final lessons = course.lessons;
     final lesson = lessons.isNotEmpty ? lessons[_currentLesson] : null;
-    _scheduleLessonPreparation(course, lesson);
-
-    final blueprintSlug = course.blueprintSlug;
-    final documentSlugs = ['book', 'graduation-project', 'master-thesis'];
-    final questionSlugs = ['question-bank', 'exam-builder', 'assignment-builder'];
-    final storySlugs = ['story'];
-    final isDocument = documentSlugs.contains(blueprintSlug);
-    final isQuestion = questionSlugs.contains(blueprintSlug);
-    final isStory = storySlugs.contains(blueprintSlug);
-    final isCourse = !isDocument && !isQuestion && !isStory;
+    if (isCourse) {
+      _scheduleLessonPreparation(course, lesson);
+    }
 
     return Scaffold(
       appBar: AppBar(

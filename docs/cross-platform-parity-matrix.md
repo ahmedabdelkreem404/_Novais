@@ -68,6 +68,26 @@ Evidence root:
 
 These commands improve confidence but do not replace browser, emulator, and installed desktop acceptance evidence.
 
+### Mobile Emulator Acceptance Phase
+
+Evidence root:
+
+```text
+.codex-run-logs/pr6-cross-platform-parity/mobile-emulator
+```
+
+| Gate | Result | Evidence |
+|---|---:|---|
+| Emulator detected | Passed | Pixel_8_Pro, `emulator-5554`, Android 16 / API 36. |
+| APK build with `API_URL=http://10.0.2.2:8000/api` | Passed | `mobile-emulator/apk/app-x86_64-debug-after-mobile-viewer-fix.apk`. |
+| APK install | Passed | `mobile-emulator/logs/adb-install-after-mobile-viewer-fix.log`. |
+| App launch | Partial pass | No native crash; debug first launch was slow before landing rendered. |
+| Landing screenshot | Passed | `mobile-emulator/screenshots/02-after-120s.png`. |
+| Auth interactive acceptance | Blocked/Partial | Sign-in screen opened and fields were filled, but ADB-driven interaction did not complete dashboard login reliably. |
+| Dashboard/content/payment/notes/notifications emulator parity | Blocked | Requires completed interactive auth session. |
+| Mobile viewer logic audit | Fixed in code | `study-review` now classifies as document-style; non-course layouts no longer auto-trigger lesson preparation. |
+| Mobile static-data audit | Partial | `mobile-emulator/mobile-static-data-audit.md`. |
+
 ## Auth
 
 | Feature | Backend API | Web status | Mobile status | Desktop status | Same data source? | Evidence | Blockers |
@@ -99,7 +119,7 @@ These commands improve confidence but do not replace browser, emulator, and inst
 | Full Book | `/generate-course` with `book` | Implemented | Needs evidence | Same React flow | Yes | Blueprint defaults | Need live generation proof. |
 | Question Bank | `/generate-course` with `question-bank` | Implemented | Needs evidence | Same React flow | Yes | Blueprint/layout code | Need UI proof and answers proof. |
 | Exam Builder | `/generate-course` with `exam-builder` | Implemented | Needs evidence | Same React flow | Yes | Blueprint/layout code | Need marks/sections proof. |
-| Study Review | `/generate-course` with `study-review` | Passed focused web acceptance | Needs evidence | Same React flow | Yes | `web/blocker-closure/study-review-direct-load.png`, `study-review-refresh.png` | Mobile/desktop proof still missing. |
+| Study Review | `/generate-course` with `study-review` | Passed focused web acceptance | Code fixed, emulator proof still blocked | Same React flow | Yes | `web/blocker-closure/study-review-direct-load.png`, `study-review-refresh.png`; mobile code fix in `course_screen.dart` | Mobile interactive viewer proof still blocked by auth. |
 | Academic Course | `/generate-course` with `academic-course` | Implemented | Needs evidence | Same React flow | Yes | Blueprint defaults | Need live generation proof. |
 | Interactive Course | `/generate-course` with `interactive-practical-course` | Implemented | Needs evidence | Same React flow | Yes | Blueprint defaults | Need live generation proof. |
 | Egyptian Arabic content | language option + prompt instruction | Fixed and generated | Needs evidence | Same React flow | Yes | `public_id=16d74c1ce998219f1b4437da` | Backend now preserves `Egyptian Arabic`; mobile/desktop proof still missing. |
@@ -108,8 +128,8 @@ These commands improve confidence but do not replace browser, emulator, and inst
 
 | Feature | Backend API | Web status | Mobile status | Desktop status | Same data source? | Evidence | Blockers |
 |---|---|---:|---:|---:|---:|---|---|
-| Course mode | `/courses/{id}`, lesson endpoints | Passed focused missing-content fallback | Implemented | Same React bundle | Yes | `web/blocker-closure/normal-course-missing-lesson.png` | Mobile/desktop live saved-content proof still missing. |
-| Document/book mode | `/courses/{id}` + document layout | Passed focused direct-load proof | Partially implemented | Same React bundle | Yes | Viewer screenshots plus `web/blocker-closure/study-review-direct-load.png` | Mobile/desktop proof still missing. |
+| Course mode | `/courses/{id}`, lesson endpoints | Passed focused missing-content fallback | Implemented, needs emulator proof | Same React bundle | Yes | `web/blocker-closure/normal-course-missing-lesson.png` | Mobile/desktop live saved-content proof still missing. |
+| Document/book mode | `/courses/{id}` + document layout | Passed focused direct-load proof | Code fixed for Study Review/doc classification, needs emulator proof | Same React bundle | Yes | Viewer screenshots plus `web/blocker-closure/study-review-direct-load.png`; mobile code fix | Mobile/desktop proof still missing. |
 | Question/exam mode | `/courses/{id}` | Partial browser proof | Partially implemented | Same React bundle | Yes | Viewer screenshots for question bank and exam | Need answer-key interaction proof and mobile proof. |
 | Story mode | `/courses/{id}` | Implemented in web | Partially implemented | Same React bundle | Yes | `course.js` story reader | Need real generated story proof. |
 | Terminology labels | metadata/display terms | Partially implemented | Partially implemented | Same React bundle | Mostly | i18n changes and dynamic labels | Need raw-key/course-wording sweep. |
@@ -120,12 +140,12 @@ These commands improve confidence but do not replace browser, emulator, and inst
 
 | Feature | Backend API | Web status | Mobile status | Desktop status | Same data source? | Evidence | Blockers |
 |---|---|---:|---:|---:|---:|---|---|
-| Dashboard counts | `/auth/user-profile`, `/courses` | Implemented | Implemented, needs comparison | Same React bundle | Yes | Mobile screenshot shows usage card | Need web/mobile same-user comparison. |
+| Dashboard counts | `/auth/user-profile`, `/courses` | Implemented | Blocked pending interactive auth | Same React bundle | Yes | Mobile API/profile evidence captured, dashboard screenshot not completed | Need web/mobile same-user comparison. |
 | Usage limits | profile/subscription endpoints | Implemented | Implemented, needs comparison | Same React bundle | Yes | Backend subscription code | Need no fake/stale values proof. |
 | Subscriptions | payments/subscriptions | Implemented | Partially implemented | Same React bundle | Yes | Backend payment code | Need active plan comparison. |
 | My content list | `/courses` | Implemented | Implemented | Same React bundle | Yes | Code inspected | Need same-user web/mobile evidence. |
 | Content cards | `/courses` | Implemented | Needs evidence | Same React bundle | Yes | Code inspected | Need stale cache/logout check. |
-| Notes/notebook | notes endpoints | Passed focused CRUD/security acceptance | Partially implemented | Same React bundle | Yes | `web/blocker-closure/focused-results.json`, `PersonalNoteTest` | Mobile/desktop proof still missing. |
+| Notes/notebook | notes endpoints | Passed focused CRUD/security acceptance | Partially implemented; course tab uses filtered endpoint | Same React bundle | Yes | `web/blocker-closure/focused-results.json`, `PersonalNoteTest`; `course_screen.dart` uses `/notes?course_id=` | Mobile CRUD emulator proof blocked by auth. |
 | Chatbot | chat endpoint | Passed focused viewport/drag/outside-click acceptance | Needs evidence | Same React bundle | Yes | `web/blocker-closure/chatbot-final-checks.json` | Mobile/desktop proof still missing. |
 | Notifications | `/notifications`, `/notification-devices` | Implemented | Implemented in-app | Same React bundle | Yes | Notification docs/tests | Native push not proven. |
 
@@ -133,7 +153,7 @@ These commands improve confidence but do not replace browser, emulator, and inst
 
 | Feature | Backend API | Web status | Mobile status | Desktop status | Same data source? | Evidence | Blockers |
 |---|---|---:|---:|---:|---:|---|---|
-| Pricing | `/plans`, platform config | Passed backend-source web acceptance | Implemented/needs evidence | Same React bundle | Yes | `web/blocker-closure/pricing-recheck.png` | Need mobile pricing proof. |
+| Pricing | `/plans`, platform config | Passed backend-source web acceptance | Implemented/needs emulator evidence | Same React bundle | Yes | `web/blocker-closure/pricing-recheck.png`; mobile pricing code uses `/plans` | Mobile pricing screenshot blocked by auth; landing fallback constants remain risk. |
 | Paymob card | `/payment/checkout`, webhook | Implemented | Partially implemented | Same React bundle | Yes | Payment controller/tests | Need safe checkout/browser proof, no production claim. |
 | Wallet | Paymob wallet integration | Implemented in backend | Needs evidence | Same React bundle | Yes | Paymob service | Need config/checkout proof. |
 | Vodafone Cash offline | `/offline-payments` | Implemented | Needs emulator proof | Same React bundle | Yes | Offline controller/tests | Need receiver config/unavailable proof. |
@@ -159,12 +179,12 @@ These commands improve confidence but do not replace browser, emulator, and inst
 | Area | Current judgment | Notes |
 |---|---:|---|
 | Web business data | Focused blocker closure passed | Download fallbacks and pricing source were rechecked under `web/blocker-closure`; broader mobile/desktop parity still pending. |
-| Mobile business data | Needs evidence | API client exists, cache exists, but emulator parity comparison still required. |
+| Mobile business data | Partial / blocked | APK build/install/launch and API source checks passed; interactive auth/dashboard parity still blocked. |
 | Desktop business data | Needs evidence | Should match web because Electron wraps React, but installed app proof required. |
-| Static pricing | Passed focused web audit | Pricing matched backend `/plans` values `0`, `60`, `85`. |
+| Static pricing | Web passed; mobile partial | Web pricing matched backend `/plans`; mobile pricing screen uses `/plans`, but landing still has fallback legacy constants if plan data is missing. |
 | Static blueprint options | Mostly backend-driven | Mobile/web fetch blueprints; still verify no stale hardcoded options. |
 | Static legal/download config | Download passed focused web audit | Fake installer/APK fallbacks removed; legal pages still need full platform acceptance. |
-| Cache after logout | Needs evidence | Must verify no previous-user data on mobile/web. |
+| Cache after logout | Needs evidence | Must verify no previous-user data on mobile/web; mobile logout/cache isolation blocked by incomplete interactive auth. |
 
 ## Required Evidence Paths
 
@@ -192,16 +212,19 @@ Those screenshots prove that some surfaces can render, but they are **not** a co
 
 ## Current Blockers Before Ready For Review
 
-1. Mobile emulator acceptance needs same-user comparison with web for dashboard, settings, blueprints, viewer modes, payments, notes, and notifications.
-2. Desktop needs built installed app launch evidence, not just Electron dev/wrapper screenshot.
-3. Legal/CMS/contact/social/payment flows still need cross-platform acceptance screenshots and network proof.
-4. Broader static-data sweep should continue during mobile/desktop parity, even though web download/pricing blockers were closed.
-5. PR is still Draft and should remain Draft until mobile and installed desktop evidence passes.
+1. Mobile emulator acceptance is **Partial/Blocked**: APK build/install/launch passed, but interactive auth did not reach dashboard reliably, so dashboard/content/payment/notes/notifications cannot be marked passed.
+2. Mobile viewer logic was fixed for Study Review/document mode, but still needs emulator screenshots after auth is accepted.
+3. Desktop needs built installed app launch evidence, not just Electron dev/wrapper screenshot.
+4. Legal/CMS/contact/social/payment flows still need cross-platform acceptance screenshots and network proof.
+5. Broader static-data sweep should continue during mobile/desktop parity, even though web download/pricing blockers were closed.
+6. PR is still Draft and should remain Draft until mobile and installed desktop evidence passes.
 
 ## Production Readiness Score
 
 Current confidence as a Draft PR: **88-90% implementation progress**.
 
 Current production-proven confidence: **78-82%**, because focused web blockers are closed but mobile/desktop acceptance is still missing.
+
+Mobile production-proven confidence after this phase: **45-55%**. Build/install/launch and source checks passed, but core authenticated emulator parity is not complete.
 
 Production decision: **No-Go** until web + mobile emulator + installed desktop acceptance evidence is complete.

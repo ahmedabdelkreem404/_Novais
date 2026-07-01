@@ -163,7 +163,14 @@ class NvCourseCard extends StatelessWidget {
         ? null
         : ApiClient.resolveMediaUrl(course.imageUrl!);
 
-    final isDocument = ['book', 'graduation-project', 'master-thesis'].contains(course.blueprintSlug);
+    final isDocument = [
+      'book',
+      'graduation-project',
+      'master-thesis',
+      'research-paper',
+      'academic-course',
+      'study-review',
+    ].contains(course.blueprintSlug);
 
     String badgeText = _courseTypeLabel(course.type, l10n);
     Color badgeColor = const Color(0xFF2563EB); // Blue-600
