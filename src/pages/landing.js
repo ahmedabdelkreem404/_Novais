@@ -77,21 +77,62 @@ const Landing = () => {
     const [plans, setPlans] = React.useState([]);
     const [config, setConfig] = React.useState(null);
 
+    const resolveMediaUrl = React.useCallback((url, version = config?.settings_version) => {
+        if (!url) return '';
+        const resolved = url.startsWith('http') ? url : `${serverURL.replace('/api', '')}${url}`;
+        if (!version) return resolved;
+
+        try {
+            const parsed = new URL(resolved, window.location.origin);
+            parsed.searchParams.set('v', version);
+            return parsed.toString();
+        } catch (_) {
+            const separator = resolved.includes('?') ? '&' : '?';
+            return `${resolved}${separator}v=${encodeURIComponent(version)}`;
+        }
+    }, [config?.settings_version]);
+
     React.useEffect(() => {
-        const fetchPlansAndConfig = async () => {
+        let mounted = true;
+
+        const fetchPlans = async () => {
             try {
-                const [plansRes, configRes] = await Promise.all([
-                    axios.get(`${serverURL}/plans`),
-                    axios.get(`${serverURL}/platform-settings`)
-                ]);
-                setPlans(Array.isArray(plansRes.data) ? plansRes.data : []);
-                setConfig(configRes.data);
+                const plansRes = await axios.get(`${serverURL}/plans`);
+                if (mounted) setPlans(Array.isArray(plansRes.data) ? plansRes.data : []);
             } catch (err) {
-                console.error("Failed to fetch plans or config", err);
+                console.error("Failed to fetch plans", err);
             }
         };
-        fetchPlansAndConfig();
+
+        const fetchConfig = async () => {
+            try {
+                const configRes = await axios.get(`${serverURL}/platform-settings`);
+                if (mounted) setConfig(configRes.data);
+            } catch (err) {
+                console.error("Failed to fetch platform config", err);
+            }
+        };
+
+        fetchPlans();
+        fetchConfig();
+        const refreshId = window.setInterval(fetchConfig, 15000);
+        window.addEventListener('focus', fetchConfig);
+
+        return () => {
+            mounted = false;
+            window.clearInterval(refreshId);
+            window.removeEventListener('focus', fetchConfig);
+        };
     }, []);
+
+    React.useEffect(() => {
+        setVideoEnded(false);
+    }, [
+        config?.hero_media_type,
+        config?.hero_media_url,
+        config?.hero_video_fallback_image,
+        config?.settings_version
+    ]);
 
     const getPlan = (slug) => (Array.isArray(plans) ? plans : []).find(p => p.slug === slug) || {};
     const lang = i18n.language.startsWith('ar') ? 'ar' : 'en';
@@ -230,13 +271,13 @@ const Landing = () => {
                              !videoEnded ? (
                                 <video
                                     className="landing-preview__image w-full rounded-2xl object-cover shadow-2xl"
-                                    src={config.hero_media_url && config.hero_media_url.startsWith('http') ? config.hero_media_url : `${serverURL.replace('/api', '')}${config.hero_media_url}`}
+                                    src={resolveMediaUrl(config.hero_media_url)}
                                     autoPlay={config.hero_video_autoplay !== false}
                                     muted={config.hero_media_muted !== false}
                                     loop={config.hero_video_loop_mode === 'loop_forever'}
                                     controls={config.hero_video_controls_hidden === false}
                                     playsInline
-                                    poster={config.hero_media_poster ? (config.hero_media_poster.startsWith('http') ? config.hero_media_poster : `${serverURL.replace('/api', '')}${config.hero_media_poster}`) : undefined}
+                                    poster={config.hero_media_poster ? resolveMediaUrl(config.hero_media_poster) : undefined}
                                     onEnded={() => {
                                         if (config.hero_video_loop_mode === 'play_once_then_image') {
                                             setVideoEnded(true);
@@ -251,9 +292,9 @@ const Landing = () => {
                                     className="landing-preview__image w-full rounded-2xl object-cover shadow-2xl"
                                     src={
                                         (videoEnded && config?.hero_video_fallback_image) 
-                                            ? (config.hero_video_fallback_image.startsWith('http') ? config.hero_video_fallback_image : `${serverURL.replace('/api', '')}${config.hero_video_fallback_image}`)
+                                            ? resolveMediaUrl(config.hero_video_fallback_image)
                                             : (config?.hero_media_url && config?.hero_media_type === 'image')
-                                                ? (config.hero_media_url.startsWith('http') ? config.hero_media_url : `${serverURL.replace('/api', '')}${config.hero_media_url}`)
+                                                ? resolveMediaUrl(config.hero_media_url)
                                                 : slideOne
                                     }
                                     alt="Platform Preview"

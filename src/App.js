@@ -117,10 +117,12 @@ function App() {
   const { serverURL } = require('./constants');
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchThemeMode = async () => {
       try {
         const res = await axios.get(`${serverURL}/platform-settings`);
-        if (res.data) {
+        if (mounted && res.data) {
           const d = res.data;
 
           // Theme
@@ -160,7 +162,16 @@ function App() {
         console.error("Failed to fetch platform config", err);
       }
     };
+
     fetchThemeMode();
+    const refreshId = window.setInterval(fetchThemeMode, 15000);
+    window.addEventListener('focus', fetchThemeMode);
+
+    return () => {
+      mounted = false;
+      window.clearInterval(refreshId);
+      window.removeEventListener('focus', fetchThemeMode);
+    };
   }, [serverURL]);
 
 

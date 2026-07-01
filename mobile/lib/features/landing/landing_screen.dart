@@ -434,7 +434,8 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
                               if (showThemeToggle) ...[
                                 const SizedBox(width: 4),
                                 IconButton(
-                                  tooltip: isAr ? 'تبديل المظهر' : 'Toggle theme',
+                                  tooltip:
+                                      isAr ? 'تبديل المظهر' : 'Toggle theme',
                                   onPressed: () => ref
                                       .read(themeModeProvider.notifier)
                                       .toggle(),
@@ -617,7 +618,8 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
               width: double.infinity,
               height: 240,
               child: configAsync.maybeWhen(
-                data: (config) => _HeroMediaWidget(config: config, isDark: isDark),
+                data: (config) =>
+                    _HeroMediaWidget(config: config, isDark: isDark),
                 orElse: () => ClipRRect(
                   borderRadius: BorderRadius.circular(20),
                   child: Image.asset(
@@ -643,7 +645,8 @@ class _LandingScreenState extends ConsumerState<LandingScreen>
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.laptop_mac,
-                                size: 48, color: AppColors.primary.withAlpha(150)),
+                                size: 48,
+                                color: AppColors.primary.withAlpha(150)),
                             const SizedBox(height: 8),
                             Text('NOVAIS Platform Preview',
                                 style: TextStyle(
@@ -1783,7 +1786,7 @@ class _HeroMediaWidgetState extends State<_HeroMediaWidget> {
 
     if (!isVideo) return;
 
-    final resolvedUrl = ApiClient.resolveMediaUrl(config.heroMediaUrl!);
+    final resolvedUrl = _versionedMediaUrl(config.heroMediaUrl!);
 
     _controller = VideoPlayerController.networkUrl(Uri.parse(resolvedUrl))
       ..initialize().then((_) {
@@ -1825,11 +1828,46 @@ class _HeroMediaWidgetState extends State<_HeroMediaWidget> {
 
   @override
   void dispose() {
+    _disposeVideo();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _HeroMediaWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.config.heroMediaType != widget.config.heroMediaType ||
+        oldWidget.config.heroMediaUrl != widget.config.heroMediaUrl ||
+        oldWidget.config.heroVideoEnabled != widget.config.heroVideoEnabled ||
+        oldWidget.config.heroVideoLoopMode != widget.config.heroVideoLoopMode ||
+        oldWidget.config.settingsVersion != widget.config.settingsVersion) {
+      _disposeVideo();
+      _isInitialized = false;
+      _videoEnded = false;
+      _hasError = false;
+      _initializeVideo();
+    }
+  }
+
+  void _disposeVideo() {
     if (_controller != null) {
       _controller!.removeListener(_videoListener);
       _controller!.dispose();
+      _controller = null;
     }
-    super.dispose();
+  }
+
+  String _versionedMediaUrl(String url) {
+    final resolvedUrl = ApiClient.resolveMediaUrl(url);
+    final version = widget.config.settingsVersion;
+    if (version == null || version.isEmpty) return resolvedUrl;
+
+    final uri = Uri.tryParse(resolvedUrl);
+    if (uri == null) return resolvedUrl;
+
+    return uri.replace(queryParameters: {
+      ...uri.queryParameters,
+      'v': version,
+    }).toString();
   }
 
   @override
@@ -1855,7 +1893,7 @@ class _HeroMediaWidgetState extends State<_HeroMediaWidget> {
         );
       } else {
         if (config.heroVideoPoster != null) {
-          final posterUrl = ApiClient.resolveMediaUrl(config.heroVideoPoster!);
+          final posterUrl = _versionedMediaUrl(config.heroVideoPoster!);
           return ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: Image.network(
@@ -1874,7 +1912,7 @@ class _HeroMediaWidgetState extends State<_HeroMediaWidget> {
     final hasImage =
         config.heroMediaUrl != null && config.heroMediaType == 'image';
     if (hasImage) {
-      final imageUrl = ApiClient.resolveMediaUrl(config.heroMediaUrl!);
+      final imageUrl = _versionedMediaUrl(config.heroMediaUrl!);
       return ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Image.network(
@@ -1888,8 +1926,7 @@ class _HeroMediaWidgetState extends State<_HeroMediaWidget> {
     }
 
     if (_videoEnded && config.heroVideoFallbackImage != null) {
-      final fallbackUrl =
-          ApiClient.resolveMediaUrl(config.heroVideoFallbackImage!);
+      final fallbackUrl = _versionedMediaUrl(config.heroVideoFallbackImage!);
       return ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Image.network(

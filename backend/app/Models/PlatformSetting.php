@@ -305,7 +305,22 @@ class PlatformSetting extends Model
     public static function publicConfig(): array
     {
         return Cache::remember(self::CACHE_KEY, self::CACHE_TTL, function () {
-            return static::sanitizeForPublic(static::currentConfig());
+            $row = static::firstOrCreate(
+                ['key' => self::CONFIG_KEY],
+                [
+                    'value' => static::defaults(),
+                    'group' => 'platform',
+                    'is_public' => true,
+                    'description' => 'Backend-driven platform configuration shared by web, mobile, and desktop.',
+                ]
+            );
+
+            $config = static::sanitizeForPublic(
+                array_replace_recursive(static::defaults(), $row->value ?? [])
+            );
+            $config['settings_version'] = sha1(json_encode($config));
+
+            return $config;
         });
     }
 

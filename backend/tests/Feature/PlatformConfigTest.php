@@ -54,6 +54,7 @@ class PlatformConfigTest extends TestCase
         $this->getJson('/api/platform-settings')
             ->assertOk()
             ->assertJsonPath('course_creation_enabled', true)
+            ->assertJsonStructure(['settings_version'])
             ->assertJsonMissingPath('secret_private_key');
     }
 
