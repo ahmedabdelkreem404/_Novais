@@ -58,7 +58,7 @@ Evidence root:
 |---|---:|---|
 | `php artisan migrate:fresh --seed --force` | Passed | Fresh schema and seed completed after the notes index change. |
 | `$env:CI='true'; npm run build` | Passed | CRA production build compiled successfully. Large bundle advisory remains. |
-| `php artisan test` | Passed | 97 tests, 314 assertions. |
+| `php artisan test` | Passed | 97 tests, 315 assertions during auth-closure rerun. |
 | `flutter analyze` | Passed | No issues found. Dependency outdated notices remain. |
 | `flutter test` | Passed | 18 tests passed. |
 | `composer audit --format=json` | Passed | No advisories, no abandoned packages. |
@@ -84,6 +84,7 @@ Evidence root:
 | App launch | Partial pass | No native crash; debug first launch was slow before landing rendered. |
 | Landing screenshot | Passed | `mobile-emulator/screenshots/02-after-120s.png`. |
 | Auth interactive acceptance | Blocked/Partial | Sign-in screen opened and fields were filled, but ADB-driven interaction did not complete dashboard login reliably. |
+| Auth closure rerun | Partial/Blocked | `mobile-emulator/auth-closure` evidence captured. Found real `flutter_secure_storage` `BadPaddingException` before auth request; code now catches corrupt secure storage reads and avoids token printing. Follow-up emulator run still hit an app ANR during ADB menu/login automation, so dashboard acceptance is not closed. |
 | Dashboard/content/payment/notes/notifications emulator parity | Blocked | Requires completed interactive auth session. |
 | Mobile viewer logic audit | Fixed in code | `study-review` now classifies as document-style; non-course layouts no longer auto-trigger lesson preparation. |
 | Mobile static-data audit | Partial | `mobile-emulator/mobile-static-data-audit.md`. |
@@ -92,11 +93,11 @@ Evidence root:
 
 | Feature | Backend API | Web status | Mobile status | Desktop status | Same data source? | Evidence | Blockers |
 |---|---|---:|---:|---:|---:|---|---|
-| Login | `/auth/login` | Implemented, needs acceptance | Implemented, needs emulator proof | Same React flow, needs installed app proof | Yes | Code/routes inspected | Need real login flow screenshots/logs on all platforms. |
+| Login | `/auth/login` | Implemented, needs acceptance | Partial: secure-storage corruption handling added; emulator dashboard proof still blocked | Same React flow, needs installed app proof | Yes | `mobile/lib/core/auth/auth_provider.dart`, `mobile/lib/core/api/api_client.dart`, `mobile-emulator/auth-closure/logs/logcat-user-a-login-dashboard.txt` | Need successful emulator dashboard screenshot/log after ANR is resolved. |
 | Register | `/auth/register` | Implemented, needs acceptance | Implemented, needs emulator proof | Same React flow, needs installed app proof | Yes | API inventory/routes | Need real register flow or test account proof. |
 | Logout | `/auth/logout` | Implemented, needs acceptance | Implemented, needs emulator proof | Same React flow, needs installed app proof | Yes | Auth providers/interceptors | Need stale-cache check after logout. |
 | Token/session refresh | `/auth/refresh`, `/auth/user-profile` | Partially implemented | Partially implemented | Same React flow | Yes | JWT auth code | Need force refresh/reopen proof. |
-| Device id | `X-Device-ID` via middleware | Implemented | Implemented | Same as web | Yes | `FingerprintService`, mobile Dio interceptor | Need network log proof. |
+| Device id | `X-Device-ID` via middleware | Implemented | Implemented with corrupt-storage fallback | Same as web | Yes | `FingerprintService`, mobile Dio interceptor, auth-closure secure storage fix | Need successful network log proof from emulator login. |
 
 ## Platform Settings / Branding
 
@@ -212,7 +213,7 @@ Those screenshots prove that some surfaces can render, but they are **not** a co
 
 ## Current Blockers Before Ready For Review
 
-1. Mobile emulator acceptance is **Partial/Blocked**: APK build/install/launch passed, but interactive auth did not reach dashboard reliably, so dashboard/content/payment/notes/notifications cannot be marked passed.
+1. Mobile emulator acceptance is **Partial/Blocked**: APK build/install/launch passed. Auth closure found and fixed a corrupt secure-storage `BadPaddingException` path, but the follow-up emulator run hit an app ANR during ADB menu/login automation, so dashboard/content/payment/notes/notifications still cannot be marked passed.
 2. Mobile viewer logic was fixed for Study Review/document mode, but still needs emulator screenshots after auth is accepted.
 3. Desktop needs built installed app launch evidence, not just Electron dev/wrapper screenshot.
 4. Legal/CMS/contact/social/payment flows still need cross-platform acceptance screenshots and network proof.
@@ -225,6 +226,6 @@ Current confidence as a Draft PR: **88-90% implementation progress**.
 
 Current production-proven confidence: **78-82%**, because focused web blockers are closed but mobile/desktop acceptance is still missing.
 
-Mobile production-proven confidence after this phase: **45-55%**. Build/install/launch and source checks passed, but core authenticated emulator parity is not complete.
+Mobile production-proven confidence after auth-closure work: **50-60%**. Build/install/launch, source checks, secure-storage hardening, and tests passed, but core authenticated emulator parity is still not complete because dashboard proof remains blocked by ANR/interactive automation.
 
 Production decision: **No-Go** until web + mobile emulator + installed desktop acceptance evidence is complete.

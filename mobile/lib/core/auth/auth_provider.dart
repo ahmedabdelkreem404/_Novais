@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -137,33 +139,39 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _checkToken() async {
-    final token = await _storage.read(key: 'jwt_token');
+    _debugAuth('bootstrap token check started');
+    final token = await _safeRead('jwt_token');
     if (token == null) {
+      _debugAuth('bootstrap token missing');
       state = state.copyWith(status: AuthStatus.unauthenticated);
       return;
     }
     try {
-      final res = await _apiClient.dio.get('/auth/user-profile');
-      final user = AppUser.fromJson(res.data['user'] ?? res.data);
-      await _storage.write(key: 'user_id', value: user.id.toString());
+      final user = await _fetchAndPersistUser();
+      _debugAuth('bootstrap profile loaded user=${user.id}');
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
-    } catch (_) {
-      await _storage.delete(key: 'jwt_token');
-      state = state.copyWith(status: AuthStatus.unauthenticated);
+    } catch (e) {
+      _debugAuth('bootstrap profile failed: ${_debugError(e)}');
+      await _clearSensitiveSession();
+      state = const AuthState(
+        status: AuthStatus.unauthenticated,
+        error: 'Session expired. Please sign in again.',
+      );
     }
   }
 
   Future<String> _getDeviceId() async {
-    String? deviceId = await _storage.read(key: 'device_id');
+    String? deviceId = await _safeRead('device_id');
     if (deviceId == null) {
       deviceId = const Uuid().v4();
-      await _storage.write(key: 'device_id', value: deviceId);
+      await _safeWrite('device_id', deviceId);
     }
     return deviceId;
   }
 
   Future<bool> login(String email, String password) async {
     try {
+      _debugAuth('login started for email=${_maskedEmail(email)}');
       final deviceId = await _getDeviceId();
       final res = await _apiClient.dio.post('/auth/login', data: {
         'email': email,
@@ -171,13 +179,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
         'device_id': deviceId,
       });
       final token = res.data['token'] ?? res.data['access_token'];
-      await _storage.write(key: 'jwt_token', value: token.toString());
-      final user = AppUser.fromJson(res.data['user'] ?? {});
-      await _storage.write(key: 'user_id', value: user.id.toString());
+      if (token == null || token.toString().isEmpty) {
+        throw const FormatException('Login response did not include a token.');
+      }
+      await _safeWrite('jwt_token', token.toString());
+      final user = await _fetchAndPersistUser(
+        fallback: res.data is Map ? res.data['user'] : null,
+      );
+      await _safeWrite('user_id', user.id.toString());
+      _debugAuth('login completed user=${user.id}');
       state = state.copyWith(status: AuthStatus.authenticated, user: user);
       return true;
     } on Exception catch (e) {
-      state = state.copyWith(error: e.toString());
+      _debugAuth('login failed: ${_debugError(e)}');
+      await _safeDelete('jwt_token');
+      state = AuthState(
+        status: AuthStatus.unauthenticated,
+        error: _friendlyAuthError(e),
+      );
       return false;
     }
   }
@@ -191,9 +210,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final res = await _apiClient.dio.post('/auth/register', data: payload);
       final token = res.data['token'] ?? res.data['access_token'];
       if (token != null) {
-        await _storage.write(key: 'jwt_token', value: token.toString());
+        await _safeWrite('jwt_token', token.toString());
         final user = AppUser.fromJson(res.data['user'] ?? {});
-        await _storage.write(key: 'user_id', value: user.id.toString());
+        await _safeWrite('user_id', user.id.toString());
         state = state.copyWith(status: AuthStatus.authenticated, user: user);
       } else {
         // Needs email verification
@@ -215,20 +234,140 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    _debugAuth('logout started');
     try {
       await _apiClient.dio.post('/auth/logout');
     } catch (_) {}
-    await ApiCache.clearAll();
-    await _storage.deleteAll();
+    await _clearSensitiveSession();
+    _debugAuth('logout completed');
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
   Future<void> refreshUser() async {
     try {
+      final user = await _fetchAndPersistUser();
+      state = state.copyWith(user: user);
+    } catch (e) {
+      _debugAuth('refresh profile failed: ${_debugError(e)}');
+      state = state.copyWith(error: _friendlyAuthError(e));
+    }
+  }
+
+  Future<AppUser> _fetchAndPersistUser({dynamic fallback}) async {
+    try {
       final res = await _apiClient.dio.get('/auth/user-profile');
       final user = AppUser.fromJson(res.data['user'] ?? res.data);
-      await _storage.write(key: 'user_id', value: user.id.toString());
-      state = state.copyWith(user: user);
-    } catch (_) {}
+      if (user.id <= 0 || user.email.isEmpty) {
+        throw const FormatException('Profile response is incomplete.');
+      }
+      await _safeWrite('user_id', user.id.toString());
+      return user;
+    } catch (_) {
+      if (fallback is Map && fallback.isNotEmpty) {
+        final user = AppUser.fromJson(Map<String, dynamic>.from(fallback));
+        if (user.id > 0 && user.email.isNotEmpty) {
+          await _safeWrite('user_id', user.id.toString());
+          return user;
+        }
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _clearSensitiveSession() async {
+    await ApiCache.clearAll();
+    await _safeDeleteAll();
+  }
+
+  Future<String?> _safeRead(String key) async {
+    try {
+      return await _storage.read(key: key);
+    } on PlatformException catch (error) {
+      _debugAuth('secure storage read failed for $key: ${error.code}');
+      await _safeDeleteAll();
+      return null;
+    }
+  }
+
+  Future<void> _safeWrite(String key, String value) async {
+    try {
+      await _storage.write(key: key, value: value);
+    } on PlatformException catch (error) {
+      _debugAuth('secure storage write failed for $key: ${error.code}');
+      await _safeDeleteAll();
+      rethrow;
+    }
+  }
+
+  Future<void> _safeDelete(String key) async {
+    try {
+      await _storage.delete(key: key);
+    } on PlatformException catch (error) {
+      _debugAuth('secure storage delete failed for $key: ${error.code}');
+      await _safeDeleteAll();
+    }
+  }
+
+  Future<void> _safeDeleteAll() async {
+    try {
+      await _storage.deleteAll();
+    } on PlatformException catch (error) {
+      _debugAuth('secure storage deleteAll failed: ${error.code}');
+    }
+  }
+
+  String _friendlyAuthError(Object error) {
+    if (error is DioException) {
+      final status = error.response?.statusCode;
+      final data = error.response?.data;
+      if (data is Map) {
+        final message = data['message'] ?? data['error'];
+        if (message is String && message.trim().isNotEmpty) {
+          return message;
+        }
+        final errors = data['errors'];
+        if (errors is Map && errors.isNotEmpty) {
+          final first = errors.values.first;
+          if (first is List && first.isNotEmpty) return first.first.toString();
+          return first.toString();
+        }
+      }
+      if (status == 401 || status == 422) {
+        return 'Invalid email or password.';
+      }
+      if (status != null && status >= 500) {
+        return 'Server error. Please try again shortly.';
+      }
+      if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.sendTimeout) {
+        return 'Connection timed out. Please try again.';
+      }
+      return 'Could not connect to NOVAIS. Please check your connection.';
+    }
+    if (error is FormatException) {
+      return 'Sign in could not be completed. Please try again.';
+    }
+    return 'Login failed. Please try again.';
+  }
+
+  String _maskedEmail(String email) {
+    final parts = email.split('@');
+    if (parts.length != 2 || parts.first.length <= 2) return '***';
+    return '${parts.first.substring(0, 2)}***@${parts.last}';
+  }
+
+  String _debugError(Object error) {
+    if (error is DioException) {
+      return 'DioException(status=${error.response?.statusCode}, type=${error.type.name})';
+    }
+    return error.runtimeType.toString();
+  }
+
+  void _debugAuth(String message) {
+    assert(() {
+      debugPrint('[NOVAIS auth] $message');
+      return true;
+    }());
   }
 }

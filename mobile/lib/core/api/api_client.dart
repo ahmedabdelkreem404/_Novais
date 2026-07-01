@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
 import '../cache/api_cache.dart';
@@ -40,8 +42,51 @@ class ApiClient {
     dio.interceptors.addAll([
       _AuthInterceptor(_storage),
       _DeviceInterceptor(_storage),
+      _DevAuthTraceInterceptor(),
       _GetCacheInterceptor(_storage),
     ]);
+  }
+}
+
+class _DevAuthTraceInterceptor extends Interceptor {
+  bool _shouldTrace(RequestOptions options) {
+    return kDebugMode &&
+        (options.path.startsWith('/auth/') ||
+            options.path == '/auth/user-profile');
+  }
+
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    if (_shouldTrace(options)) {
+      debugPrint(
+        '[NOVAIS auth] request ${options.method} ${options.path} '
+        'hasAuth=${options.headers.containsKey('Authorization')} '
+        'hasDevice=${options.headers.containsKey('X-Device-ID')}',
+      );
+    }
+    handler.next(options);
+  }
+
+  @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    if (_shouldTrace(response.requestOptions)) {
+      debugPrint(
+        '[NOVAIS auth] response ${response.statusCode} '
+        '${response.requestOptions.method} ${response.requestOptions.path}',
+      );
+    }
+    handler.next(response);
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    if (_shouldTrace(err.requestOptions)) {
+      debugPrint(
+        '[NOVAIS auth] error ${err.response?.statusCode ?? 'network'} '
+        '${err.requestOptions.method} ${err.requestOptions.path}: ${err.type.name}',
+      );
+    }
+    handler.next(err);
   }
 }
 
@@ -52,11 +97,11 @@ class _AuthInterceptor extends Interceptor {
   @override
   void onRequest(
       RequestOptions options, RequestInterceptorHandler handler) async {
-    final token = await _storage.read(key: 'jwt_token');
+    final token = await _safeRead('jwt_token');
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
     }
-    final lang = await _storage.read(key: 'language') ?? 'en';
+    final lang = await _safeRead('language') ?? 'en';
     options.headers['Accept-Language'] = lang;
     handler.next(options);
   }
@@ -68,6 +113,18 @@ class _AuthInterceptor extends Interceptor {
       // Auth state will react to token being gone
     }
     handler.next(err);
+  }
+
+  Future<String?> _safeRead(String key) async {
+    try {
+      return await _storage.read(key: key);
+    } on PlatformException catch (error) {
+      if (kDebugMode) {
+        debugPrint(
+            '[NOVAIS auth] secure storage read failed for $key: ${error.code}');
+      }
+      return null;
+    }
   }
 }
 
@@ -84,8 +141,20 @@ class _GetCacheInterceptor extends Interceptor {
   }
 
   Future<ApiCache> _cache() async {
-    final userId = await _storage.read(key: 'user_id') ?? 'anonymous';
+    final userId = await _safeReadUserId();
     return ApiCache.create(userId: userId);
+  }
+
+  Future<String> _safeReadUserId() async {
+    try {
+      return await _storage.read(key: 'user_id') ?? 'anonymous';
+    } on PlatformException catch (error) {
+      if (kDebugMode) {
+        debugPrint(
+            '[NOVAIS auth] secure storage user_id read failed: ${error.code}');
+      }
+      return 'anonymous';
+    }
   }
 
   @override
@@ -126,12 +195,35 @@ class _DeviceInterceptor extends Interceptor {
   @override
   void onRequest(
       RequestOptions options, RequestInterceptorHandler handler) async {
-    String? deviceId = await _storage.read(key: _kDeviceIdKey);
+    String? deviceId = await _safeReadDeviceId();
     if (deviceId == null) {
       deviceId = const Uuid().v4();
-      await _storage.write(key: _kDeviceIdKey, value: deviceId);
+      await _safeWriteDeviceId(deviceId);
     }
     options.headers['X-Device-ID'] = deviceId;
     handler.next(options);
+  }
+
+  Future<String?> _safeReadDeviceId() async {
+    try {
+      return await _storage.read(key: _kDeviceIdKey);
+    } on PlatformException catch (error) {
+      if (kDebugMode) {
+        debugPrint(
+            '[NOVAIS auth] secure storage device_id read failed: ${error.code}');
+      }
+      return null;
+    }
+  }
+
+  Future<void> _safeWriteDeviceId(String deviceId) async {
+    try {
+      await _storage.write(key: _kDeviceIdKey, value: deviceId);
+    } on PlatformException catch (error) {
+      if (kDebugMode) {
+        debugPrint(
+            '[NOVAIS auth] secure storage device_id write failed: ${error.code}');
+      }
+    }
   }
 }
