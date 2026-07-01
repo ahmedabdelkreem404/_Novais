@@ -206,7 +206,7 @@ function App() {
   const isRtl = require('react-i18next').useTranslation().i18n.language.startsWith('ar');
 
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div>
         <ToastContainer
           limit={3}
