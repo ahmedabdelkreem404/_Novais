@@ -10,19 +10,29 @@ use Illuminate\Support\Facades\Auth;
 
 class NoteController extends Controller
 {
+    private function resolveOwnedCourse(string|int $identifier, int $userId): ?Course
+    {
+        return Course::where('user_id', $userId)
+            ->where(function ($query) use ($identifier) {
+                $query->where('public_id', $identifier);
+                if (ctype_digit((string) $identifier)) {
+                    $query->orWhere('id', (int) $identifier);
+                }
+            })
+            ->first();
+    }
+
     public function index(Request $request)
     {
         $user = Auth::user();
         $query = $user->personalNotes();
         
         if ($request->has('course_id')) {
-            $courseId = $request->course_id;
-            // Validate course ownership/authorization
-            $courseExists = Course::where('id', $courseId)->where('user_id', $user->id)->exists();
-            if (!$courseExists) {
+            $course = $this->resolveOwnedCourse($request->course_id, $user->id);
+            if (!$course) {
                 return response()->json(['error' => 'common.unauthorized'], 403);
             }
-            $query->where('course_id', $courseId);
+            $query->where('course_id', $course->id);
         }
         
         $limit = (int) $request->input('limit', 50);
@@ -37,13 +47,13 @@ class NoteController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'course_id' => 'required|exists:courses,id',
+            'course_id' => 'required',
             'lesson_id' => 'nullable|exists:lessons,id',
             'content' => 'required|string'
         ]);
 
         $user = Auth::user();
-        $course = Course::where('id', $request->course_id)->where('user_id', $user->id)->first();
+        $course = $this->resolveOwnedCourse($request->course_id, $user->id);
         if (!$course) {
             return response()->json(['error' => 'common.unauthorized'], 403);
         }
@@ -58,7 +68,11 @@ class NoteController extends Controller
             }
         }
 
-        $note = $user->personalNotes()->create($request->only(['course_id', 'lesson_id', 'content']));
+        $note = $user->personalNotes()->create([
+            'course_id' => $course->id,
+            'lesson_id' => $request->lesson_id,
+            'content' => $request->content,
+        ]);
         return response()->json($note, 201);
     }
 

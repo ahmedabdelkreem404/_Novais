@@ -113,4 +113,48 @@ class PersonalNoteTest extends TestCase
         $response->assertStatus(200);
         $response->assertJsonCount(2);
     }
+
+    public function test_notes_can_use_course_public_id_without_leaking_other_users_notes()
+    {
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+
+        $course1 = Course::create([
+            'user_id' => $user1->id,
+            'title' => 'User 1 Public Course',
+            'type' => 'text',
+            'language' => 'English',
+            'metadata' => []
+        ]);
+
+        $course2 = Course::create([
+            'user_id' => $user2->id,
+            'title' => 'User 2 Public Course',
+            'type' => 'text',
+            'language' => 'English',
+            'metadata' => []
+        ]);
+
+        $create = $this->actingAs($user1, 'api')
+            ->postJson('/api/notes', [
+                'course_id' => $course1->public_id,
+                'content' => 'Public id note'
+            ]);
+
+        $create->assertCreated()
+            ->assertJsonFragment([
+                'course_id' => $course1->id,
+                'content' => 'Public id note'
+            ]);
+
+        $this->actingAs($user1, 'api')
+            ->getJson("/api/notes?course_id={$course1->public_id}")
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonFragment(['content' => 'Public id note']);
+
+        $this->actingAs($user1, 'api')
+            ->getJson("/api/notes?course_id={$course2->public_id}")
+            ->assertForbidden();
+    }
 }

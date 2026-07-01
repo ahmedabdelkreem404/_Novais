@@ -4,7 +4,7 @@ import axios from 'axios';
 import { serverURL } from '../constants';
 import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LuX, LuLoader } from 'react-icons/lu';
+import { LuX, LuLoader, LuTrash2, LuCircleCheck } from 'react-icons/lu';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,9 @@ const NotesSidebar = ({ isOpen, onClose, courseId }) => {
     const [newNote, setNewNote] = useState('');
     const [loading, setLoading] = useState(false);
     const [adding, setAdding] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [error, setError] = useState('');
+    const [saved, setSaved] = useState(false);
 
     // Quill Toolbar Configuration
     const modules = {
@@ -43,6 +46,8 @@ const NotesSidebar = ({ isOpen, onClose, courseId }) => {
 
     const fetchNotes = useCallback(async () => {
         setLoading(true);
+        setError('');
+        setSaved(false);
         try {
             const token = localStorage.getItem('token');
             if (!token) {
@@ -56,17 +61,21 @@ const NotesSidebar = ({ isOpen, onClose, courseId }) => {
                 }
             };
             const res = await axios.get(`${serverURL}/notes?course_id=${courseId}`, config);
-            setNotes(res.data);
-            if (res.data.length > 0) {
-                setNewNote(res.data[0].content);
+            const nextNotes = Array.isArray(res.data) ? res.data : [];
+            setNotes(nextNotes);
+            if (nextNotes.length > 0) {
+                setNewNote(nextNotes[0].content);
+            } else {
+                setNewNote('');
             }
         } catch (error) {
             console.error(error);
             if (error.response?.status === 401) navigate('/signin');
+            setError(t('sidebar.note_load_error') || 'Could not load notes. Please try again.');
         } finally {
             setLoading(false);
         }
-    }, [courseId, navigate]);
+    }, [courseId, navigate, t]);
 
     useEffect(() => {
         if (isOpen && courseId) {
@@ -76,6 +85,8 @@ const NotesSidebar = ({ isOpen, onClose, courseId }) => {
 
     const addNote = async () => {
         setAdding(true);
+        setError('');
+        setSaved(false);
         try {
             const token = localStorage.getItem('token');
             const config = {
@@ -89,6 +100,7 @@ const NotesSidebar = ({ isOpen, onClose, courseId }) => {
 
             if (existingNote) {
                 await axios.put(`${serverURL}/notes/${existingNote.id}`, { content: newNote }, config);
+                setNotes(notes.map(note => note.id === existingNote.id ? { ...note, content: newNote } : note));
                 toast.success(t('sidebar.note_update_success'));
             } else {
                 const data = {
@@ -99,16 +111,43 @@ const NotesSidebar = ({ isOpen, onClose, courseId }) => {
                 setNotes([res.data, ...notes]);
                 toast.success(t('sidebar.note_save_success'));
             }
-            onClose();
+            setSaved(true);
         } catch (error) {
             console.error(error);
             if (error.response?.status === 401) {
                 navigate('/signin');
             } else {
+                setError(t('sidebar.note_save_error'));
                 toast.error(t('sidebar.note_save_error'));
             }
         } finally {
             setAdding(false);
+        }
+    };
+
+    const deleteNote = async () => {
+        const existingNote = notes[0];
+        if (!existingNote) return;
+        setDeleting(true);
+        setError('');
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`${serverURL}/notes/${existingNote.id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+            setNotes(notes.filter(note => note.id !== existingNote.id));
+            setNewNote('');
+            setSaved(false);
+            toast.success(t('common.deleted') || 'Deleted');
+        } catch (error) {
+            console.error(error);
+            if (error.response?.status === 401) navigate('/signin');
+            setError(t('sidebar.note_save_error'));
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -170,6 +209,17 @@ const NotesSidebar = ({ isOpen, onClose, courseId }) => {
                         </div>
 
                         <div className="flex-1 overflow-hidden flex flex-col min-h-[320px]">
+                            {error && (
+                                <div className="mx-5 sm:mx-8 mb-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
+                                    {error}
+                                </div>
+                            )}
+                            {saved && !error && (
+                                <div className="mx-5 sm:mx-8 mb-3 flex items-center gap-2 rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700 dark:border-green-900/40 dark:bg-green-950/30 dark:text-green-200">
+                                    <LuCircleCheck size={16} />
+                                    {t('sidebar.note_update_success') || 'Saved'}
+                                </div>
+                            )}
                             {loading ? (
                                 <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-slate-500">
                                     <LuLoader className="animate-spin mb-4" size={32} />
@@ -190,7 +240,16 @@ const NotesSidebar = ({ isOpen, onClose, courseId }) => {
                             )}
                         </div>
 
-                        <div className="px-5 sm:px-8 py-5 sm:py-6 border-t border-gray-100 dark:border-white/10 flex justify-end bg-gray-50/80 dark:bg-slate-900/80">
+                        <div className="px-5 sm:px-8 py-5 sm:py-6 border-t border-gray-100 dark:border-white/10 flex flex-col sm:flex-row justify-between gap-3 bg-gray-50/80 dark:bg-slate-900/80">
+                            <button
+                                type="button"
+                                onClick={deleteNote}
+                                disabled={deleting || notes.length === 0}
+                                className="px-5 py-3.5 bg-white dark:bg-slate-950 text-red-600 rounded-[10px] font-bold text-[15px] border border-red-100 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {deleting ? <LuLoader className="animate-spin" /> : <LuTrash2 size={17} />}
+                                {t('common.delete') || 'Delete'}
+                            </button>
                             <button
                                 onClick={addNote}
                                 disabled={adding || (!newNote.trim() && notes.length === 0)}

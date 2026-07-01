@@ -236,15 +236,19 @@ const Course = () => {
 
     const [quizResult, setQuizResult] = useState(null);
 
-    const [blueprintSlug, setBlueprintSlug] = useState('normal-course');
+    const [blueprintSlug, setBlueprintSlug] = useState(stateData?.blueprint_slug || null);
 
     const [generatingSectionTitle, setGeneratingSectionTitle] = useState('');
 
     const [showAnswers, setShowAnswers] = useState(false);
+    const [prepError, setPrepError] = useState('');
+    const activePreparationRef = React.useRef(null);
 
 
 
     const layoutMode = useMemo(() => {
+
+        if (!blueprintSlug) return 'loading';
 
         const documentSlugs = ['book', 'graduation-project', 'master-thesis', 'study-review'];
 
@@ -1246,6 +1250,10 @@ const Course = () => {
 
     const handlePrepareLessonInternal = useCallback(async (chapterTitle, subtopicTitle, subtopicObj) => {
 
+        const preparationKey = `${chapterTitle}::${subtopicTitle}`;
+        if (activePreparationRef.current === preparationKey) return;
+        activePreparationRef.current = preparationKey;
+        setPrepError('');
         setGeneratingSectionTitle(subtopicTitle);
 
         setLoading(true);
@@ -1346,7 +1354,10 @@ const Course = () => {
 
                 language: jsonData.language || 'en'
 
-            }, { headers: { Authorization: `Bearer ${token}` } });
+            }, {
+                headers: { Authorization: `Bearer ${token}` },
+                timeout: 90000
+            });
 
 
 
@@ -1442,6 +1453,9 @@ const Course = () => {
 
             console.error("Lesson generation failed:", e);
 
+            setPrepError(e.code === 'ECONNABORTED'
+                ? (isArabic ? 'استغرق تجهيز هذا الدرس وقتًا أطول من المتوقع. حاول مرة أخرى.' : 'Lesson preparation took longer than expected. Please retry.')
+                : (e.response?.data?.message || t('footer.load_fail')));
             toast.error(e.response?.data?.message || t('footer.load_fail'));
 
             setShowPrepButton(true);
@@ -1452,19 +1466,21 @@ const Course = () => {
 
             clearInterval(logInterval);
 
+            activePreparationRef.current = null;
             setGeneratingSectionTitle('');
 
-            setTimeout(() => setLoading(false), 1000);
+            setLoading(false);
 
         }
 
-    }, [jsonData, mainTopic, syncProgress, courseId, t]);
+    }, [jsonData, mainTopic, syncProgress, courseId, t, isArabic]);
 
 
 
     const handleSelect = useCallback(async (chapterTitle, subtopicTitle, subtopicObj, forceAuto = false) => {
 
         setSelectedSubtopic(subtopicTitle);
+        setPrepError('');
 
 
 
@@ -1806,7 +1822,7 @@ const Course = () => {
 
     useEffect(() => {
 
-        if (topics.length > 0 && !selectedSubtopic && !autoSelectedRef.current) {
+        if (topics.length > 0 && !selectedSubtopic && !autoSelectedRef.current && layoutMode !== 'loading') {
 
             const first = topics[0];
 
@@ -1816,7 +1832,11 @@ const Course = () => {
 
                 autoSelectedRef.current = true;
 
-                handleSelect(first.title, subs[0].title, subs[0]);
+                if (layoutMode === 'course') {
+                    handleSelect(first.title, subs[0].title, subs[0]);
+                } else {
+                    setSelectedSubtopic(subs[0].title);
+                }
 
                 setExpandedChapters({ [first.title]: true });
 
@@ -1824,7 +1844,7 @@ const Course = () => {
 
         }
 
-    }, [topics, selectedSubtopic, handleSelect]);
+    }, [topics, selectedSubtopic, handleSelect, layoutMode]);
 
 
 
@@ -1900,7 +1920,8 @@ const Course = () => {
 
     const layoutDir = 'ltr';
 
-    const showStars = loading || showPrepButton;
+    const isCourseMode = layoutMode === 'course';
+    const showStars = (isCourseMode && loading) || showPrepButton;
 
 
 
@@ -1934,7 +1955,7 @@ const Course = () => {
 
 
 
-                    {layoutMode === 'course' && (
+                    {isCourseMode && (
 
                         <div className="hidden min-[360px]:block w-[38px] h-[38px] flex-shrink-0 drop-shadow-sm">
 
@@ -1982,7 +2003,7 @@ const Course = () => {
 
                             { icon: LuDownload, label: t('footer.export'), action: () => setIsExportModalOpen(true) },
 
-                            ...(layoutMode === 'course' ? [{
+                            ...(isCourseMode ? [{
 
                                 icon: LuAward,
 
@@ -2094,7 +2115,7 @@ const Course = () => {
 
                         <span className="text-[11px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500">
 
-                            {layoutMode === 'course' ? getDynamicLabel('progress') : (isArabic ? 'محتويات الوثيقة' : 'Document Contents')}
+                            {isCourseMode ? getDynamicLabel('progress') : (isArabic ? 'محتويات الوثيقة' : 'Document Contents')}
 
                         </span>
 
@@ -2186,7 +2207,7 @@ const Course = () => {
 
                                                             onClick={() => {
 
-                                                                if (layoutMode === 'course') {
+                                                                if (isCourseMode) {
 
                                                                     handleSelect(topic.title, sub.title, sub);
 
@@ -2210,7 +2231,7 @@ const Course = () => {
 
                                                         >
 
-                                                            {layoutMode === 'course' ? (
+                                                            {isCourseMode ? (
 
                                                                 sub.done ? (
 
@@ -2264,7 +2285,7 @@ const Course = () => {
 
 
 
-                        {layoutMode === 'course' && (
+                        {isCourseMode && (
 
                             <div className="pt-8 border-t border-gray-100 dark:border-gray-800/50 mt-4">
 
@@ -2314,7 +2335,21 @@ const Course = () => {
 
                     <div dir={courseDir} className="max-w-6xl mx-auto px-6 py-10 md:px-12 min-h-screen flex flex-col relative z-10">
 
-                        {loading && layoutMode === 'course' ? (
+                        {layoutMode === 'loading' ? (
+                            <div className="flex-1 flex items-center justify-center py-20 min-h-[70vh]">
+                                <div className="w-full max-w-md text-center rounded-3xl border border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-[#111827]/80 p-8 shadow-xl">
+                                    <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                                        <FiLoader size={28} className="animate-spin text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">
+                                        {isArabic ? 'جاري فتح المحتوى' : 'Opening content'}
+                                    </h2>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        {isArabic ? 'نحمّل نوع المحتوى وتفاصيله قبل عرض الواجهة المناسبة.' : 'Loading the content type and metadata before choosing the right viewer.'}
+                                    </p>
+                                </div>
+                            </div>
+                        ) : loading && layoutMode === 'course' ? (
 
                             <div className="flex-1 flex flex-col items-center justify-center py-10 md:py-20 min-h-[80vh] relative overflow-hidden" dir={courseDir}>
 
@@ -2714,7 +2749,7 @@ const Course = () => {
 
                                         <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto">
 
-                                            {t('sidebar.ready_desc')}
+                                            {prepError || t('sidebar.ready_desc')}
 
                                         </p>
 

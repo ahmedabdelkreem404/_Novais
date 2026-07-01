@@ -10,7 +10,7 @@ PR #6 is still **Open** and **Draft**. GitHub currently reports `mergeable: MERG
 
 Production readiness claim: **No-Go**.
 
-Reason: builds, unit tests, and a first web acceptance pass are useful, but web still has blockers, and Android emulator parity acceptance plus installed Electron app acceptance are not yet complete across all required flows.
+Reason: builds, unit tests, and focused web blocker closure now pass, but Android emulator parity acceptance plus installed Electron app acceptance are not yet complete across all required flows.
 
 ## Status Legend
 
@@ -32,16 +32,39 @@ Reason: builds, unit tests, and a first web acceptance pass are useful, but web 
 
 ## Verification Run On 2026-07-01
 
+### Focused Web Blocker Closure
+
+Evidence root:
+
+```text
+.codex-run-logs/pr6-cross-platform-parity/web/blocker-closure
+```
+
+| Gate | Result | Evidence |
+|---|---:|---|
+| Study Review direct `/course/:publicId` load | Passed | Neutral metadata-loading shell, no course progress/certificate/final-exam flash. |
+| Study Review refresh | Passed | Document/review layout persisted after refresh. |
+| Normal Course missing lesson content | Passed | No infinite spinner; retry/fallback state appears. |
+| Chatbot 300x500, 320x568, 390x844, 768x1024, 1440x900 | Passed | Clamped panel, no viewport overflow, outside click closes, inside input remains usable. |
+| Chatbot drag persistence | Passed | Position persisted through reload. |
+| Notes CRUD | Passed | Create/list/update/delete verified through authenticated API and browser open state. |
+| Notes authorization isolation | Passed | Other user received 403 for another user's course notes. |
+| Download fallbacks | Passed | No clickable fake `/NOVAIS_Installer.exe` or `/NOVAIS_App.apk`; unavailable state displayed. |
+| Pricing source | Passed | Browser pricing matched backend `/plans` values `0`, `60`, `85`. |
+
+### Command Gate
+
 | Command | Result | Notes |
 |---|---:|---|
+| `php artisan migrate:fresh --seed --force` | Passed | Fresh schema and seed completed after the notes index change. |
 | `$env:CI='true'; npm run build` | Passed | CRA production build compiled successfully. Large bundle advisory remains. |
-| `php artisan test` | Passed | 96 tests, 307 assertions. |
+| `php artisan test` | Passed | 97 tests, 314 assertions. |
 | `flutter analyze` | Passed | No issues found. Dependency outdated notices remain. |
 | `flutter test` | Passed | 18 tests passed. |
 | `composer audit --format=json` | Passed | No advisories, no abandoned packages. |
-| `npm audit --omit=dev --audit-level=high` | Passed at high threshold | 5 moderate advisories remain in `quill/react-quill` and `webpack-dev-server/react-scripts`; breaking-force upgrades not applied. |
+| `npm audit --omit=dev --audit-level=high` | Passed at high threshold | No high-threshold failure. |
 | Web route viewport pass | Partial pass | 192 route/viewport checks captured under `.codex-run-logs/pr6-cross-platform-parity/web`; no automated overflow/raw-key failures, but fast navigation produced aborted request noise. |
-| Web live AI generation | Partial pass | 8 generated content records with PDF status 200; viewer mode blockers remain for direct-load loading states. |
+| Web live AI generation | Partial pass | 8 generated content records with PDF status 200; focused direct-load viewer blockers were closed separately under `web/blocker-closure`. |
 
 These commands improve confidence but do not replace browser, emulator, and installed desktop acceptance evidence.
 
@@ -76,7 +99,7 @@ These commands improve confidence but do not replace browser, emulator, and inst
 | Full Book | `/generate-course` with `book` | Implemented | Needs evidence | Same React flow | Yes | Blueprint defaults | Need live generation proof. |
 | Question Bank | `/generate-course` with `question-bank` | Implemented | Needs evidence | Same React flow | Yes | Blueprint/layout code | Need UI proof and answers proof. |
 | Exam Builder | `/generate-course` with `exam-builder` | Implemented | Needs evidence | Same React flow | Yes | Blueprint/layout code | Need marks/sections proof. |
-| Study Review | `/generate-course` with `study-review` | Generated, viewer still blocked on direct-load loading shell | Needs evidence | Same React flow | Yes | `public_id=d903baee1857b094f7b485d8` | Direct route can still show course loading/progress shell before metadata resolves. |
+| Study Review | `/generate-course` with `study-review` | Passed focused web acceptance | Needs evidence | Same React flow | Yes | `web/blocker-closure/study-review-direct-load.png`, `study-review-refresh.png` | Mobile/desktop proof still missing. |
 | Academic Course | `/generate-course` with `academic-course` | Implemented | Needs evidence | Same React flow | Yes | Blueprint defaults | Need live generation proof. |
 | Interactive Course | `/generate-course` with `interactive-practical-course` | Implemented | Needs evidence | Same React flow | Yes | Blueprint defaults | Need live generation proof. |
 | Egyptian Arabic content | language option + prompt instruction | Fixed and generated | Needs evidence | Same React flow | Yes | `public_id=16d74c1ce998219f1b4437da` | Backend now preserves `Egyptian Arabic`; mobile/desktop proof still missing. |
@@ -85,8 +108,8 @@ These commands improve confidence but do not replace browser, emulator, and inst
 
 | Feature | Backend API | Web status | Mobile status | Desktop status | Same data source? | Evidence | Blockers |
 |---|---|---:|---:|---:|---:|---|---|
-| Course mode | `/courses/{id}`, lesson endpoints | Implemented | Implemented | Same React bundle | Yes | Existing screenshots/sample asset | Need live saved content proof. |
-| Document/book mode | `/courses/{id}` + document layout | Partial browser proof | Partially implemented | Same React bundle | Yes | Viewer screenshots for graduation projects and book | Direct-load loading shell still needs cleanup. |
+| Course mode | `/courses/{id}`, lesson endpoints | Passed focused missing-content fallback | Implemented | Same React bundle | Yes | `web/blocker-closure/normal-course-missing-lesson.png` | Mobile/desktop live saved-content proof still missing. |
+| Document/book mode | `/courses/{id}` + document layout | Passed focused direct-load proof | Partially implemented | Same React bundle | Yes | Viewer screenshots plus `web/blocker-closure/study-review-direct-load.png` | Mobile/desktop proof still missing. |
 | Question/exam mode | `/courses/{id}` | Partial browser proof | Partially implemented | Same React bundle | Yes | Viewer screenshots for question bank and exam | Need answer-key interaction proof and mobile proof. |
 | Story mode | `/courses/{id}` | Implemented in web | Partially implemented | Same React bundle | Yes | `course.js` story reader | Need real generated story proof. |
 | Terminology labels | metadata/display terms | Partially implemented | Partially implemented | Same React bundle | Mostly | i18n changes and dynamic labels | Need raw-key/course-wording sweep. |
@@ -102,15 +125,15 @@ These commands improve confidence but do not replace browser, emulator, and inst
 | Subscriptions | payments/subscriptions | Implemented | Partially implemented | Same React bundle | Yes | Backend payment code | Need active plan comparison. |
 | My content list | `/courses` | Implemented | Implemented | Same React bundle | Yes | Code inspected | Need same-user web/mobile evidence. |
 | Content cards | `/courses` | Implemented | Needs evidence | Same React bundle | Yes | Code inspected | Need stale cache/logout check. |
-| Notes/notebook | notes endpoints | Implemented, needs acceptance | Partially implemented | Same React bundle | Yes | Recent PR commits mention notes | Need course_id/content_id filter proof. |
-| Chatbot | chat endpoint | Implemented, needs UX acceptance | Needs evidence | Same React bundle | Yes | Recent PR commits mention viewport-safe chatbot | Need drag/RTL/outside-click proof. |
+| Notes/notebook | notes endpoints | Passed focused CRUD/security acceptance | Partially implemented | Same React bundle | Yes | `web/blocker-closure/focused-results.json`, `PersonalNoteTest` | Mobile/desktop proof still missing. |
+| Chatbot | chat endpoint | Passed focused viewport/drag/outside-click acceptance | Needs evidence | Same React bundle | Yes | `web/blocker-closure/chatbot-final-checks.json` | Mobile/desktop proof still missing. |
 | Notifications | `/notifications`, `/notification-devices` | Implemented | Implemented in-app | Same React bundle | Yes | Notification docs/tests | Native push not proven. |
 
 ## Payments
 
 | Feature | Backend API | Web status | Mobile status | Desktop status | Same data source? | Evidence | Blockers |
 |---|---|---:|---:|---:|---:|---|---|
-| Pricing | `/plans`, platform config | Implemented | Implemented/needs evidence | Same React bundle | Yes | Real web pricing screenshot | Need mobile pricing proof. |
+| Pricing | `/plans`, platform config | Passed backend-source web acceptance | Implemented/needs evidence | Same React bundle | Yes | `web/blocker-closure/pricing-recheck.png` | Need mobile pricing proof. |
 | Paymob card | `/payment/checkout`, webhook | Implemented | Partially implemented | Same React bundle | Yes | Payment controller/tests | Need safe checkout/browser proof, no production claim. |
 | Wallet | Paymob wallet integration | Implemented in backend | Needs evidence | Same React bundle | Yes | Paymob service | Need config/checkout proof. |
 | Vodafone Cash offline | `/offline-payments` | Implemented | Needs emulator proof | Same React bundle | Yes | Offline controller/tests | Need receiver config/unavailable proof. |
@@ -129,18 +152,18 @@ These commands improve confidence but do not replace browser, emulator, and inst
 | Acceptable Use | Unknown / needs audit | Needs audit | Needs audit | Needs audit | Unknown | Not confirmed | Add only if present. |
 | Contact/support | `/contact` | Implemented | Needs evidence | Same React bundle | Yes | Contact code/PR commits | Need submit proof. |
 | Social links | `/social-links` | Implemented | Needs evidence | Same React bundle | Yes | Routes/admin social links | Need admin/public proof. |
-| Download page | `/download`, platform settings app URLs | Implemented, needs link validation | Needs evidence | Same React bundle | Yes | Download route, platform settings | Need broken/unavailable states proof. |
+| Download page | `/download`, platform settings app URLs | Passed no-fake-link web acceptance | Needs evidence | Same React bundle | Yes | `web/blocker-closure/download-recheck.png` | Need mobile/desktop unavailable-state proof. |
 
 ## Same Backend Data Source Audit
 
 | Area | Current judgment | Notes |
 |---|---:|---|
-| Web business data | Partially implemented, needs audit | Many routes use backend, but static fallback/old labels need sweep. |
+| Web business data | Focused blocker closure passed | Download fallbacks and pricing source were rechecked under `web/blocker-closure`; broader mobile/desktop parity still pending. |
 | Mobile business data | Needs evidence | API client exists, cache exists, but emulator parity comparison still required. |
 | Desktop business data | Needs evidence | Should match web because Electron wraps React, but installed app proof required. |
-| Static pricing | Needs audit | Pricing screenshot exists, but source must be verified against `/plans` or config. |
+| Static pricing | Passed focused web audit | Pricing matched backend `/plans` values `0`, `60`, `85`. |
 | Static blueprint options | Mostly backend-driven | Mobile/web fetch blueprints; still verify no stale hardcoded options. |
-| Static legal/download config | Needs audit | Backend CMS/settings exists; verify pages do not rely on stale hardcoded values. |
+| Static legal/download config | Download passed focused web audit | Fake installer/APK fallbacks removed; legal pages still need full platform acceptance. |
 | Cache after logout | Needs evidence | Must verify no previous-user data on mobile/web. |
 
 ## Required Evidence Paths
@@ -169,20 +192,16 @@ Those screenshots prove that some surfaces can render, but they are **not** a co
 
 ## Current Blockers Before Ready For Review
 
-1. Web acceptance is only a partial pass: route screenshots and AI generation evidence exist, but direct viewer loading states and some UX flows still need fixes.
-2. `study-review` direct-load can still show a course loading/progress shell before metadata resolves.
-3. Normal Course direct viewer can remain in preparation/loading when selected lesson content is missing.
-4. Chatbot drag/clamp/outside-click and notes CRUD were not fully exercised yet.
-5. Mobile emulator acceptance needs same-user comparison with web for dashboard, settings, blueprints, viewer modes, payments, notes, and notifications.
-6. Desktop needs built installed app launch evidence, not just Electron dev/wrapper screenshot.
-7. Static/fake business data audit found remaining static download fallbacks and legacy pricing constants.
-8. Moderate npm advisories remain; no high-severity audit failure at requested threshold.
-9. PR is still Draft and should remain Draft until evidence passes.
+1. Mobile emulator acceptance needs same-user comparison with web for dashboard, settings, blueprints, viewer modes, payments, notes, and notifications.
+2. Desktop needs built installed app launch evidence, not just Electron dev/wrapper screenshot.
+3. Legal/CMS/contact/social/payment flows still need cross-platform acceptance screenshots and network proof.
+4. Broader static-data sweep should continue during mobile/desktop parity, even though web download/pricing blockers were closed.
+5. PR is still Draft and should remain Draft until mobile and installed desktop evidence passes.
 
 ## Production Readiness Score
 
-Current confidence as a Draft PR: **84-87% implementation progress**.
+Current confidence as a Draft PR: **88-90% implementation progress**.
 
-Current production-proven confidence: **72-76%**, because web is only partially accepted and mobile/desktop acceptance is still missing.
+Current production-proven confidence: **78-82%**, because focused web blockers are closed but mobile/desktop acceptance is still missing.
 
 Production decision: **No-Go** until web + mobile emulator + installed desktop acceptance evidence is complete.

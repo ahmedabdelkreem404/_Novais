@@ -40,13 +40,13 @@ const DownloadApp = () => {
     const desc = (config && (isRtl ? config.download_page_desc_ar : config.download_page_desc_en))
         || (isRtl ? 'قم بتحميل وتثبيت تطبيق Novais للويندوز وتطبيقات الموبايل لبدء التعلم فوراً.' : 'Download Novais client for Windows and Mobile devices to start learning.');
 
-    const winUrl = config && config.windows_download_url 
-        ? (config.windows_download_url.startsWith('http') ? config.windows_download_url : `${serverURL.replace('/api', '')}${config.windows_download_url}`)
-        : `${serverURL.replace('/api', '')}/NOVAIS_Installer.exe`;
+    const resolveDownloadUrl = (url) => {
+        if (!url || typeof url !== 'string' || !url.trim()) return null;
+        return url.startsWith('http') ? url : `${serverURL.replace('/api', '')}${url}`;
+    };
 
-    const apkUrl = config && config.mobile_download_url
-        ? (config.mobile_download_url.startsWith('http') ? config.mobile_download_url : `${serverURL.replace('/api', '')}${config.mobile_download_url}`)
-        : `${serverURL.replace('/api', '')}/NOVAIS_App.apk`;
+    const winUrl = resolveDownloadUrl(config?.windows_download_url);
+    const apkUrl = resolveDownloadUrl(config?.mobile_download_url);
 
     const apps = [
         {
@@ -57,7 +57,7 @@ const DownloadApp = () => {
             bg: 'bg-blue-500/10',
             link: winUrl,
             btnText: isRtl ? 'تنزيل لنظام ويندوز' : 'Download for Windows',
-            comingSoonText: isRtl ? 'قريباً لويندوز' : 'Windows client coming soon'
+            comingSoonText: isRtl ? 'غير متاح حالياً / قريباً لويندوز' : 'Not available yet / Windows client coming soon'
         },
         {
             os: isRtl ? 'أندرويد (Android)' : 'Android Application',
@@ -67,7 +67,7 @@ const DownloadApp = () => {
             bg: 'bg-green-500/10',
             link: apkUrl,
             btnText: isRtl ? 'تنزيل ملف APK' : 'Download APK File',
-            comingSoonText: isRtl ? 'قريباً للأندرويد' : 'Android app coming soon'
+            comingSoonText: isRtl ? 'غير متاح حالياً / قريباً للأندرويد' : 'Not available yet / Android app coming soon'
         }
     ];
 

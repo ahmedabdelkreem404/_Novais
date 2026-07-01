@@ -25,6 +25,7 @@ return new class extends Migration
             $table->index('lesson_id');
             $table->index('created_at');
             $table->index(['user_id', 'course_id', 'created_at']);
+            $table->index(['user_id', 'course_id', 'lesson_id', 'created_at'], 'personal_notes_user_course_lesson_created_idx');
         });
     }
 

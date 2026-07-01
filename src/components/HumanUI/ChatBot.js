@@ -19,8 +19,33 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
     ]);
     const [input, setInput] = useState('');
     const containerRef = useRef(null);
+    const panelRef = useRef(null);
     const constraintsRef = useRef(null);
     const [panelPosition, setPanelPosition] = useState(null);
+    const clampButtonPosition = (position) => {
+        const EDGE = 16;
+        const SIZE = 56;
+        return {
+            left: Math.max(EDGE, Math.min(position.left, window.innerWidth - SIZE - EDGE)),
+            top: Math.max(EDGE, Math.min(position.top, window.innerHeight - SIZE - EDGE)),
+        };
+    };
+
+    const [buttonPosition, setButtonPosition] = useState(() => {
+        try {
+            const saved = JSON.parse(localStorage.getItem('novais_chatbot_button_position') || 'null');
+            if (saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) return clampButtonPosition(saved);
+        } catch (_) {}
+        return null;
+    });
+
+    useEffect(() => {
+        if (buttonPosition) return;
+        setButtonPosition({
+            left: Math.max(16, window.innerWidth - 56 - 24),
+            top: Math.max(16, window.innerHeight - 56 - 112)
+        });
+    }, [buttonPosition]);
 
     /**
      * Calculate a safe viewport-clamped position for the chat panel so it
@@ -59,11 +84,31 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
         setPanelPosition({ top, left, width: PANEL_W, height: PANEL_H });
     };
 
+    const persistButtonPosition = () => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const next = clampButtonPosition({ left: rect.left, top: rect.top });
+        setButtonPosition(next);
+        localStorage.setItem('novais_chatbot_button_position', JSON.stringify(next));
+        requestAnimationFrame(updatePanelPosition);
+    };
+
     useEffect(() => {
         if (isOpen) {
             setTimeout(updatePanelPosition, 20);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return undefined;
+        const closeOnOutsidePointer = (event) => {
+            if (panelRef.current?.contains(event.target)) return;
+            if (containerRef.current?.contains(event.target)) return;
+            setIsOpen(false);
+        };
+        document.addEventListener('pointerdown', closeOnOutsidePointer, true);
+        return () => document.removeEventListener('pointerdown', closeOnOutsidePointer, true);
     }, [isOpen]);
 
     const [loading, setLoading] = useState(false);
@@ -196,6 +241,7 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
             <AnimatePresence>
                 {isOpen && panelPosition && (
                     <motion.div
+                        ref={panelRef}
                         key="chatbot-panel"
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -263,6 +309,9 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
                                                     strong: ({ node, ...props }) => <strong className="font-bold text-blue-600 dark:text-blue-400" {...props} />,
                                                     code: ({ node, ...props }) => <code className="break-words whitespace-pre-wrap bg-black/5 dark:bg-white/10 rounded px-1" {...props} />,
                                                     pre: ({ node, ...props }) => <pre className="max-w-full overflow-x-auto whitespace-pre-wrap break-words" {...props} />,
+                                                    table: ({ node, ...props }) => <div className="max-w-full overflow-x-auto"><table className="min-w-full text-xs border-collapse" {...props} /></div>,
+                                                    th: ({ node, ...props }) => <th className="border border-slate-200 dark:border-slate-700 px-2 py-1 text-start" {...props} />,
+                                                    td: ({ node, ...props }) => <td className="border border-slate-200 dark:border-slate-700 px-2 py-1 align-top" {...props} />,
                                                 }}
                                             >
                                                 {msg.content}
@@ -312,8 +361,13 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
                 dragElastic={0}
                 dragMomentum={false}
                 onDrag={updatePanelPosition}
-                className="fixed right-6 bottom-28 z-[135] pointer-events-auto"
-                style={{ touchAction: 'none' }}
+                onDragEnd={persistButtonPosition}
+                className="fixed z-[135] pointer-events-auto"
+                style={{
+                    touchAction: 'none',
+                    left: buttonPosition?.left ?? 24,
+                    top: buttonPosition?.top ?? 24,
+                }}
             >
                 <button
                     onClick={() => {
@@ -330,4 +384,3 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
 };
 
 export default ChatBot;
-
