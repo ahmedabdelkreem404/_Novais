@@ -167,6 +167,8 @@ Route::get('/policies', [\App\Http\Controllers\PolicyController::class, 'index']
 Route::get('/social-links', [\App\Http\Controllers\SocialLinkController::class, 'index']);
 Route::get('/plans', [\App\Http\Controllers\CMSController::class, 'getPlans']);
 Route::get('/platform-config', [\App\Http\Controllers\PlatformConfigController::class, 'show']);
+Route::get('/platform-settings', [\App\Http\Controllers\PlatformConfigController::class, 'show']);
+Route::get('/content-blueprints', [\App\Http\Controllers\ContentBlueprintController::class, 'index']);
 
 // Admin Routes
 Route::middleware(['auth:api', 'is_admin'])->prefix('admin')->group(function () {
@@ -223,4 +225,10 @@ Route::middleware(['auth:api', 'is_admin'])->prefix('admin')->group(function () 
     // Platform Config Admin
     Route::get('/platform-config', [\App\Http\Controllers\PlatformConfigController::class, 'adminShow']);
     Route::put('/platform-config', [\App\Http\Controllers\PlatformConfigController::class, 'update']);
+    Route::get('/platform-settings', [\App\Http\Controllers\PlatformConfigController::class, 'adminShow']);
+    Route::put('/platform-settings', [\App\Http\Controllers\PlatformConfigController::class, 'update']);
+    Route::get('/content-blueprints', [\App\Http\Controllers\ContentBlueprintController::class, 'adminIndex']);
+    Route::post('/content-blueprints', [\App\Http\Controllers\ContentBlueprintController::class, 'store']);
+    Route::put('/content-blueprints/{contentBlueprint}', [\App\Http\Controllers\ContentBlueprintController::class, 'update']);
+    Route::delete('/content-blueprints/{contentBlueprint}', [\App\Http\Controllers\ContentBlueprintController::class, 'destroy']);
 });

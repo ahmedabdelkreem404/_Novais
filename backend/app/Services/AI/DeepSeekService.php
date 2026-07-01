@@ -9,8 +9,11 @@ use Illuminate\Support\Facades\Log;
 class DeepSeekService implements AIProviderInterface
 {
     protected $apiKey;
+
     protected $apiUrl;
+
     protected $model;
+
     protected $lastUsage = [];
 
     public function __construct()
@@ -34,23 +37,179 @@ class DeepSeekService implements AIProviderInterface
     {
         // Use chatRequest but return string
         $response = $this->chatRequest($message, false);
+
         return is_string($response) ? $response : json_encode($response);
     }
 
+    public function generateCourseOutline(
+        string $topic,
+        int $count,
+        string $type,
+        string $language,
+        string $level = 'Beginner',
+        mixed $blueprint = null,
+        array $blueprintFields = []
+    ): array {
+        if ($blueprint) {
+            return $this->generateBlueprintStructure($topic, $language, $count, $level, $blueprint, $blueprintFields);
+        }
 
-
-    public function generateCourseOutline(string $topic, int $count, string $type, string $language, string $level = 'Beginner'): array
-    {
         return $this->generateCourseStructure($topic, $type, $language, $count, $level);
+    }
+
+    private function generateBlueprintStructure(
+        string $topic,
+        string $language,
+        int $count,
+        string $level,
+        mixed $blueprint,
+        array $blueprintFields
+    ): array {
+        $base = $this->getBasePrompt($language);
+
+        $blueprintSlug = $blueprint->slug;
+        $blueprintName = is_array($blueprint->name) ? ($blueprint->name['en'] ?? $blueprintSlug) : $blueprint->name;
+        $requiredSections = $blueprint->required_sections ?? [];
+        $optionalSections = $blueprint->optional_sections ?? [];
+        $citationRequired = ! empty($blueprint->citation_rules['required']);
+        $includeQuiz = ! empty($blueprint->assessment_rules['include_quiz']);
+        $instructions = $blueprint->prompt_instructions ?? '';
+
+        // Build fields string
+        $fieldsStr = '';
+        foreach ($blueprintFields as $key => $value) {
+            if (is_array($value)) {
+                $valStr = implode(', ', $value);
+            } elseif (is_bool($value)) {
+                $valStr = $value ? 'Yes' : 'No';
+            } else {
+                $valStr = (string) $value;
+            }
+            $fieldsStr .= "- **{$key}**: {$valStr}\n";
+        }
+
+        $requiredSectionsStr = implode(', ', $requiredSections);
+        $optionalSectionsStr = implode(', ', $optionalSections);
+        $citationText = $citationRequired ? 'strictly required' : 'optional';
+        $quizText = $includeQuiz ? 'required' : 'optional';
+        $productTerms = $this->blueprintTerminology($blueprintSlug);
+        $specializedRules = $this->blueprintSpecializedRules($blueprintSlug);
+
+        $prompt = <<<BLUEPRINT_PROMPT
+────────────────────────────
+MODE: NOVAIS CONTENT GENERATOR (DYNAMIC BLUEPRINT ENGINE)
+INPUT:
+Topic/Subject: $topic
+Content Type (Blueprint): $blueprintName ($blueprintSlug)
+Academic Level: $level
+Language: $language
+Requested Chapters/Sections Count: $count
+
+SUBMITTED PARAMETERS & PREFERENCES:
+$fieldsStr
+
+BLUEPRINT INSTRUCTIONS:
+$instructions
+
+PRODUCT-SPECIFIC TERMINOLOGY:
+$productTerms
+
+SPECIALIZED RULES:
+$specializedRules
+
+OUTLINING CONSTRAINTS:
+1. Generate a structured outline tailored EXACTLY for the content type "$blueprintName". Do not generate a generic learning course if the type is a Book, Exam, or Research Paper.
+2. Structure the output into EXACTLY $count product-appropriate chapters/sections/items (represented in the JSON output under the "chapters" key for NOVAIS compatibility).
+3. The content of each chapter/section must follow these required components: $requiredSectionsStr.
+4. Optionally incorporate elements of: $optionalSectionsStr.
+5. Language: All titles, descriptions, and structural nodes MUST be written in "$language".
+6. Citation Requirements: Academic citations and references are $citationText.
+7. Final Assessment: A quiz or review section is $quizText.
+8. Auto-inference: If any parameter or preference under "SUBMITTED PARAMETERS" is empty, blank, or unspecified, you must dynamically generate and design those details yourself to fit the topic and educational context.
+9. Never use "course", "lessons", "modules", "learning path", or video-course language for books, exams, question banks, theses, graduation project documents, stories, assignments, or lesson plans unless the selected blueprint is actually a course.
+10. For academic/research outputs, do not invent verified citations, DOI, URLs, or real statistics. Use clearly labeled reference placeholders or suggested source topics unless verified sources were provided by the user.
+11. Arabic Input Translation/Transliteration: For 'graduation-project' and 'master-thesis' blueprints, you MUST translate and transliterate all Arabic values for university_name, faculty, department, specialization, student_names, supervisor_names into formal English. Return these translated values in the JSON under the key 'translated_fields'.
+12. Tone: DO NOT use any emojis, motivational/welcoming phrases, or informal/silly language anywhere in the titles, descriptions, or chapters. Keep the tone 100% formal, scientific, and academic.
+13. Academic Quality: For graduation-project or master-thesis topics, generate formal, scholarly chapter names and subtopics suitable for a university degree project defense. If the topic is a software system (like Novais), include chapters on System Architecture, Database Design (ERD/Data Dictionary), AI System Design, Sequence/UML Diagram placeholders, and Implementation Verification.
+
+OUTPUT JSON (Strictly follow this structure. Do not change key names to maintain compatibility with the NOVAIS engine):
+{
+  "title": "Clean Title of the $blueprintName (Translated to $language)",
+  "description": "Compelling 2-sentence summary/abstract in $language.",
+  "level": "$level",
+  "language": "$language",
+  "total_chapters": $count,
+  "chapters": [
+    {
+      "title": "Title of the Chapter/Section in $language",
+      "subtopics": [
+        { "title": "Subtopic/Subsection Title in $language" }
+      ]
+    }
+  ],
+  "translated_fields": {
+     "university_name": "University name in English",
+     "faculty": "Faculty in English",
+     "department": "Department in English",
+     "specialization": "Specialization in English",
+     "student_names": "Student names in English (each on a new line)",
+     "supervisor_names": "Supervisor names in English (each on a new line)"
+  }
+}
+BLUEPRINT_PROMPT;
+
+        return $this->chatRequest($base.$prompt, true, "You are NOVAIS, an intelligent learning coach generating content for a {$blueprintName}.");
+    }
+
+    private function blueprintTerminology(string $blueprintSlug): string
+    {
+        $map = [
+            'normal-course' => 'Use modules, lessons, exercises, practical tasks, projects, and checkpoints.',
+            'leveled-course' => 'Use levels, modules, lessons, checkpoints, and practical exercises.',
+            'interactive-practical-course' => 'Use modules, lessons, exercises, practical tasks, projects, and checkpoints.',
+            'academic-course' => 'Use lectures, lecture notes, slide outlines, discussion questions, assignments, and references.',
+            'study-review' => 'Use summary sections, key points, expected questions, exam tips, and revision plan.',
+            'question-bank' => 'Use questions, answers, explanations, difficulty, question types, and topic grouping.',
+            'exam-builder' => 'Use exam sections, questions, marks, model answers, and grading scheme.',
+            'book' => 'Use cover, preface, table of contents, chapters, exercises, glossary, references, and image placeholders.',
+            'story' => 'Use title, synopsis, characters, chapters/scenes, narrative arcs, and educational message.',
+            'graduation-project' => 'Use graduation project document, academic document, project book, cover page, chapters, sections, supervisors, students, faculty, department, university, methodology, results, references, and appendices.',
+            'master-thesis' => 'Use abstract, research problem, research questions, hypotheses, literature review, methodology, findings, discussion, recommendations, and references.',
+            'lesson-plan' => 'Use lesson objectives, materials, warm-up, explanation, activities, assessment, homework, and teacher notes.',
+            'assignment-builder' => 'Use assignment brief, tasks, deliverables, rubric, and answer guide.',
+            'project-based-learning' => 'Use project scenario, milestones, tasks, evaluation rubric, and deliverables.',
+        ];
+
+        return $map[$blueprintSlug] ?? 'Use terminology that exactly matches the selected content type.';
+    }
+
+    private function blueprintSpecializedRules(string $blueprintSlug): string
+    {
+        if ($blueprintSlug === 'graduation-project') {
+            return implode("\n", [
+                '- Graduation Project Book must be a complete academic document, not a course.',
+                '- Support any faculty or specialization: medicine, pharmacy, nursing, engineering, computer science, business, accounting, law, education, agriculture, media, arts, tourism, psychology, sociology, science, architecture, and others.',
+                '- Include cover page data when provided: university, faculty, department, project title, students, supervisors, academic year/date, and logo placeholder if useful.',
+                '- Use neutral academic sections for non-software projects: cover page, declaration if suitable, acknowledgements, abstract, table of contents, lists of figures/tables when enabled, introduction, problem statement, objectives, importance, scope, literature review, methodology, practical/applied part, results, discussion, conclusion, recommendations, references, appendices.',
+                '- Only include functional/non-functional requirements, database design, UML, software architecture, implementation, testing, deployment, Agile, Waterfall, DevOps, SRS, or system lifecycle if the topic/faculty/department/tools clearly indicate software/IT/system/app/platform OR the user explicitly asks for those sections.',
+                '- When image, diagram, or table placeholders are enabled or useful, write specific placeholders such as [IMAGE PLACEHOLDER: Add a photo/illustration showing ...], [DIAGRAM PLACEHOLDER: Add a diagram explaining ...], or [TABLE PLACEHOLDER: Add a table comparing ...].',
+            ]);
+        }
+
+        if ($blueprintSlug === 'master-thesis') {
+            return '- Treat references as placeholders or suggested source topics unless verified sources are supplied. Do not fabricate DOI, URLs, real statistics, or citations.';
+        }
+
+        return '- Match the selected product type exactly and avoid generic course wording for non-course blueprints.';
     }
 
     public function validateTopicSafety(string $topic): bool
     {
         // 1. Pre-Check: Banned Keywords (Fail Fast)
         $bannedKeywords = [
-            'porn', 'sex', 'xxx', 'nude', 'erotic', 'hentai', 'sexual', 'fetish', 'incest', 'naked', 
+            'porn', 'sex', 'xxx', 'nude', 'erotic', 'hentai', 'sexual', 'fetish', 'incest', 'naked',
             'pussy', 'dick', 'cock', 'boobs', 'vagina', 'hitler', 'nazi', 'suicide', 'bomb', 'terrorist',
-            'sexo', 'puta', 'mierda', 'ibahi', 'nik' // Multilingual basics
+            'sexo', 'puta', 'mierda', 'ibahi', 'nik', // Multilingual basics
         ];
 
         // Normalize topic for checking
@@ -59,11 +218,11 @@ class DeepSeekService implements AIProviderInterface
         // Strict exact match or start check for short sensitive words
         foreach ($bannedKeywords as $keyword) {
             // Check for exact match or word boundary match to avoid false positives (e.g., 'sussex')
-            if (preg_match("/\b" . preg_quote($keyword, '/') . "\b/i", $normalizedTopic)) {
-                
+            if (preg_match("/\b".preg_quote($keyword, '/')."\b/i", $normalizedTopic)) {
+
                 // If the user typed ONLY "sex" or "porn", block immediately.
                 if ($normalizedTopic === $keyword || strlen($normalizedTopic) < strlen($keyword) + 5) {
-                     return false;
+                    return false;
                 }
             }
         }
@@ -103,13 +262,14 @@ PROMPT;
             // Use low temperature for deterministic output
             $response = $this->chatRequest($prompt, false, 'You are a helpful safety moderator.', 0.0);
             $cleanResponse = trim(strtoupper(strip_tags($response)));
-            
+
             // Allow if it STARTS with SAFE (handles "SAFE." or "SAFE (Educational)")
             if (str_starts_with($cleanResponse, 'SAFE')) {
                 return true;
             }
 
             Log::warning("Content Safety Reject: '$topic' -> AI Response: $cleanResponse");
+
             return false;
 
         } catch (\Exception $e) {
@@ -117,17 +277,31 @@ PROMPT;
             // Given the user is angry about safety, we should FAIL CLOSED (Block) if moderation fails?
             // "Secure by default".
             Log::error('Content Safety Check Error', ['error' => $e->getMessage()]);
+
             // For now, let's return false (unsafe) if the check crashes, to be super safe.
-            return false; 
+            return false;
         }
     }
 
+    private function getLanguageInstruction(string $language): string
+    {
+        if (strtolower($language) === 'egyptian arabic') {
+            return "Egyptian Arabic Colloquial dialect (العامية المصرية). You MUST write all explanations, instructions, examples, and texts in standard Egyptian colloquial dialect (using words like 'عشان', 'إزاي', 'هيعمل', 'ليه', 'شوية') rather than Modern Standard Arabic, while keeping it clear, educational, and high quality.";
+        }
+        if (strtolower($language) === 'arabic') {
+            return 'Modern Standard Arabic (العربية الفصحى). Do NOT use any colloquial dialect.';
+        }
+
+        return $language;
+    }
 
     /**
      * The Base Instructions for Professional Bootcamp Mode.
      */
     private function getProfessionalBasePrompt(string $language): string
     {
+        $langInstruction = $this->getLanguageInstruction($language);
+
         return <<<PROMPT
 ENTERPRISE ACADEMIC + PROFESSIONAL BOOTCAMP MODE (EXTREME RIGOR POLICY)
 You are a Senior Academic Professor and Technical Lead. You are not generating casual content.
@@ -141,7 +315,7 @@ You are designing a university-level academic curriculum combined with professio
 - Structure: Use structured sections with logical, building-block flow.
 
 🔴 RULE 2: LANGUAGE & TONE
-- PRIMARY EXPLANATION TEXT: Formal, technically accurate English.
+- PRIMARY EXPLANATION TEXT: Formal, technically accurate English (or the requested language: $langInstruction).
 - TECHNICAL TERMINOLOGY: Use precise, standard industry terms.
 - VOICE: Deliver content as a serious university lecture or professional lead developer briefing.
 PROMPT;
@@ -152,6 +326,8 @@ PROMPT;
      */
     private function getBasePrompt(string $language): string
     {
+        $langInstruction = $this->getLanguageInstruction($language);
+
         return <<<PROMPT
 🎯 INSTRUCTIONAL FRAMEWORK — NOVAIS: Interactive Learning Engine
 You are NOVAIS, an advanced AI Learning Coach and Interactive Experience Designer.
@@ -162,7 +338,7 @@ Your goal is to generate practical, engaging courses based on experience.
    - You are NOVAIS.
    - You are a "Learning Coach", NOT a "Professor" or "Teacher".
 2. Language & Tone:
-   - Write in EXACTLY this language: $language.
+   - Write in EXACTLY this language: $langInstruction.
    - Tone: Enthusiastic, clear, and action-oriented.
 3. Content Integrity:
    - Focus on "Learning by Doing".
@@ -218,7 +394,7 @@ OUTPUT JSON:
 }
 MODE1;
 
-        return $this->chatRequest($base . $modePrompt, true, 'You are NOVAIS, a friendly and energetic learning coach.');
+        return $this->chatRequest($base.$modePrompt, true, 'You are NOVAIS, a friendly and energetic learning coach.');
     }
 
     private function generateProfessionalStructure(string $topic, string $courseType, string $language, int $chapters): array
@@ -295,17 +471,59 @@ OUTPUT JSON:
 }
 MODE;
 
-        return $this->chatRequest($base . $modePrompt, true, 'You are a Senior Academic Professor and Technical Lead. You follow a STRICT TECHNICAL POLICY: No emojis, English code, Arabic comments, formal English explanations.', 0.1);
+        return $this->chatRequest($base.$modePrompt, true, 'You are a Senior Academic Professor and Technical Lead. You follow a STRICT TECHNICAL POLICY: No emojis, English code, Arabic comments, formal English explanations.', 0.1);
     }
 
-    public function generateLessonContent(string $courseTopic, string $subTopic, string $language, string $courseType = 'Text', string $level = 'Beginner'): array
-    {
+    public function generateLessonContent(
+        string $courseTopic,
+        string $subTopic,
+        string $language,
+        string $courseType = 'Text',
+        string $level = 'Beginner',
+        mixed $blueprint = null,
+        array $blueprintFields = []
+    ): array {
         if (strtolower($level) === 'professional') {
-            return $this->generateProfessionalLesson($courseTopic, $subTopic, $language, $courseType);
+            return $this->generateProfessionalLesson($courseTopic, $subTopic, $language, $courseType, $blueprint, $blueprintFields);
         }
 
         $base = $this->getBasePrompt($language);
-        
+
+        $blueprintSlug = $blueprint ? $blueprint->slug : 'normal-course';
+        $blueprintName = $blueprint ? (is_array($blueprint->name) ? ($blueprint->name['en'] ?? $blueprintSlug) : $blueprint->name) : 'Course';
+
+        $fieldsStr = '';
+        foreach ($blueprintFields as $key => $value) {
+            if (is_array($value)) {
+                $valStr = implode(', ', $value);
+            } elseif (is_bool($value)) {
+                $valStr = $value ? 'Yes' : 'No';
+            } else {
+                $valStr = (string) $value;
+            }
+            $fieldsStr .= "- **{$key}**: {$valStr}\n";
+        }
+
+        $isSoftware = false;
+        if (! empty($blueprintFields['specialization'])) {
+            $spec = strtolower($blueprintFields['specialization']);
+            if (str_contains($spec, 'software') || str_contains($spec, 'computer') || str_contains($spec, 'cs') || str_contains($spec, 'it') || str_contains($spec, 'ai') || str_contains($spec, 'ذكاء') || str_contains($spec, 'حاسب')) {
+                $isSoftware = true;
+            }
+        }
+
+        $academicInstructions = '';
+        if (in_array($blueprintSlug, ['graduation-project', 'master-thesis', 'book'])) {
+            $academicInstructions = "ACADEMIC DOCUMENT GENERATION RULES:\n".
+                "1. You are writing a section/chapter of a formal academic document/book: \"$blueprintName\".\n".
+                "2. Write in formal academic and scientific style. DO NOT use course player words like \"Welcome to this lesson\", \"Mark complete\", \"Next module\", or training course conversational fluff.\n".
+                "3. The content must be deep, highly detailed, and professional university-level quality.\n".
+                "4. Placeholders for visuals: You must embed explicit markdown placeholders where figures, tables, or diagrams are needed. Format: [IMAGE PLACEHOLDER: Description] or [DIAGRAM PLACEHOLDER: Description] or [TABLE PLACEHOLDER: Description].\n".
+                '5. Specialization: '.($isSoftware ? 'This is a computer science / software project. You may include software-related architecture, database designs, UML diagram placeholders, code snippets, and deployment workflows.' : 'This is a non-software/non-IT academic project. Do NOT include software-specific architectures, database schemas, Agile/Waterfall methodologies, code snippets, or tech stack details (e.g. React, Laravel) unless directly relevant to the specific topic.')."\n".
+                "6. Emojis and Conversational Tone: DO NOT use any emojis, motivational phrasing, exclamation points, or informal remarks. Keep the text 100% formal, serious, and academic.\n".
+                "7. UML & Architecture Diagrams: You must represent architecture designs, databases, flowcharts, and sequence diagrams using text-based Mermaid code blocks (fenced with ```mermaid ... ```) or clear tabular data dictionaries, in addition to visual placeholders. For example, draw class diagrams, flowcharts, or sequence diagrams directly inside ```mermaid code blocks so the engine can render them.\n";
+        }
+
         $mediaInstruction = "Media Selection Quality Gate (INSTRUCTIONAL STANDARD):
         
         🎯 FOR IMAGE QUERIES:
@@ -326,27 +544,33 @@ MODE;
         
         🚨 ABSOLUTE RULE: Focus on INSTRUCTIONAL value. Generate query for a visual that helps a student understand the 'WHY' or 'HOW'.";
 
-        $prompt = $base . <<<PROMPT
+        $prompt = $base.<<<PROMPT
 
 ────────────────────────────
-MODE 2: COMPLETE LESSON GENERATION (NOVAIS EXPERIENCE)
+MODE 2: COMPLETE LESSON/CHAPTER GENERATION (NOVAIS EXPERIENCE)
 
 INPUT:
-Course: $courseTopic
-Lesson: $subTopic
+Topic/Course: $courseTopic
+Chapter/Section: $subTopic
 Type: $courseType
 Language: $language
 
+SUBMITTED PARAMETERS:
+$fieldsStr
+
+$academicInstructions
+
 TASK:
-Generate a production-ready, interactive lesson.
+Generate a production-ready, interactive lesson or academic chapter.
 
 - SECTION 1: CONTENT
-- Write a full, engaging lesson in Markdown. 
+- Write a full, engaging lesson/chapter in Markdown.
 - The content MUST be written in "$language".
 - Focus on EXPERIENCE and APPLICATION.
 - Use analogies and storytelling.
 - Include "Try It Yourself" or "Action Item" sections.
 - ALL technical code, keywords, and symbols MUST be in English.
+- If this is a document/book/thesis, embed explicit figure/table/diagram placeholders in the format [IMAGE PLACEHOLDER: Description] or [DIAGRAM PLACEHOLDER: Description] or [TABLE PLACEHOLDER: Description].
 
 - SECTION 2: MEDIA QUERIES
 - $mediaInstruction
@@ -360,7 +584,7 @@ Generate a production-ready, interactive lesson.
 OUTPUT JSON (EXACT STRUCTURE REQUIRED):
 {
   "title": "$subTopic (in $language)",
-  "content": "Full markdown lesson here in $language...",
+  "content": "Full markdown content here in $language...",
   "examples": "Practical real-world scenarios in $language...",
   "media_queries": {
     "images": [ 
@@ -393,16 +617,61 @@ PROMPT;
         return $this->chatRequest($prompt, true, 'You are NOVAIS, a friendly and energetic learning coach.');
     }
 
-    private function generateProfessionalLesson(string $courseTopic, string $subTopic, string $language, string $courseType): array
-    {
+    private function generateProfessionalLesson(
+        string $courseTopic,
+        string $subTopic,
+        string $language,
+        string $courseType,
+        mixed $blueprint = null,
+        array $blueprintFields = []
+    ): array {
         $base = $this->getProfessionalBasePrompt($language);
-        $prompt = $base . <<<PROMPT
+
+        $blueprintSlug = $blueprint ? $blueprint->slug : 'normal-course';
+        $blueprintName = $blueprint ? (is_array($blueprint->name) ? ($blueprint->name['en'] ?? $blueprintSlug) : $blueprint->name) : 'Course';
+
+        $fieldsStr = '';
+        foreach ($blueprintFields as $key => $value) {
+            if (is_array($value)) {
+                $valStr = implode(', ', $value);
+            } elseif (is_bool($value)) {
+                $valStr = $value ? 'Yes' : 'No';
+            } else {
+                $valStr = (string) $value;
+            }
+            $fieldsStr .= "- **{$key}**: {$valStr}\n";
+        }
+
+        $isSoftware = false;
+        if (! empty($blueprintFields['specialization'])) {
+            $spec = strtolower($blueprintFields['specialization']);
+            if (str_contains($spec, 'software') || str_contains($spec, 'computer') || str_contains($spec, 'cs') || str_contains($spec, 'it') || str_contains($spec, 'ai') || str_contains($spec, 'ذكاء') || str_contains($spec, 'حاسب')) {
+                $isSoftware = true;
+            }
+        }
+
+        $academicInstructions = '';
+        if (in_array($blueprintSlug, ['graduation-project', 'master-thesis', 'book'])) {
+            $academicInstructions = "ACADEMIC DOCUMENT GENERATION RULES:\n".
+                "1. You are writing a section/chapter of a formal academic document/book: \"$blueprintName\".\n".
+                "2. Write in formal academic and scientific style. DO NOT use course player words like \"Welcome to this lesson\", \"Mark complete\", \"Next module\", or training course fluff.\n".
+                "3. The content must be deep, highly detailed, and professional university-level quality.\n".
+                "4. Placeholders for visuals: You must embed explicit markdown placeholders where figures, tables, or diagrams are needed. Format: [IMAGE PLACEHOLDER: Description] or [DIAGRAM PLACEHOLDER: Description] or [TABLE PLACEHOLDER: Description].\n".
+                '5. Specialization: '.($isSoftware ? 'This is a computer science / software project. You may include software-related architecture, database designs, UML diagram placeholders, code snippets, and deployment workflows.' : 'This is a non-software/non-IT academic project. Do NOT include software-specific architectures, database schemas, Agile/Waterfall methodologies, code snippets, or tech stack details (e.g. React, Laravel) unless directly relevant to the specific topic.')."\n";
+        }
+
+        $prompt = $base.<<<PROMPT
 ────────────────────────────
 STAGE 3 — RIGOROUS LESSON AUTHORING & STEP-BY-STEP LOGIC
 
 INPUT:
-Course: $courseTopic
-Lesson: $subTopic
+Topic/Course: $courseTopic
+Chapter/Section: $subTopic
+
+SUBMITTED PARAMETERS:
+$fieldsStr
+
+$academicInstructions
 
 🔴 RULE 3: THEORETICAL DEPTH (MANDATORY)
 - Do not provide surface-level summaries.
@@ -410,6 +679,7 @@ Lesson: $subTopic
 - Break down the logic behind every mechanism.
 - Contrast this topic with alternatives/competitors.
 - Detail memory behavior or performance implications where applicable.
+- If this is a document/book/thesis, embed explicit figure/table/diagram placeholders in the format [IMAGE PLACEHOLDER: Description] or [DIAGRAM PLACEHOLDER: Description] or [TABLE PLACEHOLDER: Description].
 
 🔴 RULE 4: 6-STEP PROGRAMMING & CODE EXPLANATION (STRICT):
 For EVERY code example presented, you MUST follow this sequence:
@@ -469,14 +739,16 @@ PROMPT;
 
         // Use standard chat request but expect a single URL string
         $response = $this->chatRequest($prompt, false, 'You are a helpful educational assistant.');
+
         return trim(strip_tags($response));
     }
 
     public function translateTitle(string $title): string
     {
-        $prompt = "Translate this course title to formal English for NOVAIS system. 
+        $prompt = 'Translate this course title to formal English for NOVAIS system.
                    Rule: Return ONLY the translated title text. No quotes.
-                   Title: " . $title;
+                   Title: '.$title;
+
         return $this->chatRequest($prompt, false, 'You are a professional translator.');
     }
 
@@ -511,8 +783,8 @@ PROMPT;
 
         // Detect level if possible, else default to Beginner
         $levelStr = $level ?? 'Beginner';
-        $systemPrompt = (strtolower($levelStr) === 'professional') 
-            ? 'You are a Senior Academic Professor. Follow the STRICT TECHNICAL POLICY.' 
+        $systemPrompt = (strtolower($levelStr) === 'professional')
+            ? 'You are a Senior Academic Professor. Follow the STRICT TECHNICAL POLICY.'
             : 'You are NOVAIS, a friendly learning coach.';
         $temp = (strtolower($levelStr) === 'professional') ? 0.1 : 0.8;
 
@@ -526,7 +798,7 @@ PROMPT;
             $mediaResolver = app(\App\Services\MediaResolverService::class);
             $simpleQuery = $this->simplifyTopicForCover($topic);
             $result = $mediaResolver->resolveImages($simpleQuery, 'educational', []);
-            
+
             if ($result && isset($result['url']) && ($result['score'] ?? 0) >= 0.20) {
                 return $result['url'];
             }
@@ -536,9 +808,9 @@ PROMPT;
 
         $fallbackText = trim(str_replace(' creative cover', '', $this->simplifyTopicForCover($topic)));
 
-        return 'https://placehold.co/1200x675/1d4ed8/ffffff.png?text=' . rawurlencode($fallbackText !== '' ? $fallbackText : $topic);
+        return 'https://placehold.co/1200x675/1d4ed8/ffffff.png?text='.rawurlencode($fallbackText !== '' ? $fallbackText : $topic);
     }
-    
+
     // ... (Keep simplifyTopicForCover)
 
     private function simplifyTopicForCover(string $topic): string
@@ -547,16 +819,16 @@ PROMPT;
         $languages = ['Java', 'Python', 'JavaScript', 'C++', 'PHP', 'Ruby', 'Swift', 'Kotlin', 'Go', 'Rust'];
         foreach ($languages as $lang) {
             if (stripos($topic, $lang) !== false) {
-                return $lang . ' programming concept';
+                return $lang.' programming concept';
             }
         }
-        
+
         // Clean and slightly expand the query for better variety
         $clean = preg_replace('/[^\p{L}\p{N}\s]/u', '', $topic);
         $words = explode(' ', $clean);
         $shortTopic = trim(implode(' ', array_slice(array_filter($words), 0, min(6, count($words)))));
 
-        return ($shortTopic !== '' ? $shortTopic : $topic) . " creative cover";
+        return ($shortTopic !== '' ? $shortTopic : $topic).' creative cover';
     }
 
     public function chatWithContext(string $message, array $history, array $context): string
@@ -565,8 +837,8 @@ PROMPT;
         $courseTitle = $context['current_course']['title'] ?? 'General Education';
         $userRole = $context['user']['role'] ?? 'Learner'; // Student -> Learner
         $userName = $context['user']['name'] ?? 'Learner';
-        $language = 'en'; 
-        
+        $language = 'en';
+
         if (preg_match('/[\p{Arabic}]/u', $message)) {
             $language = 'ar';
         }
@@ -574,30 +846,30 @@ PROMPT;
         // Detect Level & Dynamic Persona
         $level = strtolower($context['current_course']['level'] ?? 'beginner');
         $isProfessional = ($level === 'professional');
-        
-        $personaIdentity = $isProfessional 
-            ? 'Senior Academic Professor and Technical Lead' 
+
+        $personaIdentity = $isProfessional
+            ? 'Senior Academic Professor and Technical Lead'
             : 'intelligent AI Learning Coach and Interactive Experience Designer';
-            
+
         $personaRules = $isProfessional
             ? "- You follow an EXTREME ACADEMIC RIGOR POLICY.\n- No emojis. No motivational filler. No informalities.\n- Tone: Strictly Formal, Serious, and Analytical.\n- Deep Explanations: Never summarize quickly; explain First Principles.\n- Detailed Walkthroughs: Every technical piece requires a deep 'How & Why' breakdown."
             : "- You are Friendly, Energetic, and Motivating.\n- You believe in 'Learning by Doing'.\n- Tone: Enthusiastic and supportive. Like a passionate mentor.";
 
         // Build Platform Context String
-        $pricingStr = "";
+        $pricingStr = '';
         if (isset($context['platform']['pricing'])) {
             foreach ($context['platform']['pricing'] as $plan => $info) {
-                $pricingStr .= "- " . strtoupper($plan) . ": " . ($info['price'] ?? 0) . " " . ($info['currency'] ?? 'EGP') . " (" . ($info['features'] ?? '') . ")\n";
+                $pricingStr .= '- '.strtoupper($plan).': '.($info['price'] ?? 0).' '.($info['currency'] ?? 'EGP').' ('.($info['features'] ?? '').")\n";
             }
         }
 
-        $myCoursesStr = "";
-        if (isset($context['user']['my_courses']) && !empty($context['user']['my_courses'])) {
+        $myCoursesStr = '';
+        if (isset($context['user']['my_courses']) && ! empty($context['user']['my_courses'])) {
             foreach ($context['user']['my_courses'] as $c) {
-                $myCoursesStr .= "- " . $c['title'] . " (Progress: " . ($c['progress'] ?? 0) . "%)\n";
+                $myCoursesStr .= '- '.$c['title'].' (Progress: '.($c['progress'] ?? 0)."%)\n";
             }
         } else {
-            $myCoursesStr = "- No courses created yet.";
+            $myCoursesStr = '- No courses created yet.';
         }
 
         $systemPrompt = <<<SYSTEM
@@ -639,8 +911,8 @@ If the user speaks Arabic, respond in Formal Arabic (العربية الفصحى
 SYSTEM;
 
         // Build prompt manually
-        $fullPrompt = $systemPrompt . "\n\nConversation History:\n";
-        
+        $fullPrompt = $systemPrompt."\n\nConversation History:\n";
+
         foreach ($history as $msg) {
             if (is_array($msg) && isset($msg['content'])) {
                 $role = (($msg['role'] ?? '') === 'assistant') ? 'NOVAIS' : 'Learner';
@@ -653,9 +925,9 @@ SYSTEM;
 
         // Use standard chat request
         $temp = $isProfessional ? 0.2 : 0.8; // Use 0.2 for chat to allow some natural flow but keep it strict
-        $response = $this->chatRequest($fullPrompt, false, $systemPrompt, $temp); 
-        
-        return str_replace(['NOVAIS:', 'AI:', 'Professor:'], '', $response); 
+        $response = $this->chatRequest($fullPrompt, false, $systemPrompt, $temp);
+
+        return str_replace(['NOVAIS:', 'AI:', 'Professor:'], '', $response);
     }
 
     // ... (Rest of file)
@@ -668,43 +940,43 @@ SYSTEM;
             try {
                 $client = new Client([
                     'timeout' => 300,
-                    'connect_timeout' => 30
+                    'connect_timeout' => 30,
                 ]);
 
                 $finalSystemPrompt = $systemPrompt ?? 'You are NOVAIS, an expert interactive learning engine.';
 
                 $response = $client->post($this->apiUrl, [
                     'headers' => [
-                        'Authorization' => 'Bearer ' . $this->apiKey,
-                        'Content-Type' => 'application/json'
+                        'Authorization' => 'Bearer '.$this->apiKey,
+                        'Content-Type' => 'application/json',
                     ],
                     'json' => [
                         'model' => $this->model,
                         'messages' => [
                             [
                                 'role' => 'system',
-                                'content' => $finalSystemPrompt
+                                'content' => $finalSystemPrompt,
                             ],
                             [
                                 'role' => 'user',
-                                'content' => $prompt
-                            ]
+                                'content' => $prompt,
+                            ],
                         ],
                         'temperature' => $temperature,
-                        'max_tokens' => 8000
-                    ]
+                        'max_tokens' => 8000,
+                    ],
                 ]);
 
                 $data = json_decode($response->getBody()->getContents(), true);
                 $content = $data['choices'][0]['message']['content'] ?? '';
-                
+
                 $this->lastUsage = $data['usage'] ?? [];
 
                 Log::info('AI API Response', [
                     'model' => $this->model,
                     'system_prompt_preview' => substr($finalSystemPrompt, 0, 100),
                     'temperature' => $temperature,
-                    'expect_json' => $expectJson
+                    'expect_json' => $expectJson,
                 ]);
 
                 if ($expectJson) {
@@ -732,6 +1004,7 @@ SYSTEM;
                     $prompt .= "\n\nYour previous response was not valid JSON. Return strict JSON only. Do not include markdown fences, comments, or unescaped quotes inside strings.";
                     Log::warning("AI JSON parse failed. Retrying with stricter JSON instructions. (Attempt $attempt)");
                     usleep(500000);
+
                     continue;
                 }
 
@@ -739,22 +1012,23 @@ SYSTEM;
                 if (($statusCode === 503 || $statusCode === 429) && $attempt < $maxRetries) {
                     $attempt++;
                     $delay = pow(2, $attempt) * 1000000; // Exponential sleep (2s, 4s, 8s in microseconds)
-                    Log::warning("AI API Busy ($statusCode). Retrying in " . ($delay/1000000) . "s... (Attempt $attempt)");
+                    Log::warning("AI API Busy ($statusCode). Retrying in ".($delay / 1000000)."s... (Attempt $attempt)");
                     usleep($delay);
+
                     continue;
                 }
 
                 Log::error('AI API Error', [
                     'status_code' => $statusCode,
                     'message' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
+                    'trace' => $e->getTraceAsString(),
                 ]);
 
                 if ($statusCode === 503) {
                     throw new \Exception('AI provider is currently overloaded (503). Please try again in 1 minute.');
                 }
-                
-                throw new \Exception('AI Request failed: ' . $e->getMessage());
+
+                throw new \Exception('AI Request failed: '.$e->getMessage());
             }
         }
     }
@@ -772,12 +1046,12 @@ SYSTEM;
         } elseif (strpos($cleanContent, '```') === 0) {
             $cleanContent = substr($cleanContent, 3);
         }
-        
+
         if (substr($cleanContent, -3) === '```') {
             $cleanContent = substr($cleanContent, 0, -3);
         }
         $cleanContent = trim($cleanContent);
-        
+
         // 2. Try direct decode
         $decoded = json_decode($cleanContent, true);
         if (json_last_error() === JSON_ERROR_NONE) {
@@ -790,17 +1064,17 @@ SYSTEM;
 
         if ($firstBracket !== false && $lastBracket !== false) {
             $jsonCandidate = substr($cleanContent, $firstBracket, $lastBracket - $firstBracket + 1);
-            
+
             // 4. Robust Cleaning Helper
             $cleanedJson = $this->robustCleanJson($jsonCandidate);
-            
+
             $decoded = json_decode($cleanedJson, true);
             if (json_last_error() === JSON_ERROR_NONE) {
                 return $decoded;
             }
 
             // 5. One last ditch effort: fix common escaped character issues
-            $lastDitch = str_replace(["\n", "\r", "\t"], ["\\n", "\\r", "\\t"], $jsonCandidate);
+            $lastDitch = str_replace(["\n", "\r", "\t"], ['\\n', '\\r', '\\t'], $jsonCandidate);
             $decoded = json_decode($this->robustCleanJson($lastDitch), true);
             if (json_last_error() === JSON_ERROR_NONE) {
                 return $decoded;
@@ -809,12 +1083,12 @@ SYSTEM;
             Log::error('JSON Parse Error', [
                 'error' => json_last_error_msg(),
                 'candidate_preview' => substr($jsonCandidate, 0, 500),
-                'cleaned_preview' => substr($cleanedJson ?? 'NULL', 0, 500)
+                'cleaned_preview' => substr($cleanedJson ?? 'NULL', 0, 500),
             ]);
-            throw new \Exception('Invalid JSON response: ' . $content);
+            throw new \Exception('Invalid JSON response: '.$content);
         }
 
-        throw new \Exception('Failed to return a JSON object from content: ' . substr($content, 0, 100));
+        throw new \Exception('Failed to return a JSON object from content: '.substr($content, 0, 100));
     }
 
     /**
@@ -822,21 +1096,23 @@ SYSTEM;
      */
     private function robustCleanJson(?string $json): string
     {
-        if ($json === null) return '';
+        if ($json === null) {
+            return '';
+        }
 
         // Remove control characters except for space & standard printable chars
         // Preserving \x09 (Tab), \x0A (LF), \x0D (CR) which are essential for JSON structure
         $cleaned = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $json);
-        
+
         // Fallback if preg_replace failed (though unlikely without /u)
         $json = $cleaned ?? $json;
 
         // Fix trailing commas in objects and arrays
         $json = preg_replace('/,\s*([\]}])/', '$1', $json);
-        
+
         // Fix double-escaped characters
         $json = str_replace(['\\\\n', '\\\\"'], ['\\n', '\\"'], $json);
-        
+
         return $json;
     }
 }
