@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
+import '../debug/novais_diagnostics.dart';
 
 // ── Public / Landing
 import '../../features/landing/landing_screen.dart';
@@ -48,6 +49,7 @@ import '../../features/payment/pricing_screen.dart'
 
 // ── Notes
 import '../../features/notes/notes_screen.dart';
+import '../../features/notifications/notifications_screen.dart';
 
 // ── Stub public pages (blog, contact, about, features, shared course)
 // ── Stub public pages (blog, contact, about, features)
@@ -118,9 +120,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
               path: '/audio', builder: (_, __) => const AudioCoursesScreen()),
           GoRoute(path: '/notes', builder: (_, __) => const NotesScreen()),
+          GoRoute(
+              path: '/notifications',
+              builder: (_, __) => const NotificationsScreen()),
           GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
           GoRoute(path: '/signin', builder: (_, __) => const SignInScreen()),
           GoRoute(path: '/signup', builder: (_, __) => const SignUpScreen()),
+          GoRoute(path: '/pricing', builder: (_, __) => const PricingScreen()),
         ],
       ),
 
@@ -156,10 +162,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/pricing',
-        builder: (_, __) => const PricingScreen(),
-      ),
-      GoRoute(
         path: '/subscription',
         builder: (_, __) => const ManageSubscriptionScreen(),
       ),
@@ -192,6 +194,7 @@ String? mobileAuthRedirect(AuthStatus status, String location) {
   final isAuth = status == AuthStatus.authenticated;
   final isUnknown = status == AuthStatus.unknown;
   final isLoading = location == '/auth-loading';
+  String? decision;
 
   if (isUnknown) {
     final protectedPaths = [
@@ -205,15 +208,19 @@ String? mobileAuthRedirect(AuthStatus status, String location) {
       '/payment',
       '/subscription',
       '/notes',
+      '/notifications',
       '/audio',
     ];
     final isProtected = protectedPaths.any((path) => location.startsWith(path));
-    if (isProtected) return isLoading ? null : '/auth-loading';
-    return null;
+    if (isProtected) decision = isLoading ? null : '/auth-loading';
+    _logRedirect(status, location, decision);
+    return decision;
   }
 
   if (isLoading) {
-    return isAuth ? '/dashboard' : '/signin';
+    decision = isAuth ? '/dashboard' : '/signin';
+    _logRedirect(status, location, decision);
+    return decision;
   }
 
   final protectedPaths = [
@@ -227,19 +234,32 @@ String? mobileAuthRedirect(AuthStatus status, String location) {
     '/payment',
     '/subscription',
     '/notes',
+    '/notifications',
     '/audio',
   ];
 
   final isProtected = protectedPaths.any((path) => location.startsWith(path));
 
   if (!isAuth && isProtected) {
-    return '/signin';
+    decision = '/signin';
+    _logRedirect(status, location, decision);
+    return decision;
   }
 
   if (isAuth &&
       (location == '/signin' || location == '/signup' || location == '/')) {
-    return '/dashboard';
+    decision = '/dashboard';
+    _logRedirect(status, location, decision);
+    return decision;
   }
 
-  return null;
+  _logRedirect(status, location, decision);
+  return decision;
+}
+
+void _logRedirect(AuthStatus status, String location, String? decision) {
+  NovaisDiagnostics.log(
+    'Router',
+    'status=${status.name} location=$location decision=${decision ?? 'stay'}',
+  );
 }

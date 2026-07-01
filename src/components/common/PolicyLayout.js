@@ -73,9 +73,11 @@ const PolicyLayout = ({ title, slug, icon: Icon = LuFileText }) => {
 
                     {loading ? (
                         <div className="policy-loading">
-                            <div className="policy-spinner"></div>
-                            <p className="text-gray-400 font-medium">Loading document...</p>
-                        </div>
+                        <div className="policy-spinner"></div>
+                        <p className="text-gray-400 font-medium">
+                            {isAr ? 'جاري تحميل المستند...' : 'Loading document...'}
+                        </p>
+                    </div>
                     ) : (
                         <motion.div
                             initial={{ opacity: 0 }}

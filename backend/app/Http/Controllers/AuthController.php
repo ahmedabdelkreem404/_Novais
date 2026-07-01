@@ -10,6 +10,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\WelcomeMail;
 use App\Mail\VerificationCodeMail;
+use App\Models\AppNotification;
 use App\Models\VerificationCode;
 use Carbon\Carbon;
 
@@ -271,6 +272,30 @@ class AuthController extends Controller
         // Track Device
         if ($request->has('device_id')) {
             $this->deviceManager->trackDevice($user, $request->device_id);
+        }
+
+        $hasLoginNotification = AppNotification::query()
+            ->where('user_id', $user->id)
+            ->where('type', 'system')
+            ->where('data->trigger', 'login')
+            ->exists();
+
+        if (!$hasLoginNotification) {
+            AppNotification::create([
+                'user_id' => $user->id,
+                'title' => 'Welcome back',
+                'body' => 'Your NOVAIS learning workspace is ready.',
+                'type' => 'system',
+                'data' => [
+                    'trigger' => 'login',
+                    'localized' => [
+                        'en' => ['title' => 'Welcome back', 'body' => 'Your NOVAIS learning workspace is ready.'],
+                        'ar' => ['title' => 'مرحباً بعودتك', 'body' => 'مساحة التعلم الخاصة بك في NOVAIS جاهزة.'],
+                    ],
+                ],
+                'published_at' => now(),
+                'scheduled_at' => now(),
+            ]);
         }
 
         return $this->createNewToken($token);

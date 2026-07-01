@@ -15,8 +15,10 @@ const EditBlog = () => {
 
     const [id, setId] = useState(null);
     const [title, setTitle] = useState('');
+    const [titleAr, setTitleAr] = useState('');
     const [slug, setSlug] = useState('');
     const [content, setContent] = useState('');
+    const [contentAr, setContentAr] = useState('');
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
 
@@ -28,8 +30,10 @@ const EditBlog = () => {
                 const blog = response.data;
                 setId(blog.id);
                 setTitle(blog.title);
+                setTitleAr(blog.title_ar || '');
                 setSlug(blog.slug);
                 setContent(blog.content);
+                setContentAr(blog.content_ar || '');
                 setLoading(false);
             } catch (error) {
                 console.error("Failed to fetch blog", error);
@@ -54,7 +58,13 @@ const EditBlog = () => {
         try {
             const token = localStorage.getItem('token');
             // Admin endpoint uses ID
-            await axios.put(`${serverURL}/admin/blogs/${id}`, { title, slug, content }, {
+            await axios.put(`${serverURL}/admin/blogs/${id}`, { 
+                title, 
+                title_ar: titleAr, 
+                slug, 
+                content, 
+                content_ar: contentAr 
+            }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success(t('admin.dashboard.blog.create_success')); // Or generic success, reusing create success for now
@@ -85,17 +95,18 @@ const EditBlog = () => {
                     </div>
 
                     <Input
-                        label={t('admin.dashboard.blog.blog_title')}
+                        label={t('admin.dashboard.blog.blog_title') + " (English)"}
                         placeholder={t('admin.dashboard.blog.title_placeholder')}
                         value={title}
-                        onChange={(e) => {
-                            setTitle(e.target.value);
-                            // Only auto-update slug if it hasn't been manually edited? 
-                            // For simplicity, we might just let user edit slug manually if they want, 
-                            // or auto-update if they are typing the title and slug looks like a slugified version of previous title?
-                            // Let's just update title. Slug is managed separately in edit mode usually.
-                        }}
+                        onChange={(e) => setTitle(e.target.value)}
                         required
+                    />
+
+                    <Input
+                        label={t('admin.dashboard.blog.blog_title') + " (العربية)"}
+                        placeholder="أدخل عنوان المقال بالعربية..."
+                        value={titleAr}
+                        onChange={(e) => setTitleAr(e.target.value)}
                     />
 
                     <Input
@@ -108,14 +119,26 @@ const EditBlog = () => {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                            {t('admin.dashboard.blog.content_label')}
+                            {t('admin.dashboard.blog.content_label') + " (English)"}
                         </label>
                         <textarea
-                            className="w-full min-h-[300px] p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0f0f0f] text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            className="w-full min-h-[200px] p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0f0f0f] text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             placeholder={t('admin.dashboard.blog.content_placeholder')}
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                             required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            {t('admin.dashboard.blog.content_label') + " (العربية)"}
+                        </label>
+                        <textarea
+                            className="w-full min-h-[200px] p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0f0f0f] text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            placeholder="أدخل محتوى المقال باللغة العربية..."
+                            value={contentAr}
+                            onChange={(e) => setContentAr(e.target.value)}
                         />
                     </div>
                 </Card>

@@ -163,6 +163,29 @@ class NvCourseCard extends StatelessWidget {
         ? null
         : ApiClient.resolveMediaUrl(course.imageUrl!);
 
+    final isDocument = [
+      'book',
+      'graduation-project',
+      'master-thesis',
+      'research-paper',
+      'academic-course',
+      'study-review',
+    ].contains(course.blueprintSlug);
+
+    String badgeText = _courseTypeLabel(course.type, l10n);
+    Color badgeColor = const Color(0xFF2563EB); // Blue-600
+
+    if (course.blueprintSlug == 'graduation-project') {
+      badgeText = l10n.isAr ? 'كتاب مشروع تخرج' : 'Graduation Project Book';
+      badgeColor = const Color(0xFF6366F1); // Indigo
+    } else if (course.blueprintSlug == 'master-thesis') {
+      badgeText = l10n.isAr ? 'رسالة ماجستير' : 'Master Thesis';
+      badgeColor = const Color(0xFF8B5CF6); // Purple
+    } else if (course.blueprintSlug == 'book') {
+      badgeText = l10n.isAr ? 'كتاب تعليمي' : 'Academic Book';
+      badgeColor = const Color(0xFF0EA5E9); // Sky
+    }
+
     return Semantics(
       label: 'course_card',
       button: true,
@@ -226,11 +249,10 @@ class NvCourseCard extends StatelessWidget {
                       child: Row(
                         children: [
                           _Badge(
-                            text: _courseTypeLabel(course.type, l10n),
-                            color: const Color(0xFF2563EB), // Blue-600
+                            text: badgeText,
+                            color: badgeColor,
                             textColor: Colors.white,
                           ),
-                          // Level badge could go here if we had it in model
                         ],
                       ),
                     ),
@@ -260,32 +282,46 @@ class NvCourseCard extends StatelessWidget {
                       ),
                       Column(
                         children: [
-                          // Progress Bar
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: progress / 100,
-                              backgroundColor:
-                                  isDark ? Colors.white10 : Colors.grey[200],
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                  AppColors.primary),
-                              minHeight: 6,
+                          if (!isDocument) ...[
+                            // Progress Bar
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: progress / 100,
+                                backgroundColor:
+                                    isDark ? Colors.white10 : Colors.grey[200],
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                    AppColors.primary),
+                                minHeight: 6,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
+                            const SizedBox(height: 8),
+                          ],
 
                           // Footer Stats
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('$progress% ${l10n.t('complete')}',
+                              if (isDocument)
+                                Text(
+                                  l10n.isAr ? 'وثيقة أكاديمية' : 'Academic Document',
                                   style: TextStyle(
                                       fontSize: 11,
                                       color: isDark
                                           ? Colors.grey[400]
                                           : Colors.grey[500],
-                                      fontWeight: FontWeight.w500)),
-                              Text('$chapterCount ${l10n.t('chapters')}',
+                                      fontWeight: FontWeight.w600),
+                                )
+                              else
+                                Text('$progress% ${l10n.t('complete')}',
+                                    style: TextStyle(
+                                        fontSize: 11,
+                                        color: isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[500],
+                                        fontWeight: FontWeight.w500)),
+                              Text(
+                                  '$chapterCount ${l10n.isAr ? (isDocument ? 'فصل' : 'درس') : (isDocument ? 'Chapters' : 'Lessons')}',
                                   style: TextStyle(
                                       fontSize: 11,
                                       color: isDark
@@ -315,7 +351,10 @@ class NvCourseCard extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(l10n.t('continue'),
+                    Text(
+                        isDocument
+                            ? (l10n.isAr ? 'قراءة كتاب المشروع' : 'Read Project Book')
+                            : l10n.t('continue'),
                         style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -323,8 +362,10 @@ class NvCourseCard extends StatelessWidget {
                     CircleAvatar(
                       radius: 12,
                       backgroundColor: AppColors.primary.withAlpha(20),
-                      child: const Icon(Icons.play_arrow,
-                          size: 14, color: AppColors.primary),
+                      child: Icon(
+                          isDocument ? Icons.menu_book : Icons.play_arrow,
+                          size: 14,
+                          color: AppColors.primary),
                     )
                   ],
                 ),
@@ -348,8 +389,6 @@ class NvCourseCard extends StatelessWidget {
 
   int _calculateProgress(Course c) {
     if (c.lessons.isEmpty) return 0;
-    // Mock calculation since we don't have 'done' status in simple Lesson model yet
-    // In real app, iterate lessons and check completion
     return 0;
   }
 

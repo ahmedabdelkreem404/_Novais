@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'dart:convert';
 import '../../core/auth/auth_provider.dart';
 import '../../core/api/endpoints.dart';
+import '../../core/api/subscription_usage_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/l10n/app_localizations.dart';
 
@@ -79,6 +80,10 @@ class _GeneratingScreenState extends ConsumerState<GeneratingScreen>
         final saveRes = await api.dio.post(ApiEndpoints.courses, data: {
           'mainTopic': outline['title'] ?? widget.courseData['topic'],
           'type': widget.courseData['type'],
+          'blueprint_slug':
+              widget.courseData['blueprint_slug'] ?? outline['blueprint_slug'],
+          'blueprint_fields': widget.courseData['blueprint_fields'] ??
+              outline['blueprint_fields'],
           'language': widget.courseData['language'],
           'level': widget.courseData['level'],
           'content': jsonEncode(outline),
@@ -90,6 +95,7 @@ class _GeneratingScreenState extends ConsumerState<GeneratingScreen>
       }
 
       if (mounted && _courseId != null) {
+        ref.invalidate(subscriptionUsageProvider);
         context.go('/course/$_courseId');
       }
     } catch (e) {

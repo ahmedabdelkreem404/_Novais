@@ -6,6 +6,8 @@ import '../../core/theme/app_theme.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../widgets/widgets.dart';
 import '../../core/api/platform_config_provider.dart';
+import '../../core/api/content_blueprints_provider.dart';
+import '../../models/content_blueprint.dart';
 import '../../models/platform_config.dart';
 
 class CreateScreen extends ConsumerStatefulWidget {
@@ -21,14 +23,17 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
 
   // Selection state
   String _type = 'Theory & Image Course';
+  String _blueprintSlug = 'normal-course';
   String _language = 'English';
   String _level = 'Beginner';
   int _modules = 5;
   final List<String> _subTopics = [];
+  final Map<String, dynamic> _blueprintFields = {};
 
   final _languages = [
     'English',
     'Arabic',
+    'Egyptian Arabic',
     'French',
     'Spanish',
     'German',
@@ -43,6 +48,67 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
     'Polish',
     'Dutch',
   ];
+
+  String _getLanguageLabel(String langName, bool isAr) {
+    if (langName == 'Arabic') {
+      return isAr ? 'العربية الفصحى' : 'Modern Standard Arabic';
+    }
+    if (langName == 'Egyptian Arabic') {
+      return isAr ? 'العامية المصرية' : 'Egyptian Arabic';
+    }
+    if (isAr) {
+      final translations = {
+        'English': 'الإنجليزية',
+        'French': 'الفرنسية',
+        'Spanish': 'الإسبانية',
+        'German': 'الألمانية',
+        'Italian': 'الإيطالية',
+        'Portuguese': 'البرتغالية',
+        'Russian': 'الروسية',
+        'Japanese': 'اليابانية',
+        'Chinese': 'الصينية',
+        'Korean': 'الكورية',
+        'Hindi': 'الهندية',
+        'Turkish': 'التركية',
+        'Polish': 'البولندية',
+        'Dutch': 'الهولندية',
+      };
+      return translations[langName] ?? langName;
+    }
+    return langName;
+  }
+
+  String _getDynamicTopicLabel(String slug, bool isAr) {
+    if (slug == 'book') {
+      return isAr ? 'عنوان أو موضوع الكتاب' : 'Book Title or Topic';
+    }
+    if (slug == 'exam-builder' || slug == 'question-bank') {
+      return isAr ? 'موضوع الامتحان / المادة' : 'Exam Subject / Topic';
+    }
+    if (slug == 'graduation-project' || slug == 'master-thesis') {
+      return isAr ? 'عنوان أو مجال البحث' : 'Research Field / Project Topic';
+    }
+    if (slug == 'lesson-plan') {
+      return isAr ? 'موضوع الدرس' : 'Lesson Topic';
+    }
+    return isAr ? 'موضوع الكورس / المحتوى' : 'Course Topic / Content';
+  }
+
+  String _getDynamicTopicPlaceholder(String slug, bool isAr) {
+    if (slug == 'book') {
+      return isAr ? 'مثال: تاريخ مصر القديمة، أساسيات الفيزياء...' : 'e.g., History of Ancient Egypt, Physics Fundamentals...';
+    }
+    if (slug == 'exam-builder' || slug == 'question-bank') {
+      return isAr ? 'مثال: رياضيات الصف الأول الثانوي، كيمياء عضوية...' : 'e.g., High School Math, Organic Chemistry...';
+    }
+    if (slug == 'graduation-project' || slug == 'master-thesis') {
+      return isAr ? 'مثال: تطبيق الذكاء الاصطناعي في الطب، بلوكشين...' : 'e.g., AI in Healthcare, Blockchain in Finance...';
+    }
+    if (slug == 'lesson-plan') {
+      return isAr ? 'مثال: دورة المياه في الطبيعة، الجهاز الهضمي...' : 'e.g., Water Cycle, Digestion System...';
+    }
+    return isAr ? 'مثال: أساسيات لغة بايثون، تصميم الويب...' : 'e.g., Python Basics, Web Design...';
+  }
 
   void _onFeatureSelect(String feature, dynamic value, PlatformConfig? config) {
     final user = ref.read(authProvider).user;
@@ -94,15 +160,29 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
   Future<void> _generate() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final Map<String, dynamic> extra = {
+      'topic': _topicCtrl.text.trim(),
+      'subTopics': _subTopics,
+      'type': _type,
+      'blueprint_slug': _blueprintSlug,
+      'blueprint_fields': _blueprintFields,
+      'language': _language,
+      'level': _level,
+      'numModules': _modules,
+    };
+
+    if (_blueprintFields.containsKey('level')) {
+      extra['level'] = _blueprintFields['level'];
+    }
+    if (_blueprintFields.containsKey('numModules')) {
+      extra['numModules'] = int.tryParse(_blueprintFields['numModules'].toString()) ?? _modules;
+    }
+    if (_blueprintFields.containsKey('type')) {
+      extra['type'] = _blueprintFields['type'];
+    }
+
     if (mounted) {
-      context.push('/generating', extra: {
-        'topic': _topicCtrl.text.trim(),
-        'subTopics': _subTopics,
-        'type': _type,
-        'language': _language,
-        'level': _level,
-        'numModules': _modules,
-      });
+      context.push('/generating', extra: extra);
     }
   }
 
@@ -133,28 +213,308 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
     );
   }
 
+  void _prepareBlueprintFields(List<BlueprintFormField> fields) {
+    for (final field in fields) {
+      if (field.keyName.isEmpty ||
+          _blueprintFields.containsKey(field.keyName)) {
+        continue;
+      }
+      if (field.type == 'boolean') {
+        _blueprintFields[field.keyName] = false;
+      } else if (field.type == 'multiselect') {
+        _blueprintFields[field.keyName] = <String>[];
+      } else {
+        _blueprintFields[field.keyName] = '';
+      }
+    }
+  }
+
+  void _setBlueprintField(String key, dynamic value) {
+    setState(() => _blueprintFields[key] = value);
+  }
+
+  String _getFieldCategory(String slug, String fieldKey) {
+    const essentialKeys = [
+      'practical_domain', 'practice_intensity', 'academic_level', 'lecture_count', 
+      'exam_level', 'topics_to_review', 'topics', 'question_count', 'question_types', 
+      'exam_duration', 'total_marks', 'section_count', 'target_reader', 'chapter_count', 
+      'writing_style', 'genre', 'theme', 'domain', 'problem_statement', 'objectives', 
+      'research_problem', 'research_questions', 'grade', 'duration', 'learning_objectives', 
+      'activities', 'assessment_method', 'task_count', 'delivery_style', 'final_deliverable', 
+      'milestones', 'evaluation_criteria'
+    ];
+
+    if (essentialKeys.contains(fieldKey)) {
+      return 'essential';
+    }
+
+    if (['audience', 'outcome', 'difficulty_focus'].contains(fieldKey)) {
+      return 'optional';
+    }
+
+    return 'advanced';
+  }
+
+  Widget _buildTriStateOption(BuildContext context, String key, String label, bool active, VoidCallback onTap) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: active
+                ? AppColors.primary.withValues(alpha: 0.1)
+                : (isDark ? const Color(0xFF1F1F1F) : const Color(0xFFF9FAFB)),
+            border: Border.all(
+              color: active ? AppColors.primary : (isDark ? Colors.grey[800]! : Colors.grey[300]!),
+              width: 1.5,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+              color: active ? AppColors.primary : (isDark ? Colors.grey[400] : Colors.grey[600]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBlueprintField(
+    BuildContext context,
+    BlueprintFormField field,
+    bool isDark,
+  ) {
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final label = field.labelFor(languageCode);
+    final value = _blueprintFields[field.keyName];
+    final category = _getFieldCategory(_blueprintSlug, field.keyName);
+    final isEssential = category == 'essential';
+    final isAr = languageCode == 'ar';
+    
+    final placeholder = field.placeholderFor(languageCode) ?? 
+        (isEssential 
+            ? label 
+            : (isAr ? '$label (تلقائي / اتركه للذكاء الاصطناعي)' : '$label (Auto / Let AI decide)'));
+
+    final inputDecoration = InputDecoration(
+      hintText: placeholder,
+      filled: true,
+      fillColor: isDark ? const Color(0xFF1F1F1F) : const Color(0xFFF9FAFB),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+
+    Widget control;
+    if (field.type == 'textarea') {
+      control = TextFormField(
+        initialValue: value?.toString() ?? '',
+        minLines: 3,
+        maxLines: 5,
+        decoration: inputDecoration,
+        onChanged: (next) => _blueprintFields[field.keyName] = next,
+        validator: field.required
+            ? (next) =>
+                (next == null || next.trim().isEmpty) ? AppLocalizations.of(context).t('required') : null
+            : null,
+      );
+    } else if (field.type == 'number') {
+      control = TextFormField(
+        initialValue: value?.toString() ?? '',
+        keyboardType: TextInputType.number,
+        decoration: inputDecoration,
+        onChanged: (next) => _blueprintFields[field.keyName] = next,
+        validator: field.required
+            ? (next) =>
+                (next == null || next.trim().isEmpty) ? AppLocalizations.of(context).t('required') : null
+            : null,
+      );
+    } else if (field.type == 'select') {
+      final parsed = List<Map<String, dynamic>>.from(field.parsedOptions);
+      if (!field.required) {
+        parsed.insert(0, {
+          'value': 'auto',
+          'label': {
+            'en': 'Auto / Let AI decide',
+            'ar': 'تلقائي / اتركه للذكاء الاصطناعي',
+          }
+        });
+      }
+      final currentValue = value ?? (field.required ? null : 'auto');
+      final selectedValue = parsed.any((o) => o['value'] == currentValue) ? currentValue.toString() : null;
+      control = DropdownButtonFormField<String>(
+        value: selectedValue,
+        decoration: inputDecoration,
+        dropdownColor: isDark ? const Color(0xFF1F1F1F) : Colors.white,
+        items: parsed
+            .map((option) {
+              final optLabelMap = option['label'] as Map<String, dynamic>;
+              final optLabel = languageCode == 'ar'
+                  ? (optLabelMap['ar']?.toString() ?? optLabelMap['en']?.toString() ?? option['value'].toString())
+                  : (optLabelMap['en']?.toString() ?? optLabelMap['ar']?.toString() ?? option['value'].toString());
+              return DropdownMenuItem(
+                value: option['value'].toString(),
+                child: Text(optLabel),
+              );
+            })
+            .toList(),
+        onChanged: (next) => _setBlueprintField(field.keyName, next == 'auto' ? null : next),
+        validator: field.required
+            ? (next) => (next == null || next.isEmpty) ? AppLocalizations.of(context).t('required') : null
+            : null,
+      );
+    } else if (field.type == 'multiselect') {
+      final parsed = field.parsedOptions;
+      final selected = (value is List ? value : const [])
+          .map((item) => item.toString())
+          .toList();
+      control = Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: parsed.map((option) {
+          final optVal = option['value'].toString();
+          final optLabelMap = option['label'] as Map<String, dynamic>;
+          final optLabel = languageCode == 'ar'
+              ? (optLabelMap['ar']?.toString() ?? optLabelMap['en']?.toString() ?? optVal)
+              : (optLabelMap['en']?.toString() ?? optLabelMap['ar']?.toString() ?? optVal);
+          final checked = selected.contains(optVal);
+          return FilterChip(
+            label: Text(optLabel),
+            selected: checked,
+            onSelected: (next) {
+              final updated = [...selected];
+              if (next) {
+                updated.add(optVal);
+              } else {
+                updated.remove(optVal);
+              }
+              _setBlueprintField(field.keyName, updated);
+            },
+          );
+        }).toList(),
+      );
+    } else if (field.type == 'boolean') {
+      final currentValue = value;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _buildTriStateOption(context, 'auto', isAr ? 'تلقائي' : 'Auto', currentValue == null, () {
+                _setBlueprintField(field.keyName, null);
+              }),
+              const SizedBox(width: 8),
+              _buildTriStateOption(context, 'true', isAr ? 'نعم' : 'Yes', currentValue == true, () {
+                _setBlueprintField(field.keyName, true);
+              }),
+              const SizedBox(width: 8),
+              _buildTriStateOption(context, 'false', isAr ? 'لا' : 'No', currentValue == false, () {
+                _setBlueprintField(field.keyName, false);
+              }),
+            ],
+          ),
+        ],
+      );
+    } else {
+      control = TextFormField(
+        initialValue: value?.toString() ?? '',
+        decoration: inputDecoration,
+        onChanged: (next) => _blueprintFields[field.keyName] = next,
+        validator: field.required
+            ? (next) =>
+                (next == null || next.trim().isEmpty) ? AppLocalizations.of(context).t('required') : null
+            : null,
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+              ),
+            ),
+            if (field.required)
+              Text(
+                AppLocalizations.of(context).t('required'),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primary,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        control,
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = ref.watch(authProvider).user;
     final isPro = user?.isPro == true;
+    final languageCode = Localizations.localeOf(context).languageCode;
 
     final configAsync = ref.watch(platformConfigProvider);
     final config = configAsync.valueOrNull;
+    final blueprints = ref.watch(contentBlueprintsProvider).valueOrNull ?? [];
+    if (blueprints.isNotEmpty &&
+        !blueprints.any((item) => item.slug == _blueprintSlug)) {
+      _blueprintSlug = blueprints.first.slug;
+    }
+    ContentBlueprint? activeBlueprint;
+    for (final blueprint in blueprints) {
+      if (blueprint.slug == _blueprintSlug) {
+        activeBlueprint = blueprint;
+        break;
+      }
+    }
+    final activeBlueprintFields = activeBlueprint?.formFields ?? const [];
+    _prepareBlueprintFields(activeBlueprintFields);
 
     final languages = config?.enabledLanguages ?? _languages;
-    final courseTypes = config?.enabledCourseTypes ?? [
-      'Theory & Image Course',
-      'Video & Theory Course',
-    ];
+    final courseTypes = config?.enabledCourseTypes ??
+        [
+          'Theory & Image Course',
+          'Video & Theory Course',
+        ];
     final creationEnabled = config?.courseCreationEnabled ?? true;
 
     // Verify current selection is still in the active list
     String selectedLanguage = _language;
     if (languages.isNotEmpty) {
       if (!languages.contains(selectedLanguage)) {
-        selectedLanguage = languages.contains('English') ? 'English' : languages.first;
+        selectedLanguage =
+            languages.contains('English') ? 'English' : languages.first;
       }
     } else {
       selectedLanguage = 'English';
@@ -262,7 +622,8 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                          const Icon(Icons.warning_amber_rounded,
+                              color: Colors.red),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -278,14 +639,13 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                       ),
                     ),
 
-                  // Topic
-                  const _SectionHeader(
-                      label: 'TOPIC', icon: Icons.lightbulb_outline),
+                   _SectionHeader(
+                      label: _getDynamicTopicLabel(_blueprintSlug, l10n.isAr).toUpperCase(), icon: Icons.lightbulb_outline),
                   NvTextField(
                     label: '',
                     fieldKey: const Key('create_topic_input'),
                     controller: _topicCtrl,
-                    hint: 'e.g. Advanced Flutter Patterns',
+                    hint: _getDynamicTopicPlaceholder(_blueprintSlug, l10n.isAr),
                     maxLines: 1,
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? 'Required' : null,
@@ -341,7 +701,118 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                   const SizedBox(height: 24),
 
                   // Language
-                  const _SectionHeader(label: 'LANGUAGE', icon: Icons.language),
+                  if (blueprints.isNotEmpty) ...[
+                    _SectionHeader(
+                        label: l10n.t('content_blueprint').toUpperCase(),
+                        icon: Icons.dashboard_customize_outlined),
+                    DropdownButtonFormField<String>(
+                      value:
+                          blueprints.any((item) => item.slug == _blueprintSlug)
+                              ? _blueprintSlug
+                              : blueprints.first.slug,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: isDark
+                            ? const Color(0xFF1F1F1F)
+                            : const Color(0xFFF9FAFB),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                      ),
+                      dropdownColor:
+                          isDark ? const Color(0xFF1F1F1F) : Colors.white,
+                      items: blueprints
+                          .map((blueprint) => DropdownMenuItem(
+                                value: blueprint.slug,
+                                child: Text(blueprint.nameFor(languageCode)),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            _blueprintSlug = value;
+                            _blueprintFields.clear();
+                            final selectedBp = blueprints.firstWhere(
+                              (bp) => bp.slug == value,
+                              orElse: () => blueprints.first,
+                            );
+                            if (value != 'normal-course' && value != 'leveled-course') {
+                              _modules = selectedBp.defaultCount;
+                            }
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  if (activeBlueprintFields.isNotEmpty) ...[
+                    _SectionHeader(
+                      label: '${activeBlueprint?.nameFor(languageCode) ?? 'Blueprint'} ${l10n.t('details')}'
+                          .toUpperCase(),
+                      icon: Icons.tune_outlined,
+                    ),
+                    // Render essential fields directly
+                    ...activeBlueprintFields.where((f) => _getFieldCategory(_blueprintSlug, f.keyName) == 'essential').map(
+                      (field) => Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: _buildBlueprintField(context, field, isDark),
+                      ),
+                    ),
+                    
+                    // Group optional/advanced fields inside a premium ExpansionTile
+                    if (activeBlueprintFields.any((f) => _getFieldCategory(_blueprintSlug, f.keyName) != 'essential')) ...[
+                      const SizedBox(height: 10),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF2D2D2D) : const Color(0xFFE5E7EB),
+                              width: 1,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            color: isDark ? const Color(0xFF151515) : Colors.white,
+                          ),
+                          child: Theme(
+                            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                            child: ExpansionTile(
+                              collapsedBackgroundColor: isDark ? const Color(0xFF151515) : Colors.white,
+                              backgroundColor: isDark ? const Color(0xFF151515) : Colors.white,
+                              title: Text(
+                                languageCode == 'ar'
+                                    ? 'خيارات متقدمة وهيكل المحتوى (تلقائي)'
+                                    : 'Advanced Options & Structure (Auto)',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white70 : Colors.black87,
+                                ),
+                              ),
+                              leading: const Icon(
+                                Icons.tune_outlined,
+                                color: AppColors.primary,
+                                size: 20,
+                              ),
+                              childrenPadding: const EdgeInsets.all(16),
+                              children: activeBlueprintFields
+                                  .where((f) => _getFieldCategory(_blueprintSlug, f.keyName) != 'essential')
+                                  .map((field) => Padding(
+                                        padding: const EdgeInsets.only(bottom: 14),
+                                        child: _buildBlueprintField(context, field, isDark),
+                                      ))
+                                  .toList(),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+                  ],
+
+                  _SectionHeader(label: l10n.t('language').toUpperCase(), icon: Icons.language),
                   DropdownButtonFormField<String>(
                     value: selectedLanguage,
                     decoration: InputDecoration(
@@ -359,11 +830,13 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                     dropdownColor:
                         isDark ? const Color(0xFF1F1F1F) : Colors.white,
                     items: languages.map((l) {
-                      final isPrem = config != null ? config.isPremiumLanguage(l) : l != 'English';
+                      final isPrem = config != null
+                          ? config.isPremiumLanguage(l)
+                          : l != 'English';
                       return DropdownMenuItem(
                         value: l,
                         child: Row(children: [
-                          Text(l),
+                          Text(_getLanguageLabel(l, l10n.isAr)),
                           if (isPrem && !isPro) ...[
                             const SizedBox(width: 8),
                             const Icon(Icons.workspace_premium,
@@ -380,85 +853,90 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Complexity (Grid)
-                  const _SectionHeader(
-                      label: 'COMPLEXITY LEVEL',
-                      icon: Icons.rocket_launch_outlined),
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    childAspectRatio: 2.2,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    children: [
-                      'Beginner',
-                      'Intermediate',
-                      'Advanced',
-                      'Professional'
-                    ].map((level) {
-                      final isPrem = level == 'Professional';
-                      return _ComplexityCard(
-                        label: level,
-                        isSelected: _level == level,
-                        isPremium: isPrem,
-                        isLocked: isPrem && !isPro,
-                        onTap: () => _onFeatureSelect('level', level, config),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Depth (Modules)
-                  const _SectionHeader(
-                      label: 'DEPTH', icon: Icons.layers_outlined),
-                  Row(
-                    children: [5, 10].map((m) {
-                      final isPrem = m > 5;
-                      return Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                              right: m == 5 ? 10 : 0), // Spacing
-                          child: _DepthCard(
-                            value: m,
-                            label: 'Modules',
-                            isSelected: _modules == m,
-                            isPremium: isPrem,
-                            isLocked: isPrem && !isPro,
-                            onTap: () => _onFeatureSelect('modules', m, config),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Format (Type)
-                  const _SectionHeader(
-                      label: 'FORMAT', icon: Icons.auto_stories_outlined),
-                  Column(
-                    children: courseTypes.map((t) {
-                      final isPrem = config != null ? config.isPremiumCourseType(t) : t.contains('Video');
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _TypeCard(
-                          label: t.contains('Video')
-                              ? 'Video & Theory'
-                              : 'Theory & Image',
-                          desc: t.contains('Video')
-                              ? 'Detailed video explanations'
-                              : 'Comprehensive text & images',
-                          icon: t.contains('Video')
-                              ? Icons.videocam
-                              : Icons.menu_book,
-                          isSelected: selectedType == t,
+                  // Complexity, Depth, and Format inputs - only visible for normal-course or leveled-course blueprints
+                  if (_blueprintSlug == 'normal-course' || _blueprintSlug == 'leveled-course') ...[
+                    // Complexity (Grid)
+                    const _SectionHeader(
+                        label: 'COMPLEXITY LEVEL',
+                        icon: Icons.rocket_launch_outlined),
+                    GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      childAspectRatio: 2.2,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      children: [
+                        'Beginner',
+                        'Intermediate',
+                        'Advanced',
+                        'Professional'
+                      ].map((level) {
+                        final isPrem = level == 'Professional';
+                        return _ComplexityCard(
+                          label: level,
+                          isSelected: _level == level,
                           isPremium: isPrem,
                           isLocked: isPrem && !isPro,
-                          onTap: () => _onFeatureSelect('type', t, config),
-                        ),
-                      );
-                    }).toList(),
-                  ),
+                          onTap: () => _onFeatureSelect('level', level, config),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Depth (Modules)
+                    const _SectionHeader(
+                        label: 'DEPTH', icon: Icons.layers_outlined),
+                    Row(
+                      children: [5, 10].map((m) {
+                        final isPrem = m > 5;
+                        return Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                                right: m == 5 ? 10 : 0), // Spacing
+                            child: _DepthCard(
+                              value: m,
+                              label: 'Modules',
+                              isSelected: _modules == m,
+                              isPremium: isPrem,
+                              isLocked: isPrem && !isPro,
+                              onTap: () => _onFeatureSelect('modules', m, config),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Format (Type)
+                    const _SectionHeader(
+                        label: 'FORMAT', icon: Icons.auto_stories_outlined),
+                    Column(
+                      children: courseTypes.map((t) {
+                        final isPrem = config != null
+                            ? config.isPremiumCourseType(t)
+                            : t.contains('Video');
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _TypeCard(
+                            label: t.contains('Video')
+                                ? 'Video & Theory'
+                                : 'Theory & Image',
+                            desc: t.contains('Video')
+                                ? 'Detailed video explanations'
+                                : 'Comprehensive text & images',
+                            icon: t.contains('Video')
+                                ? Icons.videocam
+                                : Icons.menu_book,
+                            isSelected: selectedType == t,
+                            isPremium: isPrem,
+                            isLocked: isPrem && !isPro,
+                            onTap: () => _onFeatureSelect('type', t, config),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
 
                   const SizedBox(height: 40),
 
@@ -469,12 +947,15 @@ class _CreateScreenState extends ConsumerState<CreateScreen> {
                     child: ElevatedButton(
                       key: const Key('create_generate_button'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: creationEnabled ? AppColors.primary : Colors.grey,
+                        backgroundColor:
+                            creationEnabled ? AppColors.primary : Colors.grey,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16)),
                         elevation: creationEnabled ? 4 : 0,
-                        shadowColor: creationEnabled ? AppColors.primary.withAlpha(80) : Colors.transparent,
+                        shadowColor: creationEnabled
+                            ? AppColors.primary.withAlpha(80)
+                            : Colors.transparent,
                       ),
                       onPressed: creationEnabled ? _generate : null,
                       child: const Row(

@@ -34,18 +34,44 @@ class ExportController extends Controller
         $exportLessons = $course->lessons->map(function ($lesson, $index) {
             $content = $lesson->content ?: $lesson->topic_title ?: '';
 
+            // Clean markdown placeholders inside the exported content to render them nicely
+            // e.g. [IMAGE PLACEHOLDER: ...] -> custom formatted div
+            $html = $this->markdownHtml($content);
+            $html = preg_replace(
+                '/\[(IMAGE|DIAGRAM|TABLE)\s+PLACEHOLDER:\s*([^\]]+)\]/i',
+                '<div class="placeholder-box"><div class="placeholder-title">$1 Placeholder</div>$2</div>',
+                $html
+            );
+
             return [
                 'number' => $index + 1,
                 'title' => $lesson->title ?: 'Lesson',
-                'html' => $this->markdownHtml($content),
+                'html' => $html,
             ];
         });
         $isRtl = $this->containsArabic($course->title . ' ' . $course->lessons->pluck('content')->implode(' '));
+        $blueprintFields = $course->metadata['blueprint_fields'] ?? [];
+        if (($course->language ?? 'English') === 'English' && !empty($course->metadata['translated_fields'])) {
+            $tf = $course->metadata['translated_fields'];
+            if (!empty($tf['university_name'])) $blueprintFields['university'] = $tf['university_name'];
+            if (!empty($tf['faculty'])) $blueprintFields['faculty'] = $tf['faculty'];
+            if (!empty($tf['department'])) $blueprintFields['department'] = $tf['department'];
+            if (!empty($tf['specialization'])) $blueprintFields['specialization'] = $tf['specialization'];
+            if (!empty($tf['student_names'])) $blueprintFields['students'] = $tf['student_names'];
+            if (!empty($tf['supervisor_names'])) $blueprintFields['supervisors'] = $tf['supervisor_names'];
+        }
 
-        $pdf = Pdf::loadView('exports.course_pdf', compact('course', 'user', 'exportLessons', 'isRtl'))
+        $documentBlueprints = ['book', 'graduation-project', 'master-thesis'];
+        $isDocument = in_array($course->blueprint_slug, $documentBlueprints, true);
+        $viewName = $isDocument ? 'exports.document_pdf' : 'exports.course_pdf';
+
+        $pdf = Pdf::loadView($viewName, compact('course', 'user', 'exportLessons', 'isRtl', 'blueprintFields'))
             ->setPaper('a4')
             ->setOption('isRemoteEnabled', true);
-        return $pdf->download(Str::slug($course->title) . '.pdf');
+            
+        $blueprintSlug = $course->blueprint_slug ?: 'course';
+        $filename = Str::slug($course->title ?: 'novais') . '-' . $blueprintSlug . '.pdf';
+        return $pdf->download($filename);
     }
 
     public function exportPpt($courseId)

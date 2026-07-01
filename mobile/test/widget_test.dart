@@ -1,5 +1,6 @@
 // Basic smoke test for NOVAIS app
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
@@ -19,6 +20,22 @@ import 'package:novais/main.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+    if (methodCall.method == 'read') {
+      final key = methodCall.arguments['key'];
+      if (key == 'jwt_token') {
+        return 'mock_token';
+      }
+      if (key == 'user_id') {
+        return '1';
+      }
+      return 'mock_val';
+    }
+    return null;
+  });
 
   testWidgets('App starts without crashing', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: NovaisApp()));

@@ -6,10 +6,16 @@ import 'core/theme/app_theme.dart';
 import 'core/l10n/app_localizations.dart';
 import 'core/auth/auth_provider.dart';
 import 'core/api/platform_config_provider.dart';
+import 'core/debug/novais_diagnostics.dart';
+
+bool _firstFrameLogged = false;
 
 void main() async {
+  NovaisDiagnostics.log('Startup', 'main entered');
   WidgetsFlutterBinding.ensureInitialized();
+  NovaisDiagnostics.log('Startup', 'widgets binding initialized');
   runApp(const ProviderScope(child: NovaisApp()));
+  NovaisDiagnostics.log('Startup', 'runApp returned');
 }
 
 class NovaisApp extends ConsumerWidget {
@@ -17,6 +23,11 @@ class NovaisApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_firstFrameLogged) return;
+      _firstFrameLogged = true;
+      NovaisDiagnostics.log('Startup', 'first frame rendered');
+    });
     final router = ref.watch(appRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
     final locale = ref.watch(localeProvider);
@@ -32,7 +43,9 @@ class NovaisApp extends ConsumerWidget {
       } else if (config.systemThemeMode == 'system_default') {
         activeThemeMode = ThemeMode.system;
       } else if (themeMode == ThemeMode.system) {
-        activeThemeMode = config.themeDefaultMode == 'light' ? ThemeMode.light : ThemeMode.dark;
+        activeThemeMode = config.themeDefaultMode == 'light'
+            ? ThemeMode.light
+            : ThemeMode.dark;
       }
     }
 

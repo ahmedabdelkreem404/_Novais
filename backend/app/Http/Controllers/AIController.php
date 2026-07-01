@@ -291,13 +291,23 @@ class AIController extends Controller
                                          $courseType = $course->type ?? 'Text'; 
                                          $cleanType = str_contains(strtolower($courseType), 'video') ? 'Video' : 'Image';
 
+                                         // Fetch blueprint from course blueprint_slug / blueprintSlug
+                                         $blueprint = null;
+                                         $blueprintSlug = $course->blueprintSlug ?? ($metadata['blueprint_slug'] ?? null);
+                                         if ($blueprintSlug) {
+                                             $blueprint = \App\Models\ContentBlueprint::where('slug', $blueprintSlug)->first();
+                                         }
+                                         $blueprintFields = $metadata['blueprint_fields'] ?? [];
+
                                          // Call AI Service
                                          $aiContent = $this->aiService->generateLessonContent(
                                             $metadata['title'] ?? ($course->title ?? 'Course'), 
                                             $subtopicTitle, 
                                             $language,
                                             $cleanType,
-                                            $request->level ?? ($course->level ?? 'Beginner')
+                                            $request->level ?? ($course->level ?? 'Beginner'),
+                                            $blueprint,
+                                            $blueprintFields
                                          );
 
                                          // Deduct Credits (Fixed Cost logic)
@@ -312,6 +322,7 @@ class AIController extends Controller
                                          $subtopic['content'] = $aiContent['content'] ?? '';
                                          $subtopic['examples'] = $aiContent['examples'] ?? '';
                                          $subtopic['theory'] = $aiContent['content'] ?? ''; 
+                                         $subtopic['quiz'] = $aiContent['quiz'] ?? [];
 
                                           // === IMAGE RESOLUTION: Prioritize AI Suggestions ===
                                           $frontendImages = [];
@@ -623,6 +634,8 @@ class AIController extends Controller
 
             return response()->json(['success' => false, 'message' => 'common.subtopic_not_found'], 404);
 
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'common.course_not_found'], 404);
         } catch (\Exception $e) {
             \Log::error('Generate Lesson Failed', ['error' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

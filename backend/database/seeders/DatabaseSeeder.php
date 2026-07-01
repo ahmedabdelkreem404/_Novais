@@ -20,6 +20,11 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AdminSeeder::class,
             PlanSeeder::class,
+            ContentBlueprintSeeder::class,
+            SocialLinkSeeder::class,
+            PageSeeder::class,
+            PlatformSettingSeeder::class,
+            BlogSeeder::class,
         ]);
     }
 }

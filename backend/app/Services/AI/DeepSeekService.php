@@ -39,9 +39,165 @@ class DeepSeekService implements AIProviderInterface
 
 
 
-    public function generateCourseOutline(string $topic, int $count, string $type, string $language, string $level = 'Beginner'): array
-    {
+    public function generateCourseOutline(
+        string $topic,
+        int $count,
+        string $type,
+        string $language,
+        string $level = 'Beginner',
+        mixed $blueprint = null,
+        array $blueprintFields = []
+    ): array {
+        if ($blueprint) {
+            return $this->generateBlueprintStructure($topic, $language, $count, $level, $blueprint, $blueprintFields);
+        }
         return $this->generateCourseStructure($topic, $type, $language, $count, $level);
+    }
+
+    private function generateBlueprintStructure(
+        string $topic,
+        string $language,
+        int $count,
+        string $level,
+        mixed $blueprint,
+        array $blueprintFields
+    ): array {
+        $base = $this->getBasePrompt($language);
+        
+        $blueprintSlug = $blueprint->slug;
+        $blueprintName = is_array($blueprint->name) ? ($blueprint->name['en'] ?? $blueprintSlug) : $blueprint->name;
+        $requiredSections = $blueprint->required_sections ?? [];
+        $optionalSections = $blueprint->optional_sections ?? [];
+        $citationRequired = !empty($blueprint->citation_rules['required']);
+        $includeQuiz = !empty($blueprint->assessment_rules['include_quiz']);
+        $instructions = $blueprint->prompt_instructions ?? '';
+        
+        // Build fields string
+        $fieldsStr = "";
+        foreach ($blueprintFields as $key => $value) {
+            if (is_array($value)) {
+                $valStr = implode(', ', $value);
+            } elseif (is_bool($value)) {
+                $valStr = $value ? 'Yes' : 'No';
+            } else {
+                $valStr = (string) $value;
+            }
+            $fieldsStr .= "- **{$key}**: {$valStr}\n";
+        }
+
+        $requiredSectionsStr = implode(', ', $requiredSections);
+        $optionalSectionsStr = implode(', ', $optionalSections);
+        $citationText = $citationRequired ? 'strictly required' : 'optional';
+        $quizText = $includeQuiz ? 'required' : 'optional';
+        $productTerms = $this->blueprintTerminology($blueprintSlug);
+        $specializedRules = $this->blueprintSpecializedRules($blueprintSlug);
+
+        $prompt = <<<BLUEPRINT_PROMPT
+────────────────────────────
+MODE: NOVAIS CONTENT GENERATOR (DYNAMIC BLUEPRINT ENGINE)
+INPUT:
+Topic/Subject: $topic
+Content Type (Blueprint): $blueprintName ($blueprintSlug)
+Academic Level: $level
+Language: $language
+Requested Chapters/Sections Count: $count
+
+SUBMITTED PARAMETERS & PREFERENCES:
+$fieldsStr
+
+BLUEPRINT INSTRUCTIONS:
+$instructions
+
+PRODUCT-SPECIFIC TERMINOLOGY:
+$productTerms
+
+SPECIALIZED RULES:
+$specializedRules
+
+OUTLINING CONSTRAINTS:
+1. Generate a structured outline tailored EXACTLY for the content type "$blueprintName". Do not generate a generic learning course if the type is a Book, Exam, or Research Paper.
+2. Structure the output into EXACTLY $count product-appropriate chapters/sections/items (represented in the JSON output under the "chapters" key for NOVAIS compatibility).
+3. The content of each chapter/section must follow these required components: $requiredSectionsStr.
+4. Optionally incorporate elements of: $optionalSectionsStr.
+5. Language: All titles, descriptions, and structural nodes MUST be written in "$language".
+6. Citation Requirements: Academic citations and references are $citationText.
+7. Final Assessment: A quiz or review section is $quizText.
+8. Auto-inference: If any parameter or preference under "SUBMITTED PARAMETERS" is empty, blank, or unspecified, you must dynamically generate and design those details yourself to fit the topic and educational context.
+9. Never use "course", "lessons", "modules", "learning path", or video-course language for books, exams, question banks, theses, graduation project documents, stories, assignments, or lesson plans unless the selected blueprint is actually a course.
+10. For academic/research outputs, do not invent verified citations, DOI, URLs, or real statistics. Use clearly labeled reference placeholders or suggested source topics unless verified sources were provided by the user.
+11. Arabic Input Translation/Transliteration: For 'graduation-project' and 'master-thesis' blueprints, you MUST translate and transliterate all Arabic values for university_name, faculty, department, specialization, student_names, supervisor_names into formal English. Return these translated values in the JSON under the key 'translated_fields'.
+12. Tone: DO NOT use any emojis, motivational/welcoming phrases, or informal/silly language anywhere in the titles, descriptions, or chapters. Keep the tone 100% formal, scientific, and academic.
+13. Academic Quality: For graduation-project or master-thesis topics, generate formal, scholarly chapter names and subtopics suitable for a university degree project defense. If the topic is a software system (like Novais), include chapters on System Architecture, Database Design (ERD/Data Dictionary), AI System Design, Sequence/UML Diagram placeholders, and Implementation Verification.
+
+OUTPUT JSON (Strictly follow this structure. Do not change key names to maintain compatibility with the NOVAIS engine):
+{
+  "title": "Clean Title of the $blueprintName (Translated to $language)",
+  "description": "Compelling 2-sentence summary/abstract in $language.",
+  "level": "$level",
+  "language": "$language",
+  "total_chapters": $count,
+  "chapters": [
+    {
+      "title": "Title of the Chapter/Section in $language",
+      "subtopics": [
+        { "title": "Subtopic/Subsection Title in $language" }
+      ]
+    }
+  ],
+  "translated_fields": {
+     "university_name": "University name in English",
+     "faculty": "Faculty in English",
+     "department": "Department in English",
+     "specialization": "Specialization in English",
+     "student_names": "Student names in English (each on a new line)",
+     "supervisor_names": "Supervisor names in English (each on a new line)"
+  }
+}
+BLUEPRINT_PROMPT;
+
+        return $this->chatRequest($base . $prompt, true, "You are NOVAIS, an intelligent learning coach generating content for a {$blueprintName}.");
+    }
+
+    private function blueprintTerminology(string $blueprintSlug): string
+    {
+        $map = [
+            'normal-course' => 'Use modules, lessons, exercises, practical tasks, projects, and checkpoints.',
+            'leveled-course' => 'Use levels, modules, lessons, checkpoints, and practical exercises.',
+            'interactive-practical-course' => 'Use modules, lessons, exercises, practical tasks, projects, and checkpoints.',
+            'academic-course' => 'Use lectures, lecture notes, slide outlines, discussion questions, assignments, and references.',
+            'study-review' => 'Use summary sections, key points, expected questions, exam tips, and revision plan.',
+            'question-bank' => 'Use questions, answers, explanations, difficulty, question types, and topic grouping.',
+            'exam-builder' => 'Use exam sections, questions, marks, model answers, and grading scheme.',
+            'book' => 'Use cover, preface, table of contents, chapters, exercises, glossary, references, and image placeholders.',
+            'story' => 'Use title, synopsis, characters, chapters/scenes, narrative arcs, and educational message.',
+            'graduation-project' => 'Use graduation project document, academic document, project book, cover page, chapters, sections, supervisors, students, faculty, department, university, methodology, results, references, and appendices.',
+            'master-thesis' => 'Use abstract, research problem, research questions, hypotheses, literature review, methodology, findings, discussion, recommendations, and references.',
+            'lesson-plan' => 'Use lesson objectives, materials, warm-up, explanation, activities, assessment, homework, and teacher notes.',
+            'assignment-builder' => 'Use assignment brief, tasks, deliverables, rubric, and answer guide.',
+            'project-based-learning' => 'Use project scenario, milestones, tasks, evaluation rubric, and deliverables.',
+        ];
+
+        return $map[$blueprintSlug] ?? 'Use terminology that exactly matches the selected content type.';
+    }
+
+    private function blueprintSpecializedRules(string $blueprintSlug): string
+    {
+        if ($blueprintSlug === 'graduation-project') {
+            return implode("\n", [
+                '- Graduation Project Book must be a complete academic document, not a course.',
+                '- Support any faculty or specialization: medicine, pharmacy, nursing, engineering, computer science, business, accounting, law, education, agriculture, media, arts, tourism, psychology, sociology, science, architecture, and others.',
+                '- Include cover page data when provided: university, faculty, department, project title, students, supervisors, academic year/date, and logo placeholder if useful.',
+                '- Use neutral academic sections for non-software projects: cover page, declaration if suitable, acknowledgements, abstract, table of contents, lists of figures/tables when enabled, introduction, problem statement, objectives, importance, scope, literature review, methodology, practical/applied part, results, discussion, conclusion, recommendations, references, appendices.',
+                '- Only include functional/non-functional requirements, database design, UML, software architecture, implementation, testing, deployment, Agile, Waterfall, DevOps, SRS, or system lifecycle if the topic/faculty/department/tools clearly indicate software/IT/system/app/platform OR the user explicitly asks for those sections.',
+                '- When image, diagram, or table placeholders are enabled or useful, write specific placeholders such as [IMAGE PLACEHOLDER: Add a photo/illustration showing ...], [DIAGRAM PLACEHOLDER: Add a diagram explaining ...], or [TABLE PLACEHOLDER: Add a table comparing ...].',
+            ]);
+        }
+
+        if ($blueprintSlug === 'master-thesis') {
+            return '- Treat references as placeholders or suggested source topics unless verified sources are supplied. Do not fabricate DOI, URLs, real statistics, or citations.';
+        }
+
+        return '- Match the selected product type exactly and avoid generic course wording for non-course blueprints.';
     }
 
     public function validateTopicSafety(string $topic): bool
@@ -123,11 +279,23 @@ PROMPT;
     }
 
 
+    private function getLanguageInstruction(string $language): string
+    {
+        if (strtolower($language) === 'egyptian arabic') {
+            return "Egyptian Arabic Colloquial dialect (العامية المصرية). You MUST write all explanations, instructions, examples, and texts in standard Egyptian colloquial dialect (using words like 'عشان', 'إزاي', 'هيعمل', 'ليه', 'شوية') rather than Modern Standard Arabic, while keeping it clear, educational, and high quality.";
+        }
+        if (strtolower($language) === 'arabic') {
+            return "Modern Standard Arabic (العربية الفصحى). Do NOT use any colloquial dialect.";
+        }
+        return $language;
+    }
+
     /**
      * The Base Instructions for Professional Bootcamp Mode.
      */
     private function getProfessionalBasePrompt(string $language): string
     {
+        $langInstruction = $this->getLanguageInstruction($language);
         return <<<PROMPT
 ENTERPRISE ACADEMIC + PROFESSIONAL BOOTCAMP MODE (EXTREME RIGOR POLICY)
 You are a Senior Academic Professor and Technical Lead. You are not generating casual content.
@@ -141,7 +309,7 @@ You are designing a university-level academic curriculum combined with professio
 - Structure: Use structured sections with logical, building-block flow.
 
 🔴 RULE 2: LANGUAGE & TONE
-- PRIMARY EXPLANATION TEXT: Formal, technically accurate English.
+- PRIMARY EXPLANATION TEXT: Formal, technically accurate English (or the requested language: $langInstruction).
 - TECHNICAL TERMINOLOGY: Use precise, standard industry terms.
 - VOICE: Deliver content as a serious university lecture or professional lead developer briefing.
 PROMPT;
@@ -152,6 +320,7 @@ PROMPT;
      */
     private function getBasePrompt(string $language): string
     {
+        $langInstruction = $this->getLanguageInstruction($language);
         return <<<PROMPT
 🎯 INSTRUCTIONAL FRAMEWORK — NOVAIS: Interactive Learning Engine
 You are NOVAIS, an advanced AI Learning Coach and Interactive Experience Designer.
@@ -162,7 +331,7 @@ Your goal is to generate practical, engaging courses based on experience.
    - You are NOVAIS.
    - You are a "Learning Coach", NOT a "Professor" or "Teacher".
 2. Language & Tone:
-   - Write in EXACTLY this language: $language.
+   - Write in EXACTLY this language: $langInstruction.
    - Tone: Enthusiastic, clear, and action-oriented.
 3. Content Integrity:
    - Focus on "Learning by Doing".
@@ -298,13 +467,55 @@ MODE;
         return $this->chatRequest($base . $modePrompt, true, 'You are a Senior Academic Professor and Technical Lead. You follow a STRICT TECHNICAL POLICY: No emojis, English code, Arabic comments, formal English explanations.', 0.1);
     }
 
-    public function generateLessonContent(string $courseTopic, string $subTopic, string $language, string $courseType = 'Text', string $level = 'Beginner'): array
-    {
+    public function generateLessonContent(
+        string $courseTopic, 
+        string $subTopic, 
+        string $language, 
+        string $courseType = 'Text', 
+        string $level = 'Beginner', 
+        mixed $blueprint = null, 
+        array $blueprintFields = []
+    ): array {
         if (strtolower($level) === 'professional') {
-            return $this->generateProfessionalLesson($courseTopic, $subTopic, $language, $courseType);
+            return $this->generateProfessionalLesson($courseTopic, $subTopic, $language, $courseType, $blueprint, $blueprintFields);
         }
 
         $base = $this->getBasePrompt($language);
+        
+        $blueprintSlug = $blueprint ? $blueprint->slug : 'normal-course';
+        $blueprintName = $blueprint ? (is_array($blueprint->name) ? ($blueprint->name['en'] ?? $blueprintSlug) : $blueprint->name) : 'Course';
+        
+        $fieldsStr = "";
+        foreach ($blueprintFields as $key => $value) {
+            if (is_array($value)) {
+                $valStr = implode(', ', $value);
+            } elseif (is_bool($value)) {
+                $valStr = $value ? 'Yes' : 'No';
+            } else {
+                $valStr = (string) $value;
+            }
+            $fieldsStr .= "- **{$key}**: {$valStr}\n";
+        }
+
+        $isSoftware = false;
+        if (!empty($blueprintFields['specialization'])) {
+            $spec = strtolower($blueprintFields['specialization']);
+            if (str_contains($spec, 'software') || str_contains($spec, 'computer') || str_contains($spec, 'cs') || str_contains($spec, 'it') || str_contains($spec, 'ai') || str_contains($spec, 'ذكاء') || str_contains($spec, 'حاسب')) {
+                $isSoftware = true;
+            }
+        }
+
+        $academicInstructions = "";
+        if (in_array($blueprintSlug, ['graduation-project', 'master-thesis', 'book'])) {
+            $academicInstructions = "ACADEMIC DOCUMENT GENERATION RULES:\n" .
+                "1. You are writing a section/chapter of a formal academic document/book: \"$blueprintName\".\n" .
+                "2. Write in formal academic and scientific style. DO NOT use course player words like \"Welcome to this lesson\", \"Mark complete\", \"Next module\", or training course conversational fluff.\n" .
+                "3. The content must be deep, highly detailed, and professional university-level quality.\n" .
+                "4. Placeholders for visuals: You must embed explicit markdown placeholders where figures, tables, or diagrams are needed. Format: [IMAGE PLACEHOLDER: Description] or [DIAGRAM PLACEHOLDER: Description] or [TABLE PLACEHOLDER: Description].\n" .
+                "5. Specialization: " . ($isSoftware ? "This is a computer science / software project. You may include software-related architecture, database designs, UML diagram placeholders, code snippets, and deployment workflows." : "This is a non-software/non-IT academic project. Do NOT include software-specific architectures, database schemas, Agile/Waterfall methodologies, code snippets, or tech stack details (e.g. React, Laravel) unless directly relevant to the specific topic.") . "\n" .
+                "6. Emojis and Conversational Tone: DO NOT use any emojis, motivational phrasing, exclamation points, or informal remarks. Keep the text 100% formal, serious, and academic.\n" .
+                "7. UML & Architecture Diagrams: You must represent architecture designs, databases, flowcharts, and sequence diagrams using text-based Mermaid code blocks (fenced with ```mermaid ... ```) or clear tabular data dictionaries, in addition to visual placeholders. For example, draw class diagrams, flowcharts, or sequence diagrams directly inside ```mermaid code blocks so the engine can render them.\n";
+        }
         
         $mediaInstruction = "Media Selection Quality Gate (INSTRUCTIONAL STANDARD):
         
@@ -329,24 +540,30 @@ MODE;
         $prompt = $base . <<<PROMPT
 
 ────────────────────────────
-MODE 2: COMPLETE LESSON GENERATION (NOVAIS EXPERIENCE)
+MODE 2: COMPLETE LESSON/CHAPTER GENERATION (NOVAIS EXPERIENCE)
 
 INPUT:
-Course: $courseTopic
-Lesson: $subTopic
+Topic/Course: $courseTopic
+Chapter/Section: $subTopic
 Type: $courseType
 Language: $language
 
+SUBMITTED PARAMETERS:
+$fieldsStr
+
+$academicInstructions
+
 TASK:
-Generate a production-ready, interactive lesson.
+Generate a production-ready, interactive lesson or academic chapter.
 
 - SECTION 1: CONTENT
-- Write a full, engaging lesson in Markdown. 
+- Write a full, engaging lesson/chapter in Markdown. 
 - The content MUST be written in "$language".
 - Focus on EXPERIENCE and APPLICATION.
 - Use analogies and storytelling.
 - Include "Try It Yourself" or "Action Item" sections.
 - ALL technical code, keywords, and symbols MUST be in English.
+- If this is a document/book/thesis, embed explicit figure/table/diagram placeholders in the format [IMAGE PLACEHOLDER: Description] or [DIAGRAM PLACEHOLDER: Description] or [TABLE PLACEHOLDER: Description].
 
 - SECTION 2: MEDIA QUERIES
 - $mediaInstruction
@@ -360,7 +577,7 @@ Generate a production-ready, interactive lesson.
 OUTPUT JSON (EXACT STRUCTURE REQUIRED):
 {
   "title": "$subTopic (in $language)",
-  "content": "Full markdown lesson here in $language...",
+  "content": "Full markdown content here in $language...",
   "examples": "Practical real-world scenarios in $language...",
   "media_queries": {
     "images": [ 
@@ -393,16 +610,61 @@ PROMPT;
         return $this->chatRequest($prompt, true, 'You are NOVAIS, a friendly and energetic learning coach.');
     }
 
-    private function generateProfessionalLesson(string $courseTopic, string $subTopic, string $language, string $courseType): array
-    {
+    private function generateProfessionalLesson(
+        string $courseTopic, 
+        string $subTopic, 
+        string $language, 
+        string $courseType,
+        mixed $blueprint = null,
+        array $blueprintFields = []
+    ): array {
         $base = $this->getProfessionalBasePrompt($language);
+        
+        $blueprintSlug = $blueprint ? $blueprint->slug : 'normal-course';
+        $blueprintName = $blueprint ? (is_array($blueprint->name) ? ($blueprint->name['en'] ?? $blueprintSlug) : $blueprint->name) : 'Course';
+        
+        $fieldsStr = "";
+        foreach ($blueprintFields as $key => $value) {
+            if (is_array($value)) {
+                $valStr = implode(', ', $value);
+            } elseif (is_bool($value)) {
+                $valStr = $value ? 'Yes' : 'No';
+            } else {
+                $valStr = (string) $value;
+            }
+            $fieldsStr .= "- **{$key}**: {$valStr}\n";
+        }
+
+        $isSoftware = false;
+        if (!empty($blueprintFields['specialization'])) {
+            $spec = strtolower($blueprintFields['specialization']);
+            if (str_contains($spec, 'software') || str_contains($spec, 'computer') || str_contains($spec, 'cs') || str_contains($spec, 'it') || str_contains($spec, 'ai') || str_contains($spec, 'ذكاء') || str_contains($spec, 'حاسب')) {
+                $isSoftware = true;
+            }
+        }
+
+        $academicInstructions = "";
+        if (in_array($blueprintSlug, ['graduation-project', 'master-thesis', 'book'])) {
+            $academicInstructions = "ACADEMIC DOCUMENT GENERATION RULES:\n" .
+                "1. You are writing a section/chapter of a formal academic document/book: \"$blueprintName\".\n" .
+                "2. Write in formal academic and scientific style. DO NOT use course player words like \"Welcome to this lesson\", \"Mark complete\", \"Next module\", or training course fluff.\n" .
+                "3. The content must be deep, highly detailed, and professional university-level quality.\n" .
+                "4. Placeholders for visuals: You must embed explicit markdown placeholders where figures, tables, or diagrams are needed. Format: [IMAGE PLACEHOLDER: Description] or [DIAGRAM PLACEHOLDER: Description] or [TABLE PLACEHOLDER: Description].\n" .
+                "5. Specialization: " . ($isSoftware ? "This is a computer science / software project. You may include software-related architecture, database designs, UML diagram placeholders, code snippets, and deployment workflows." : "This is a non-software/non-IT academic project. Do NOT include software-specific architectures, database schemas, Agile/Waterfall methodologies, code snippets, or tech stack details (e.g. React, Laravel) unless directly relevant to the specific topic.") . "\n";
+        }
+
         $prompt = $base . <<<PROMPT
 ────────────────────────────
 STAGE 3 — RIGOROUS LESSON AUTHORING & STEP-BY-STEP LOGIC
 
 INPUT:
-Course: $courseTopic
-Lesson: $subTopic
+Topic/Course: $courseTopic
+Chapter/Section: $subTopic
+
+SUBMITTED PARAMETERS:
+$fieldsStr
+
+$academicInstructions
 
 🔴 RULE 3: THEORETICAL DEPTH (MANDATORY)
 - Do not provide surface-level summaries.
@@ -410,6 +672,7 @@ Lesson: $subTopic
 - Break down the logic behind every mechanism.
 - Contrast this topic with alternatives/competitors.
 - Detail memory behavior or performance implications where applicable.
+- If this is a document/book/thesis, embed explicit figure/table/diagram placeholders in the format [IMAGE PLACEHOLDER: Description] or [DIAGRAM PLACEHOLDER: Description] or [TABLE PLACEHOLDER: Description].
 
 🔴 RULE 4: 6-STEP PROGRAMMING & CODE EXPLANATION (STRICT):
 For EVERY code example presented, you MUST follow this sequence:
@@ -453,7 +716,6 @@ OUTPUT JSON:
   ]
 }
 PROMPT;
-
         return $this->chatRequest($prompt, true, 'You are a Senior Academic Professor and Technical Lead. You follow a STRICT TECHNICAL POLICY: No emojis, English code, Arabic comments, formal English explanations.', 0.1);
     }
 

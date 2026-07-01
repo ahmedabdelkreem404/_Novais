@@ -14,6 +14,7 @@ class Course extends Model
         'user_id',
         'title',
         'type',
+        'blueprint_slug',
         'language',
         'photo',
         'metadata',

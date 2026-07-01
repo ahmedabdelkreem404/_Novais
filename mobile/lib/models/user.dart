@@ -48,7 +48,62 @@ class AppUser {
   bool get isPro => subscriptionType == 'pro' || subscriptionType == 'elite';
 }
 
+class SubscriptionUsage {
+  final dynamic planName;
+  final num? price;
+  final int limit;
+  final int used;
+  final int remaining;
+  final String? renewalDate;
+  final num? monthlySpent;
 
+  const SubscriptionUsage({
+    this.planName,
+    this.price,
+    required this.limit,
+    required this.used,
+    required this.remaining,
+    this.renewalDate,
+    this.monthlySpent,
+  });
+
+  bool get isUnlimited => limit == -1;
+
+  double get progress {
+    if (isUnlimited || limit <= 0) return 0;
+    return (used / limit).clamp(0, 1).toDouble();
+  }
+
+  factory SubscriptionUsage.fromJson(Map<String, dynamic> json) {
+    int asInt(dynamic value, [int fallback = 0]) {
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      return int.tryParse('$value') ?? fallback;
+    }
+
+    num? asNum(dynamic value) {
+      if (value is num) return value;
+      return num.tryParse('$value');
+    }
+
+    final used = asInt(json['used']);
+    final remaining = asInt(json['remaining']);
+    var limit = asInt(json['limit'], 1);
+    if (limit == 0 && (used > 0 || remaining > 0)) {
+      limit = used + remaining;
+    }
+
+    return SubscriptionUsage(
+      planName: json['plan_name'],
+      price: asNum(json['price']),
+      limit: limit,
+      used: used,
+      remaining: remaining,
+      renewalDate: json['renewal_date']?.toString(),
+      monthlySpent: asNum(json['monthly_spent']),
+    );
+  }
+}
 
 // Quiz Question Model
 class QuizQuestion {
@@ -67,7 +122,8 @@ class QuizQuestion {
   });
 
   factory QuizQuestion.fromJson(Map<String, dynamic> json) {
-    final opts = (json['options'] as List? ?? []).map((o) => o.toString()).toList();
+    final opts =
+        (json['options'] as List? ?? []).map((o) => o.toString()).toList();
     return QuizQuestion(
       id: json['id'] ?? 0,
       question: json['question'] ?? '',
@@ -145,7 +201,9 @@ class PersonalNote {
       id: json['id'] ?? 0,
       courseId: json['course_id'] ?? 0,
       content: json['content'] ?? '',
-      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'])
+          : null,
     );
   }
 }
@@ -166,7 +224,9 @@ class ChatMessage {
     return ChatMessage(
       role: json['role'] ?? 'user',
       content: json['content'] ?? json['message'] ?? '',
-      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'])
+          : null,
     );
   }
 
@@ -204,7 +264,9 @@ class Blog {
       content: json['content'],
       imageUrl: json['image_url'] ?? json['image'],
       author: json['author'],
-      publishedAt: json['published_at'] != null ? DateTime.tryParse(json['published_at']) : null,
+      publishedAt: json['published_at'] != null
+          ? DateTime.tryParse(json['published_at'])
+          : null,
     );
   }
 }

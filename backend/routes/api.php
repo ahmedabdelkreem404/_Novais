@@ -92,6 +92,10 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/offline-payments', [\App\Http\Controllers\OfflinePaymentController::class, 'store'])->middleware('throttle:5,1');
     Route::get('/offline-payments/{offlinePaymentRequest}', [\App\Http\Controllers\OfflinePaymentController::class, 'show']);
     Route::post('/offline-payments/{offlinePaymentRequest}/cancel', [\App\Http\Controllers\OfflinePaymentController::class, 'cancel']);
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index']);
+    Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{notification}/read', [\App\Http\Controllers\NotificationController::class, 'markRead']);
+    Route::post('/notification-devices', [\App\Http\Controllers\NotificationController::class, 'registerDevice']);
 });
 
 // Public Share Route (via Token)
@@ -167,6 +171,8 @@ Route::get('/policies', [\App\Http\Controllers\PolicyController::class, 'index']
 Route::get('/social-links', [\App\Http\Controllers\SocialLinkController::class, 'index']);
 Route::get('/plans', [\App\Http\Controllers\CMSController::class, 'getPlans']);
 Route::get('/platform-config', [\App\Http\Controllers\PlatformConfigController::class, 'show']);
+Route::get('/platform-settings', [\App\Http\Controllers\PlatformConfigController::class, 'show']);
+Route::get('/content-blueprints', [\App\Http\Controllers\ContentBlueprintController::class, 'index']);
 
 // Admin Routes
 Route::middleware(['auth:api', 'is_admin'])->prefix('admin')->group(function () {
@@ -223,4 +229,12 @@ Route::middleware(['auth:api', 'is_admin'])->prefix('admin')->group(function () 
     // Platform Config Admin
     Route::get('/platform-config', [\App\Http\Controllers\PlatformConfigController::class, 'adminShow']);
     Route::put('/platform-config', [\App\Http\Controllers\PlatformConfigController::class, 'update']);
+    Route::get('/platform-settings', [\App\Http\Controllers\PlatformConfigController::class, 'adminShow']);
+    Route::put('/platform-settings', [\App\Http\Controllers\PlatformConfigController::class, 'update']);
+    Route::get('/content-blueprints', [\App\Http\Controllers\ContentBlueprintController::class, 'adminIndex']);
+    Route::post('/content-blueprints', [\App\Http\Controllers\ContentBlueprintController::class, 'store']);
+    Route::put('/content-blueprints/{contentBlueprint}', [\App\Http\Controllers\ContentBlueprintController::class, 'update']);
+    Route::delete('/content-blueprints/{contentBlueprint}', [\App\Http\Controllers\ContentBlueprintController::class, 'destroy']);
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'adminIndex']);
+    Route::post('/notifications', [\App\Http\Controllers\NotificationController::class, 'adminStore']);
 });

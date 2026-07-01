@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Interfaces\AIProviderInterface;
+use App\Models\ContentBlueprint;
 use App\Models\Course;
 use App\Models\Lesson;
 use Illuminate\Support\Facades\Log;
@@ -55,7 +56,7 @@ class CourseService
 
         $allowedLanguages = [
             'English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Russian', 'Chinese', 'Japanese', 'Korean',
-            'Arabic', 'Turkish', 'Dutch', 'Polish', 'Swedish', 'Danish', 'Norwegian', 'Finnish', 'Greek', 'Hindi',
+            'Arabic', 'Egyptian Arabic', 'Turkish', 'Dutch', 'Polish', 'Swedish', 'Danish', 'Norwegian', 'Finnish', 'Greek', 'Hindi',
             'Bengali', 'Indonesian', 'Vietnamese'
         ];
 
@@ -63,6 +64,15 @@ class CourseService
         if (!in_array($lang, $allowedLanguages)) {
             $lang = 'English'; // Fallback for MVP stability
         }
+
+        $blueprint = null;
+        if (!empty($data['blueprint_slug'])) {
+            $blueprint = ContentBlueprint::query()
+                ->where('slug', $data['blueprint_slug'])
+                ->where('enabled', true)
+                ->firstOrFail();
+        }
+        $blueprintFields = $this->normalizeBlueprintFields($data['blueprint_fields'] ?? []);
 
         $outline = null;
         $maxRetries = 1;
@@ -76,7 +86,9 @@ class CourseService
                     $data['topics_count'] ?? 5,
                     $data['type'] ?? 'text',
                     $lang,
-                    $data['level'] ?? 'Beginner' // Pass Level
+                    $data['level'] ?? 'Beginner',
+                    $blueprint,
+                    $blueprintFields
                 );
                 
                 // VALIDATION CHECK
@@ -132,15 +144,91 @@ class CourseService
             : null;
         $photoUrl = $photoUrl ?: $this->fallbackCourseCoverImage($courseTitle);
         $outline['cover_image'] = $photoUrl;
+        if ($blueprint) {
+            $outline['blueprint_slug'] = $blueprint->slug;
+            $outline['blueprint_name'] = $blueprint->name;
+            $outline['blueprint_structure'] = $blueprint->output_structure;
+            $outline['blueprint_fields'] = $blueprintFields;
+            $outline['submitted_blueprint_fields'] = $blueprintFields;
+            $outline['content_kind'] = $blueprint->slug;
+            $outline['language_variant'] = $lang;
+            $outline['display_terms'] = $this->displayTermsForBlueprint($blueprint->slug);
+            $outline['output_sections'] = $blueprint->required_sections ?? [];
+        }
 
         return $outline;
     }
 
+    private function displayTermsForBlueprint(string $slug): array
+    {
+        return [
+            'normal-course' => ['item' => 'Lesson', 'group' => 'Module', 'structure' => 'Modules'],
+            'leveled-course' => ['item' => 'Lesson', 'group' => 'Level', 'structure' => 'Levels'],
+            'interactive-practical-course' => ['item' => 'Lesson', 'group' => 'Module', 'structure' => 'Modules'],
+            'academic-course' => ['item' => 'Lecture', 'group' => 'Lecture Pack', 'structure' => 'Lectures'],
+            'study-review' => ['item' => 'Review Section', 'group' => 'Study Guide', 'structure' => 'Summary Sections'],
+            'question-bank' => ['item' => 'Question', 'group' => 'Question Group', 'structure' => 'Questions'],
+            'exam-builder' => ['item' => 'Exam Question', 'group' => 'Exam Section', 'structure' => 'Exam Sections'],
+            'book' => ['item' => 'Chapter', 'group' => 'Book Part', 'structure' => 'Chapters'],
+            'story' => ['item' => 'Scene', 'group' => 'Chapter', 'structure' => 'Chapters / Scenes'],
+            'graduation-project' => ['item' => 'Document Section', 'group' => 'Chapter', 'structure' => 'Document Sections'],
+            'master-thesis' => ['item' => 'Research Section', 'group' => 'Chapter', 'structure' => 'Research Sections'],
+            'lesson-plan' => ['item' => 'Activity', 'group' => 'Lesson Plan', 'structure' => 'Lesson Plan Sections'],
+            'assignment-builder' => ['item' => 'Task', 'group' => 'Assignment Section', 'structure' => 'Tasks'],
+            'project-based-learning' => ['item' => 'Milestone', 'group' => 'Project Phase', 'structure' => 'Milestones'],
+        ][$slug] ?? ['item' => 'Section', 'group' => 'Content', 'structure' => 'Sections'];
+    }
+
+    private function normalizeBlueprintFields(mixed $fields): array
+    {
+        if (!is_array($fields)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($fields as $key => $value) {
+            $key = preg_replace('/[^a-zA-Z0-9_-]/', '', (string) $key);
+            if ($key === '') {
+                continue;
+            }
+
+            if (is_array($value)) {
+                $normalized[$key] = array_values(array_filter(array_map(
+                    fn ($item) => is_scalar($item) ? trim((string) $item) : null,
+                    $value
+                ), fn ($item) => $item !== null && $item !== ''));
+                continue;
+            }
+
+            if (is_bool($value)) {
+                $normalized[$key] = $value;
+                continue;
+            }
+
+            if (is_scalar($value)) {
+                $normalized[$key] = trim((string) $value);
+            }
+        }
+
+        return $normalized;
+    }
+
     public function fallbackCourseCoverImage(string $title): string
     {
-        $text = trim($title) !== '' ? $title : 'NOVAIS Course';
-
-        return 'https://placehold.co/1200x675/1d4ed8/ffffff.png?text=' . rawurlencode($text);
+        $text = strtolower(trim($title));
+        
+        // Technology / Software / AI / CS
+        if (str_contains($text, 'novais') || str_contains($text, 'ai') || str_contains($text, 'ذكاء') || str_contains($text, 'حاسب') || str_contains($text, 'برمج') || str_contains($text, 'computer') || str_contains($text, 'software') || str_contains($text, 'code') || str_contains($text, 'system')) {
+            return 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=800&auto=format&fit=crop';
+        }
+        
+        // Medical / Healthcare
+        if (str_contains($text, 'عياد') || str_contains($text, 'طب') || str_contains($text, 'medical') || str_contains($text, 'clinic') || str_contains($text, 'health') || str_contains($text, 'مستشفى')) {
+            return 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=800&auto=format&fit=crop';
+        }
+        
+        // General Academic / Books / Research
+        return 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=800&auto=format&fit=crop';
     }
 
     public function extractPersistableLessonMedia(array $lessonData, string $courseType): array
@@ -203,6 +291,7 @@ class CourseService
             'user_id' => $userId,
             'title' => $courseTitle,
             'type' => $data['type'] ?? 'text',
+            'blueprint_slug' => $data['blueprint_slug'] ?? ($outline['blueprint_slug'] ?? null),
             'language' => $data['language'] ?? 'English',
             'photo' => $photoUrl, // Nullable
             'level' => $data['level'] ?? 'Beginner', // Save Level to DB
@@ -247,13 +336,24 @@ class CourseService
 
         $course = $lesson->course;
         
+        $blueprint = null;
+        if (!empty($course->blueprint_slug)) {
+            $blueprint = \App\Models\ContentBlueprint::query()
+                ->where('slug', $course->blueprint_slug)
+                ->where('enabled', true)
+                ->first();
+        }
+        $blueprintFields = $this->normalizeBlueprintFields($course->metadata['blueprint_fields'] ?? []);
+
         // 1. Generate Content via AI -> Returns Array [content, media, quiz, etc]
         $aiResponse = $this->aiProvider->generateLessonContent(
             $lesson->topic_title,
             $lesson->title,
             $course->language,
             $course->type,
-            $course->level ?? 'Beginner'
+            $course->level ?? 'Beginner',
+            $blueprint,
+            $blueprintFields
         );
 
         $textContent = $aiResponse['content'] ?? 'Content generation failed.';

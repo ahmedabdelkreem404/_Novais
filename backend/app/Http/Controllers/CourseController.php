@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\CurriculumValidator;
 use App\Models\PlatformSetting;
+use App\Models\ContentBlueprint;
+use App\Models\AppNotification;
 use App\Services\SubscriptionService;
 
 class CourseController extends Controller
@@ -50,7 +52,10 @@ class CourseController extends Controller
             'language' => 'required|string',
             'numModules' => 'required|integer',
             'subTopics' => 'nullable|array',
-            'level' => 'sometimes|string' // New Parameter
+            'level' => 'sometimes|string',
+            'blueprint_slug' => 'sometimes|string',
+            'blueprint_fields' => 'sometimes|array',
+            'content_type' => 'sometimes|string',
         ]);
 
         if ($response = $this->platformGateResponse($request)) {
@@ -71,7 +76,9 @@ class CourseController extends Controller
                 'topics_count' => $request->numModules,
                 'type' => $request->type === 'Video & Theory Course' ? 'video' : 'image',
                 'language' => $request->language,
-                'level' => $request->level ?? 'Beginner' // Pass Level
+                'level' => $request->level ?? 'Beginner',
+                'blueprint_slug' => $request->input('blueprint_slug', $request->input('content_type')),
+                'blueprint_fields' => $request->input('blueprint_fields', []),
             ];
 
             $outline = $this->courseService->generateOutline($data, auth('api')->id());
@@ -102,6 +109,9 @@ class CourseController extends Controller
             'type' => 'required|string',
             'language' => 'nullable|string',
             'content' => 'required|json', // The full course structure
+            'blueprint_slug' => 'sometimes|string',
+            'blueprint_fields' => 'sometimes|array',
+            'content_type' => 'sometimes|string',
         ]);
 
         if ($response = $this->platformGateResponse($request)) {
@@ -119,6 +129,13 @@ class CourseController extends Controller
             $contentData = $this->curriculumValidator->normalize($contentData, [
                 'mainTopic' => $request->mainTopic,
             ]);
+            $blueprintFields = $request->input('blueprint_fields', $contentData['blueprint_fields'] ?? []);
+            if (isset($contentData['translated_fields']) && is_array($contentData['translated_fields'])) {
+                $blueprintFields = array_merge($blueprintFields, $contentData['translated_fields']);
+            }
+            if (is_array($blueprintFields) && !empty($blueprintFields)) {
+                $contentData['blueprint_fields'] = $blueprintFields;
+            }
             $userId = auth('api')->id(); // Use Auth::id instead of request->user for security
             
             $courseTitle = $contentData['title'] ?? $request->mainTopic;
@@ -131,6 +148,7 @@ class CourseController extends Controller
                 'user_id' => $userId,
                 'title' => $courseTitle,
                 'type' => $request->type,
+                'blueprint_slug' => $request->input('blueprint_slug', $request->input('content_type', $contentData['blueprint_slug'] ?? null)),
                 'language' => $request->language ?? 'English',
                 'photo' => $courseCover ?: $this->courseService->fallbackCourseCoverImage($courseTitle),
                 'level' => $request->level ?? 'Beginner', // Save Level
@@ -161,6 +179,23 @@ class CourseController extends Controller
                      }
                  }
             }
+
+            AppNotification::create([
+                'user_id' => $userId,
+                'title' => 'Course created',
+                'body' => "\"{$courseTitle}\" is ready in your dashboard.",
+                'type' => 'course',
+                'data' => [
+                    'trigger' => 'course_created',
+                    'course_id' => $course->public_id,
+                    'localized' => [
+                        'en' => ['title' => 'Course created', 'body' => "\"{$courseTitle}\" is ready in your dashboard."],
+                        'ar' => ['title' => 'تم إنشاء الدورة', 'body' => "الدورة \"{$courseTitle}\" جاهزة في لوحة التحكم."],
+                    ],
+                ],
+                'published_at' => now(),
+                'scheduled_at' => now(),
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -344,7 +379,37 @@ class CourseController extends Controller
         }
 
         $config = PlatformSetting::currentConfig();
-        $language = ucfirst(strtolower($request->input('language', 'English')));
+        $blueprintSlug = $request->input('blueprint_slug', $request->input('content_type'));
+        if ($blueprintSlug) {
+            $blueprint = ContentBlueprint::query()
+                ->where('slug', $blueprintSlug)
+                ->first();
+
+            if (!$blueprint) {
+                return response()->json(['message' => 'platform.blueprint_not_found'], 404);
+            }
+            if (!$blueprint->enabled) {
+                return response()->json(['message' => 'platform.blueprint_disabled'], 403);
+            }
+
+            // Validate required fields from the blueprint's form schema
+            $formSchema = $blueprint->form_schema ?? ContentBlueprint::defaultFormSchema($blueprint->slug, is_array($blueprint->name) ? ($blueprint->name['en'] ?? 'course') : $blueprint->name);
+            $fields = $formSchema['fields'] ?? [];
+            $submittedFields = $request->input('blueprint_fields', []);
+            foreach ($fields as $field) {
+                if (!empty($field['required'])) {
+                    $key = $field['key'];
+                    if (!isset($submittedFields[$key]) || $submittedFields[$key] === '' || $submittedFields[$key] === []) {
+                        $label = $field['label']['en'] ?? $key;
+                        return response()->json([
+                            'message' => "The field '{$label}' is required for this content type."
+                        ], 422);
+                    }
+                }
+            }
+        }
+
+        $language = ucwords(strtolower($request->input('language', 'English')));
         
         $rawType = $request->input('type', 'Theory & Image Course');
         $type = str_contains(strtolower($rawType), 'video') ? 'Video & Theory Course' : 'Theory & Image Course';
@@ -397,13 +462,18 @@ class CourseController extends Controller
         // Depth validation
         if ($request->has('numModules')) {
             $depth = (int) $request->input('numModules');
-            $enabledDepths = $config['enabled_depths'] ?? [5, 10];
-            if (!in_array($depth, $enabledDepths, true)) {
-                return response()->json(['message' => 'platform.depth_disabled'], 403);
-            }
-            $freeDepthLimit = (int) ($config['free_depth_limit'] ?? 5);
-            if (!$isPaid && $depth > $freeDepthLimit) {
-                return response()->json(['message' => 'platform.depth_requires_upgrade'], 403);
+            $blueprintSlug = $request->input('blueprint_slug', $request->input('content_type'));
+            
+            // Only enforce strict enabled_depths array and free depth limits if it is NOT a custom blueprint
+            if (!$blueprintSlug || $blueprintSlug === 'normal-course' || $blueprintSlug === 'leveled-course') {
+                $enabledDepths = $config['enabled_depths'] ?? [5, 10];
+                if (!in_array($depth, $enabledDepths, true)) {
+                    return response()->json(['message' => 'platform.depth_disabled'], 403);
+                }
+                $freeDepthLimit = (int) ($config['free_depth_limit'] ?? 5);
+                if (!$isPaid && $depth > $freeDepthLimit) {
+                    return response()->json(['message' => 'platform.depth_requires_upgrade'], 403);
+                }
             }
         }
 

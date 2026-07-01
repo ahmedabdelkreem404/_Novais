@@ -5,6 +5,9 @@ import '../core/auth/auth_provider.dart';
 import '../core/l10n/app_localizations.dart';
 import '../core/theme/app_theme.dart';
 import '../core/api/platform_config_provider.dart';
+import '../core/api/notifications_provider.dart';
+import '../core/api/subscription_usage_provider.dart';
+import '../models/user.dart';
 
 class AppSidebar extends ConsumerWidget {
   const AppSidebar({super.key});
@@ -25,6 +28,9 @@ class AppSidebar extends ConsumerWidget {
     final showThemeToggle = !configAsync.hasValue ||
         (configAsync.value!.systemThemeMode != 'light_only' &&
             configAsync.value!.systemThemeMode != 'dark_only');
+    final unreadNotifications =
+        ref.watch(notificationsProvider).valueOrNull?.unreadCount ?? 0;
+    final usageAsync = ref.watch(subscriptionUsageProvider);
     const Radius edgeRadius = Radius.circular(16);
 
     return Drawer(
@@ -75,6 +81,7 @@ class AppSidebar extends ConsumerWidget {
           ),
           Expanded(
             child: ListView(
+              cacheExtent: 900,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
               children: [
                 if (isAuthenticated) ...[
@@ -84,25 +91,7 @@ class AppSidebar extends ConsumerWidget {
                     labelKey: 'dashboard',
                     path: '/dashboard',
                   ),
-                  const _NavItem(
-                    icon: Icons.headphones_outlined,
-                    selectedIcon: Icons.headphones,
-                    labelKey: 'audio_courses',
-                    path: '/audio',
-                  ),
-                  const _NavItem(
-                    icon: Icons.person_outline,
-                    selectedIcon: Icons.person,
-                    labelKey: 'profile',
-                    path: '/profile',
-                  ),
-                  const _NavItem(
-                    icon: Icons.monetization_on_outlined,
-                    selectedIcon: Icons.monetization_on,
-                    labelKey: 'pricing',
-                    path: '/pricing',
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   ElevatedButton(
                     key: const Key('drawer_create_button'),
                     onPressed: () {
@@ -135,8 +124,35 @@ class AppSidebar extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  _UsageCard(isDark: isDark, usageAsync: usageAsync),
+                  const SizedBox(height: 12),
+                  _NavItem(
+                    icon: Icons.notifications_outlined,
+                    selectedIcon: Icons.notifications,
+                    labelKey: 'notifications',
+                    path: '/notifications',
+                    badgeCount: unreadNotifications,
+                  ),
+                  const _NavItem(
+                    icon: Icons.headphones_outlined,
+                    selectedIcon: Icons.headphones,
+                    labelKey: 'audio_courses',
+                    path: '/audio',
+                  ),
+                  const _NavItem(
+                    icon: Icons.person_outline,
+                    selectedIcon: Icons.person,
+                    labelKey: 'profile',
+                    path: '/profile',
+                  ),
+                  const _NavItem(
+                    icon: Icons.monetization_on_outlined,
+                    selectedIcon: Icons.monetization_on,
+                    labelKey: 'pricing',
+                    path: '/pricing',
+                  ),
                   const SizedBox(height: 20),
-                  _UsageCard(isDark: isDark),
                 ] else ...[
                   const _NavItem(
                     icon: Icons.login_outlined,
@@ -209,12 +225,20 @@ class AppSidebar extends ConsumerWidget {
 
 class _UsageCard extends StatelessWidget {
   final bool isDark;
+  final AsyncValue<SubscriptionUsage> usageAsync;
 
-  const _UsageCard({required this.isDark});
+  const _UsageCard({required this.isDark, required this.usageAsync});
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final usage = usageAsync.valueOrNull;
+    final used = usage?.used ?? 0;
+    final limit = usage?.limit ?? 0;
+    final remaining = usage?.remaining ?? 0;
+    final displayLimit =
+        limit <= 0 && (used > 0 || remaining > 0) ? used + remaining : limit;
+    final isUnlimited = usage?.isUnlimited ?? false;
 
     return Container(
       key: const Key('drawer_usage_card'),
@@ -247,7 +271,7 @@ class _UsageCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '1',
+                usageAsync.isLoading ? '...' : '$used',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -256,7 +280,7 @@ class _UsageCard extends StatelessWidget {
                 ),
               ),
               Text(
-                ' / ∞',
+                ' / ${isUnlimited ? '∞' : displayLimit}',
                 style: TextStyle(
                   fontSize: 14,
                   color: isDark ? Colors.grey[500] : Colors.grey[400],
@@ -277,10 +301,10 @@ class _UsageCard extends StatelessWidget {
           const SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
-            child: const LinearProgressIndicator(
-              value: 0.2,
+            child: LinearProgressIndicator(
+              value: usage?.progress ?? 0,
               backgroundColor: Colors.transparent,
-              valueColor: AlwaysStoppedAnimation(AppColors.primary),
+              valueColor: const AlwaysStoppedAnimation(AppColors.primary),
               minHeight: 4,
             ),
           ),
@@ -329,12 +353,14 @@ class _NavItem extends StatelessWidget {
   final IconData selectedIcon;
   final String labelKey;
   final String path;
+  final int badgeCount;
 
   const _NavItem({
     required this.icon,
     required this.selectedIcon,
     required this.labelKey,
     required this.path,
+    this.badgeCount = 0,
   });
 
   @override
@@ -365,15 +391,37 @@ class _NavItem extends StatelessWidget {
               ? (isDark ? Colors.white : Colors.black)
               : (isDark ? Colors.grey[400] : Colors.grey[600]),
         ),
-        title: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected
-                ? (isDark ? Colors.white : Colors.black)
-                : (isDark ? Colors.grey[400] : Colors.grey[600]),
-          ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected
+                      ? (isDark ? Colors.white : Colors.black)
+                      : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                ),
+              ),
+            ),
+            if (badgeCount > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Text(
+                  badgeCount > 99 ? '99+' : '$badgeCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+          ],
         ),
         onTap: () {
           Navigator.of(context).pop();

@@ -40,7 +40,9 @@ class CMSController extends Controller
     {
         $request->validate([
             'title' => 'required|string',
+            'title_ar' => 'nullable|string',
             'content' => 'required|string',
+            'content_ar' => 'nullable|string',
             'slug' => 'nullable|string|unique:blogs,slug',
         ]);
 
@@ -53,8 +55,10 @@ class CMSController extends Controller
 
         $blog = Blog::create([
             'title' => $request->title,
+            'title_ar' => $request->title_ar,
             'slug' => $slug,
             'content' => HtmlSanitizer::clean($request->content),
+            'content_ar' => $request->content_ar ? HtmlSanitizer::clean($request->content_ar) : null,
             'image' => $request->image,
             'meta_title' => $request->meta_title,
             'meta_description' => $request->meta_description,
@@ -66,12 +70,15 @@ class CMSController extends Controller
     public function updateBlog(Request $request, $id)
     {
         $blog = Blog::findOrFail($id);
-        $data = $request->only(['title', 'slug', 'content', 'image', 'meta_title', 'meta_description']);
+        $data = $request->only(['title', 'title_ar', 'slug', 'content', 'content_ar', 'image', 'meta_title', 'meta_description']);
         if (array_key_exists('slug', $data) && $data['slug']) {
             $data['slug'] = Str::slug($data['slug']);
         }
         if (array_key_exists('content', $data)) {
             $data['content'] = HtmlSanitizer::clean($data['content']);
+        }
+        if (array_key_exists('content_ar', $data) && $data['content_ar']) {
+            $data['content_ar'] = HtmlSanitizer::clean($data['content_ar']);
         }
         $blog->update($data);
         return response()->json($blog);

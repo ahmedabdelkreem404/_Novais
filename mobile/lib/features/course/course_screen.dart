@@ -20,6 +20,23 @@ final _courseDetailProvider =
   return Course.fromJson(res.data);
 });
 
+const _documentBlueprintSlugs = [
+  'book',
+  'graduation-project',
+  'master-thesis',
+  'research-paper',
+  'academic-course',
+  'study-review',
+];
+
+const _questionBlueprintSlugs = [
+  'question-bank',
+  'exam-builder',
+  'assignment-builder',
+];
+
+const _storyBlueprintSlugs = ['story'];
+
 class CourseScreen extends ConsumerStatefulWidget {
   final String courseId;
   const CourseScreen({super.key, required this.courseId});
@@ -36,6 +53,91 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
   Course? _course;
   bool _preparingLesson = false;
   final Set<String> _requestedLessons = {};
+
+  String _getDynamicLabel(String key, String? blueprintSlug, bool isAr) {
+    if (key == 'lessons') {
+      switch (blueprintSlug) {
+        case 'book':
+        case 'story':
+          return isAr ? 'فصول' : 'Chapters';
+        case 'exam':
+        case 'exam-builder':
+        case 'question-bank':
+          return isAr ? 'أسئلة' : 'Questions';
+        case 'research-paper':
+        case 'master-thesis':
+        case 'academic-lecture':
+        case 'academic-course':
+          return isAr ? 'أقسام' : 'Sections';
+        case 'graduation-project':
+        case 'project-based-learning':
+          return isAr ? 'مراحل' : 'Phases';
+        case 'study-review':
+          return isAr ? 'موضوعات' : 'Topics';
+        case 'lesson-plan':
+          return isAr ? 'خطوات' : 'Steps';
+        case 'assignment-builder':
+          return isAr ? 'مهام' : 'Tasks';
+        default:
+          return isAr ? 'دروس' : 'Lessons';
+      }
+    }
+    if (key == 'previous') {
+      switch (blueprintSlug) {
+        case 'book':
+        case 'story':
+          return isAr ? 'الفصل السابق' : 'Previous Chapter';
+        case 'exam':
+        case 'exam-builder':
+        case 'question-bank':
+          return isAr ? 'السؤال السابق' : 'Previous Question';
+        case 'research-paper':
+        case 'master-thesis':
+        case 'academic-lecture':
+        case 'academic-course':
+          return isAr ? 'القسم السابق' : 'Previous Section';
+        case 'graduation-project':
+        case 'project-based-learning':
+          return isAr ? 'المرحلة السابقة' : 'Previous Phase';
+        case 'study-review':
+          return isAr ? 'الموضوع السابق' : 'Previous Topic';
+        case 'lesson-plan':
+          return isAr ? 'الخطوة السابقة' : 'Previous Step';
+        case 'assignment-builder':
+          return isAr ? 'المهمة السابقة' : 'Previous Task';
+        default:
+          return isAr ? 'الدرس السابق' : 'Previous Lesson';
+      }
+    }
+    if (key == 'next') {
+      switch (blueprintSlug) {
+        case 'book':
+        case 'story':
+          return isAr ? 'الفصل التالي' : 'Next Chapter';
+        case 'exam':
+        case 'exam-builder':
+        case 'question-bank':
+          return isAr ? 'السؤال التالي' : 'Next Question';
+        case 'research-paper':
+        case 'master-thesis':
+        case 'academic-lecture':
+        case 'academic-course':
+          return isAr ? 'القسم التالي' : 'Next Section';
+        case 'graduation-project':
+        case 'project-based-learning':
+          return isAr ? 'المرحلة التالية' : 'Next Phase';
+        case 'study-review':
+          return isAr ? 'الموضوع التالي' : 'Next Topic';
+        case 'lesson-plan':
+          return isAr ? 'الخطوة التالية' : 'Next Step';
+        case 'assignment-builder':
+          return isAr ? 'المهمة التالية' : 'Next Task';
+        default:
+          return isAr ? 'الدرس التالي' : 'Next Lesson';
+      }
+    }
+    return key;
+  }
 
   @override
   void initState() {
@@ -81,25 +183,34 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
 
   Widget _buildCourse(
       BuildContext context, AppLocalizations l10n, Course course) {
+    final blueprintSlug = course.blueprintSlug;
+    final isDocument = _documentBlueprintSlugs.contains(blueprintSlug);
+    final isQuestion = _questionBlueprintSlugs.contains(blueprintSlug);
+    final isStory = _storyBlueprintSlugs.contains(blueprintSlug);
+    final isCourse = !isDocument && !isQuestion && !isStory;
     final lessons = course.lessons;
     final lesson = lessons.isNotEmpty ? lessons[_currentLesson] : null;
-    _scheduleLessonPreparation(course, lesson);
+    if (isCourse) {
+      _scheduleLessonPreparation(course, lesson);
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: Text(course.title, maxLines: 1, overflow: TextOverflow.ellipsis),
         leading: BackButton(onPressed: () => context.pop()),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.quiz_outlined),
-            tooltip: l10n.t('quiz'),
-            onPressed: () => context.push('/quiz/${course.id}'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.workspace_premium_outlined),
-            tooltip: l10n.t('certificate'),
-            onPressed: () => context.push('/certificate/${course.id}'),
-          ),
+          if (isCourse) ...[
+            IconButton(
+              icon: const Icon(Icons.quiz_outlined),
+              tooltip: l10n.t('quiz'),
+              onPressed: () => context.push('/quiz/${course.id}'),
+            ),
+            IconButton(
+              icon: const Icon(Icons.workspace_premium_outlined),
+              tooltip: l10n.t('certificate'),
+              onPressed: () => context.push('/certificate/${course.id}'),
+            ),
+          ],
           IconButton(
             icon: const Icon(Icons.menu),
             onPressed: () => setState(() => _drawerOpen = !_drawerOpen),
@@ -108,7 +219,7 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
         bottom: TabBar(
           controller: _tabCtrl,
           tabs: [
-            Tab(text: l10n.t('lessons')),
+            Tab(text: _getDynamicLabel('lessons', course.blueprintSlug, l10n.isAr)),
             Tab(text: l10n.t('chat')),
             Tab(text: l10n.t('notes_tab')),
           ],
@@ -219,7 +330,7 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                                 ? () => setState(() => _currentLesson--)
                                 : null,
                             icon: const Icon(Icons.arrow_back, size: 16),
-                            label: Text(l10n.t('previous')),
+                            label: Text(_getDynamicLabel('previous', course.blueprintSlug, l10n.isAr)),
                           ),
                         ),
                         Padding(
@@ -234,7 +345,7 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                                 ? () => setState(() => _currentLesson++)
                                 : null,
                             icon: const Icon(Icons.arrow_forward, size: 16),
-                            label: Text(l10n.t('next')),
+                            label: Text(_getDynamicLabel('next', course.blueprintSlug, l10n.isAr)),
                           ),
                         ),
                       ]),
@@ -272,7 +383,7 @@ class _CourseScreenState extends ConsumerState<CourseScreen>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(l10n.t('lessons'),
+                            Text(_getDynamicLabel('lessons', course.blueprintSlug, l10n.isAr),
                                 style: Theme.of(context).textTheme.titleLarge),
                             IconButton(
                               icon: const Icon(Icons.close),

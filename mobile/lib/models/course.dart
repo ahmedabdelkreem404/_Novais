@@ -8,6 +8,7 @@ class Course {
   final Map<String, dynamic>? metadata;
   final bool completed;
   final List<Lesson> lessons;
+  final String? blueprintSlug;
 
   String? get imageUrl => photo;
   String get apiId => publicId.isNotEmpty ? publicId : id.toString();
@@ -22,6 +23,7 @@ class Course {
     this.metadata,
     this.completed = false,
     this.lessons = const [],
+    this.blueprintSlug,
   });
 
   factory Course.fromJson(Map<String, dynamic> json) {
@@ -50,6 +52,7 @@ class Course {
       metadata: metadata,
       completed: json['completed'] == 1 || json['completed'] == true,
       lessons: metadataLessons.isNotEmpty ? metadataLessons : savedLessons,
+      blueprintSlug: json['blueprint_slug'] as String? ?? metadata?['blueprint_slug'] as String?,
     );
   }
 
@@ -64,6 +67,7 @@ class Course {
       metadata: metadata,
       completed: completed,
       lessons: lessons ?? this.lessons,
+      blueprintSlug: blueprintSlug,
     );
   }
 }
