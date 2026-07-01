@@ -10,7 +10,7 @@ PR #6 is still **Open** and **Draft**. GitHub currently reports `mergeable: MERG
 
 Production readiness claim: **No-Go**.
 
-Reason: builds and unit tests are useful, but full browser acceptance, Android emulator parity acceptance, and installed Electron app acceptance are not yet complete across all required flows.
+Reason: builds, unit tests, and a first web acceptance pass are useful, but web still has blockers, and Android emulator parity acceptance plus installed Electron app acceptance are not yet complete across all required flows.
 
 ## Status Legend
 
@@ -40,6 +40,8 @@ Reason: builds and unit tests are useful, but full browser acceptance, Android e
 | `flutter test` | Passed | 18 tests passed. |
 | `composer audit --format=json` | Passed | No advisories, no abandoned packages. |
 | `npm audit --omit=dev --audit-level=high` | Passed at high threshold | 5 moderate advisories remain in `quill/react-quill` and `webpack-dev-server/react-scripts`; breaking-force upgrades not applied. |
+| Web route viewport pass | Partial pass | 192 route/viewport checks captured under `.codex-run-logs/pr6-cross-platform-parity/web`; no automated overflow/raw-key failures, but fast navigation produced aborted request noise. |
+| Web live AI generation | Partial pass | 8 generated content records with PDF status 200; viewer mode blockers remain for direct-load loading states. |
 
 These commands improve confidence but do not replace browser, emulator, and installed desktop acceptance evidence.
 
@@ -74,18 +76,18 @@ These commands improve confidence but do not replace browser, emulator, and inst
 | Full Book | `/generate-course` with `book` | Implemented | Needs evidence | Same React flow | Yes | Blueprint defaults | Need live generation proof. |
 | Question Bank | `/generate-course` with `question-bank` | Implemented | Needs evidence | Same React flow | Yes | Blueprint/layout code | Need UI proof and answers proof. |
 | Exam Builder | `/generate-course` with `exam-builder` | Implemented | Needs evidence | Same React flow | Yes | Blueprint/layout code | Need marks/sections proof. |
-| Study Review | `/generate-course` with `study-review` | Implemented | Needs evidence | Same React flow | Yes | Blueprint defaults | Need live generation proof. |
+| Study Review | `/generate-course` with `study-review` | Generated, viewer still blocked on direct-load loading shell | Needs evidence | Same React flow | Yes | `public_id=d903baee1857b094f7b485d8` | Direct route can still show course loading/progress shell before metadata resolves. |
 | Academic Course | `/generate-course` with `academic-course` | Implemented | Needs evidence | Same React flow | Yes | Blueprint defaults | Need live generation proof. |
 | Interactive Course | `/generate-course` with `interactive-practical-course` | Implemented | Needs evidence | Same React flow | Yes | Blueprint defaults | Need live generation proof. |
-| Egyptian Arabic content | language option + prompt instruction | Implemented | Needs evidence | Same React flow | Yes | Language/prompt code | Need live output review. |
+| Egyptian Arabic content | language option + prompt instruction | Fixed and generated | Needs evidence | Same React flow | Yes | `public_id=16d74c1ce998219f1b4437da` | Backend now preserves `Egyptian Arabic`; mobile/desktop proof still missing. |
 
 ## Viewer Modes
 
 | Feature | Backend API | Web status | Mobile status | Desktop status | Same data source? | Evidence | Blockers |
 |---|---|---:|---:|---:|---:|---|---|
 | Course mode | `/courses/{id}`, lesson endpoints | Implemented | Implemented | Same React bundle | Yes | Existing screenshots/sample asset | Need live saved content proof. |
-| Document/book mode | `/courses/{id}` + document layout | Implemented in current PR | Partially implemented | Same React bundle | Yes | `course.js`, mobile filter, PDF template | Need browser and emulator proof. |
-| Question/exam mode | `/courses/{id}` | Implemented in web | Partially implemented | Same React bundle | Yes | `course.js` answer toggle | Need browser and mobile proof. |
+| Document/book mode | `/courses/{id}` + document layout | Partial browser proof | Partially implemented | Same React bundle | Yes | Viewer screenshots for graduation projects and book | Direct-load loading shell still needs cleanup. |
+| Question/exam mode | `/courses/{id}` | Partial browser proof | Partially implemented | Same React bundle | Yes | Viewer screenshots for question bank and exam | Need answer-key interaction proof and mobile proof. |
 | Story mode | `/courses/{id}` | Implemented in web | Partially implemented | Same React bundle | Yes | `course.js` story reader | Need real generated story proof. |
 | Terminology labels | metadata/display terms | Partially implemented | Partially implemented | Same React bundle | Mostly | i18n changes and dynamic labels | Need raw-key/course-wording sweep. |
 | PDF export | `/courses/{id}/export/pdf` | Implemented | Endpoint known, mobile proof needed | Same React bundle | Yes | `ExportController`, `document_pdf.blade.php` | Need export file evidence for each mode. |
@@ -167,19 +169,20 @@ Those screenshots prove that some surfaces can render, but they are **not** a co
 
 ## Current Blockers Before Ready For Review
 
-1. Full web acceptance matrix is not complete across all requested viewport sizes.
-2. Live AI browser acceptance is not complete for all requested blueprints and Egyptian Arabic.
-3. Mobile emulator acceptance needs same-user comparison with web for dashboard, settings, blueprints, viewer modes, payments, notes, and notifications.
-4. Desktop needs built installed app launch evidence, not just Electron dev/wrapper screenshot.
-5. Static/fake business data audit is incomplete.
-6. Course-only terminology sweep is incomplete across web/mobile/admin/public pages.
-7. Moderate npm advisories remain; no high-severity audit failure at requested threshold.
-8. PR is still Draft and should remain Draft until evidence passes.
+1. Web acceptance is only a partial pass: route screenshots and AI generation evidence exist, but direct viewer loading states and some UX flows still need fixes.
+2. `study-review` direct-load can still show a course loading/progress shell before metadata resolves.
+3. Normal Course direct viewer can remain in preparation/loading when selected lesson content is missing.
+4. Chatbot drag/clamp/outside-click and notes CRUD were not fully exercised yet.
+5. Mobile emulator acceptance needs same-user comparison with web for dashboard, settings, blueprints, viewer modes, payments, notes, and notifications.
+6. Desktop needs built installed app launch evidence, not just Electron dev/wrapper screenshot.
+7. Static/fake business data audit found remaining static download fallbacks and legacy pricing constants.
+8. Moderate npm advisories remain; no high-severity audit failure at requested threshold.
+9. PR is still Draft and should remain Draft until evidence passes.
 
 ## Production Readiness Score
 
-Current confidence as a Draft PR: **82-86% implementation progress**.
+Current confidence as a Draft PR: **84-87% implementation progress**.
 
-Current production-proven confidence: **lower than implementation progress**, because parity evidence is incomplete.
+Current production-proven confidence: **72-76%**, because web is only partially accepted and mobile/desktop acceptance is still missing.
 
 Production decision: **No-Go** until web + mobile emulator + installed desktop acceptance evidence is complete.

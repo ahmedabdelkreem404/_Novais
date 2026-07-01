@@ -56,7 +56,7 @@ class CourseService
 
         $allowedLanguages = [
             'English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Russian', 'Chinese', 'Japanese', 'Korean',
-            'Arabic', 'Turkish', 'Dutch', 'Polish', 'Swedish', 'Danish', 'Norwegian', 'Finnish', 'Greek', 'Hindi',
+            'Arabic', 'Egyptian Arabic', 'Turkish', 'Dutch', 'Polish', 'Swedish', 'Danish', 'Norwegian', 'Finnish', 'Greek', 'Hindi',
             'Bengali', 'Indonesian', 'Vietnamese'
         ];
 

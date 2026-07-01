@@ -246,7 +246,7 @@ const Course = () => {
 
     const layoutMode = useMemo(() => {
 
-        const documentSlugs = ['book', 'graduation-project', 'master-thesis'];
+        const documentSlugs = ['book', 'graduation-project', 'master-thesis', 'study-review'];
 
         const questionSlugs = ['question-bank', 'exam-builder', 'assignment-builder'];
 
@@ -2314,7 +2314,7 @@ const Course = () => {
 
                     <div dir={courseDir} className="max-w-6xl mx-auto px-6 py-10 md:px-12 min-h-screen flex flex-col relative z-10">
 
-                        {loading ? (
+                        {loading && layoutMode === 'course' ? (
 
                             <div className="flex-1 flex flex-col items-center justify-center py-10 md:py-20 min-h-[80vh] relative overflow-hidden" dir={courseDir}>
 
@@ -2967,4 +2967,3 @@ const Course = () => {
 
 
 export default Course;
-
