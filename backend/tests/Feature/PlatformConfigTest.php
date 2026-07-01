@@ -17,6 +17,9 @@ class PlatformConfigTest extends TestCase
         $this->assertTrue(Schema::hasColumns('platform_settings', [
             'key',
             'value',
+            'group',
+            'is_public',
+            'description',
         ]));
     }
 
@@ -44,6 +47,17 @@ class PlatformConfigTest extends TestCase
             ->assertJsonPath('video_courses_enabled', true);
     }
 
+    public function test_public_platform_settings_alias_returns_safe_cached_config(): void
+    {
+        \Illuminate\Support\Facades\Cache::forget(PlatformSetting::CACHE_KEY);
+
+        $this->getJson('/api/platform-settings')
+            ->assertOk()
+            ->assertJsonPath('course_creation_enabled', true)
+            ->assertJsonStructure(['settings_version'])
+            ->assertJsonMissingPath('secret_private_key');
+    }
+
     public function test_admin_can_update_platform_config(): void
     {
         $admin = \App\Models\User::factory()->create(['role' => 'admin']);
@@ -62,6 +76,37 @@ class PlatformConfigTest extends TestCase
             ->assertJsonPath('video_courses_free', true);
 
         $this->assertTrue(\App\Models\PlatformSetting::currentConfig()['all_languages_free']);
+    }
+
+    public function test_admin_can_update_platform_settings_alias_and_cache_clears(): void
+    {
+        \Illuminate\Support\Facades\Cache::put(PlatformSetting::CACHE_KEY, ['stale' => true], 300);
+
+        $admin = \App\Models\User::factory()->create(['role' => 'admin']);
+        $token = auth('api')->login($admin);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->putJson('/api/admin/platform-settings', [
+                'payment_vodafone_cash_visible' => false,
+                'system_theme_mode' => 'dark_only',
+            ])
+            ->assertOk()
+            ->assertJsonPath('payment_vodafone_cash_visible', false)
+            ->assertJsonPath('system_theme_mode', 'dark_only');
+
+        $this->assertFalse(\Illuminate\Support\Facades\Cache::has(PlatformSetting::CACHE_KEY));
+    }
+
+    public function test_invalid_platform_settings_are_rejected(): void
+    {
+        $admin = \App\Models\User::factory()->create(['role' => 'admin']);
+        $token = auth('api')->login($admin);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->putJson('/api/admin/platform-settings', [
+                'system_theme_mode' => 'neon',
+            ])
+            ->assertUnprocessable();
     }
 
     public function test_non_admin_cannot_update_platform_config(): void

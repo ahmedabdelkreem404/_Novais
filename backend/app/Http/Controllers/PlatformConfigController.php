@@ -9,9 +9,7 @@ class PlatformConfigController extends Controller
 {
     public function show()
     {
-        $config = PlatformSetting::currentConfig();
-        unset($config['secret_private_key']);
-        return response()->json($config);
+        return response()->json(PlatformSetting::publicConfig());
     }
 
     public function adminShow()
@@ -57,17 +55,18 @@ class PlatformConfigController extends Controller
             'download_page_desc_ar' => 'sometimes|string',
             'windows_download_url' => 'sometimes|nullable|string',
             'mobile_download_url' => 'sometimes|nullable|string',
-            'system_theme_mode' => 'sometimes|string|in:system_default,light_only,dark_only,user_choice',
+            'system_theme_mode' => 'sometimes|string|in:system,system_default,light_only,dark_only,user_choice',
             'hero_media_muted' => 'sometimes|boolean',
             'hero_media_loop' => 'sometimes|boolean',
             'hero_media_poster' => 'sometimes|nullable|string',
+            'hero_media_show_image_until_loaded' => 'sometimes|boolean',
 
             // Branding & Identity
             'branding_platform_name_en' => 'sometimes|string',
             'branding_platform_name_ar' => 'sometimes|string',
             'branding_logo_url' => 'sometimes|nullable|string',
             'branding_favicon_url' => 'sometimes|nullable|string',
-            
+
             // Theme behavior
             'theme_default_mode' => 'sometimes|string|in:light,dark',
 
@@ -82,6 +81,11 @@ class PlatformConfigController extends Controller
 
             // Payment visibility & instructions
             'payment_methods_visible' => 'sometimes|boolean',
+            'payment_paymob_visible' => 'sometimes|boolean',
+            'payment_wallet_visible' => 'sometimes|boolean',
+            'payment_offline_visible' => 'sometimes|boolean',
+            'payment_vodafone_cash_visible' => 'sometimes|boolean',
+            'payment_instapay_visible' => 'sometimes|boolean',
             'offline_payment_instructions_en' => 'sometimes|string',
             'offline_payment_instructions_ar' => 'sometimes|string',
 
@@ -92,6 +96,7 @@ class PlatformConfigController extends Controller
             'feature_quiz_enabled' => 'sometimes|boolean',
             'feature_chat_enabled' => 'sometimes|boolean',
             'feature_audio_courses_enabled' => 'sometimes|boolean',
+            'feature_certificates_enabled' => 'sometimes|boolean',
 
             // SEO / Social
             'seo_meta_title_en' => 'sometimes|string',
@@ -101,8 +106,10 @@ class PlatformConfigController extends Controller
             'seo_meta_keywords_en' => 'sometimes|string',
             'seo_meta_keywords_ar' => 'sometimes|string',
 
-            // Secret key
-            'secret_private_key' => 'sometimes|string',
+            // Landing Custom Lists
+            'landing_features_list' => 'sometimes|array',
+            'landing_steps_list' => 'sometimes|array',
+            'landing_reviews_list' => 'sometimes|array',
         ]);
 
         return response()->json(PlatformSetting::updateConfig($data));
