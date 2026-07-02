@@ -20,14 +20,26 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
     const [input, setInput] = useState('');
     const containerRef = useRef(null);
     const panelRef = useRef(null);
-    const constraintsRef = useRef(null);
+    const dragStateRef = useRef(null);
+    const suppressNextClickRef = useRef(false);
     const [panelPosition, setPanelPosition] = useState(null);
+    const getViewport = () => {
+        const viewport = window.visualViewport;
+        return {
+            left: viewport?.offsetLeft ?? 0,
+            top: viewport?.offsetTop ?? 0,
+            width: viewport?.width ?? window.innerWidth,
+            height: viewport?.height ?? window.innerHeight,
+        };
+    };
+
     const clampButtonPosition = (position) => {
         const EDGE = 16;
         const SIZE = 56;
+        const viewport = getViewport();
         return {
-            left: Math.max(EDGE, Math.min(position.left, window.innerWidth - SIZE - EDGE)),
-            top: Math.max(EDGE, Math.min(position.top, window.innerHeight - SIZE - EDGE)),
+            left: Math.max(viewport.left + EDGE, Math.min(position.left, viewport.left + viewport.width - SIZE - EDGE)),
+            top: Math.max(viewport.top + EDGE, Math.min(position.top, viewport.top + viewport.height - SIZE - EDGE)),
         };
     };
 
@@ -41,9 +53,10 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
 
     useEffect(() => {
         if (buttonPosition) return;
+        const viewport = getViewport();
         setButtonPosition({
-            left: Math.max(16, window.innerWidth - 56 - 24),
-            top: Math.max(16, window.innerHeight - 56 - 112)
+            left: Math.max(viewport.left + 16, viewport.left + viewport.width - 56 - 24),
+            top: Math.max(viewport.top + 16, viewport.top + viewport.height - 56 - 112)
         });
     }, [buttonPosition]);
 
@@ -55,42 +68,86 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
     const updatePanelPosition = () => {
         if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
+        const viewport = getViewport();
+        const vw = viewport.width;
+        const vh = viewport.height;
+        const viewportLeft = viewport.left;
+        const viewportTop = viewport.top;
 
-        const PANEL_W = Math.min(380, vw - 32);
-        const PANEL_H = Math.min(460, vh - 120);
-        const GAP = 10;
         const EDGE = 12;
+        const PANEL_W = Math.max(260, Math.min(380, vw - (EDGE * 2)));
+        const PANEL_H = Math.max(280, Math.min(460, vh - (EDGE * 2)));
+        const GAP = 10;
 
         // Vertical: prefer above the button, fallback to below
-        const spaceAbove = rect.top - GAP - EDGE;
-        const spaceBelow = vh - rect.bottom - GAP - EDGE;
+        const spaceAbove = rect.top - viewportTop - GAP - EDGE;
+        const spaceBelow = viewportTop + vh - rect.bottom - GAP - EDGE;
         let top;
         if (spaceAbove >= PANEL_H || spaceAbove >= spaceBelow) {
             top = rect.top - GAP - PANEL_H;
         } else {
             top = rect.bottom + GAP;
         }
-        top = Math.max(EDGE, Math.min(top, vh - PANEL_H - EDGE));
+        top = Math.max(viewportTop + EDGE, Math.min(top, viewportTop + vh - PANEL_H - EDGE));
 
         // Horizontal: align to whichever side has more room
         const buttonCenterX = rect.left + rect.width / 2;
-        let left = buttonCenterX > vw / 2
+        let left = buttonCenterX > viewportLeft + vw / 2
             ? rect.right - PANEL_W        // right-side: align right edges
             : rect.left;                   // left-side: align left edges
-        left = Math.max(EDGE, Math.min(left, vw - PANEL_W - EDGE));
+        left = Math.max(viewportLeft + EDGE, Math.min(left, viewportLeft + vw - PANEL_W - EDGE));
 
         setPanelPosition({ top, left, width: PANEL_W, height: PANEL_H });
     };
 
-    const persistButtonPosition = () => {
-        if (!containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        const next = clampButtonPosition({ left: rect.left, top: rect.top });
+    const persistButtonPosition = (position = buttonPosition) => {
+        if (!position) return;
+        const next = clampButtonPosition(position);
         setButtonPosition(next);
         localStorage.setItem('novais_chatbot_button_position', JSON.stringify(next));
         requestAnimationFrame(updatePanelPosition);
+    };
+
+    const startButtonDrag = (event) => {
+        if (event.button !== undefined && event.button !== 0) return;
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (!rect) return;
+
+        dragStateRef.current = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            offsetX: event.clientX - rect.left,
+            offsetY: event.clientY - rect.top,
+            moved: false,
+            lastPosition: buttonPosition || { left: rect.left, top: rect.top },
+        };
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+    };
+
+    const moveButtonDrag = (event) => {
+        const dragState = dragStateRef.current;
+        if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+        const next = clampButtonPosition({
+            left: event.clientX - dragState.offsetX,
+            top: event.clientY - dragState.offsetY,
+        });
+        dragState.moved = dragState.moved
+            || Math.hypot(event.clientX - dragState.startX, event.clientY - dragState.startY) > 3;
+        dragState.lastPosition = next;
+        setButtonPosition(next);
+        requestAnimationFrame(updatePanelPosition);
+    };
+
+    const endButtonDrag = (event) => {
+        const dragState = dragStateRef.current;
+        if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+        dragStateRef.current = null;
+        suppressNextClickRef.current = dragState.moved;
+        event.currentTarget.releasePointerCapture?.(event.pointerId);
+        persistButtonPosition(dragState.lastPosition);
     };
 
     useEffect(() => {
@@ -99,6 +156,29 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
+
+    useEffect(() => {
+        const keepInsideViewport = () => {
+            setButtonPosition((current) => {
+                if (!current) return current;
+                const next = clampButtonPosition(current);
+                localStorage.setItem('novais_chatbot_button_position', JSON.stringify(next));
+                return next;
+            });
+            requestAnimationFrame(updatePanelPosition);
+        };
+
+        window.addEventListener('resize', keepInsideViewport);
+        window.visualViewport?.addEventListener('resize', keepInsideViewport);
+        window.visualViewport?.addEventListener('scroll', keepInsideViewport);
+
+        return () => {
+            window.removeEventListener('resize', keepInsideViewport);
+            window.visualViewport?.removeEventListener('resize', keepInsideViewport);
+            window.visualViewport?.removeEventListener('scroll', keepInsideViewport);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         if (!isOpen) return undefined;
@@ -220,9 +300,6 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
 
     return (
         <>
-            {/* Drag constraint box: inset 16px so button edge stays within viewport */}
-            <div ref={constraintsRef} className="fixed inset-4 pointer-events-none z-[120]" />
-
             {/* Backdrop — click outside to close */}
             <AnimatePresence>
                 {isOpen && (
@@ -356,12 +433,10 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
             {/* Draggable toggle button — ONLY element that can be dragged */}
             <motion.div
                 ref={containerRef}
-                drag
-                dragConstraints={constraintsRef}
-                dragElastic={0}
-                dragMomentum={false}
-                onDrag={updatePanelPosition}
-                onDragEnd={persistButtonPosition}
+                onPointerDown={startButtonDrag}
+                onPointerMove={moveButtonDrag}
+                onPointerUp={endButtonDrag}
+                onPointerCancel={endButtonDrag}
                 className="fixed z-[135] pointer-events-auto"
                 style={{
                     touchAction: 'none',
@@ -370,7 +445,12 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
                 }}
             >
                 <button
-                    onClick={() => {
+                    onClick={(event) => {
+                        if (suppressNextClickRef.current) {
+                            suppressNextClickRef.current = false;
+                            event.preventDefault();
+                            return;
+                        }
                         setIsOpen((prev) => !prev);
                         if (!isOpen) updatePanelPosition();
                     }}
