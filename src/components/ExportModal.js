@@ -127,6 +127,23 @@ const ExportModal = ({ isOpen, onClose, courseId, mainTopic }) => {
                                     </p>
                                 </div>
                             </button>
+
+                            <button
+                                disabled={true}
+                                className="w-full flex items-center gap-5 p-5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/10 rounded-[18px] opacity-60 cursor-not-allowed text-left"
+                            >
+                                <div className="w-14 h-14 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 flex-shrink-0">
+                                    <LuFileText size={28} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-[17px] font-black text-slate-400 mb-0.5 uppercase tracking-wide">
+                                        Word Document (.docx)
+                                    </h3>
+                                    <p className="text-sm text-amber-600 dark:text-amber-500 font-black">
+                                        تصدير Word قريبًا / Word export is coming soon
+                                    </p>
+                                </div>
+                            </button>
                         </div>
                     </motion.div>
                 </div>

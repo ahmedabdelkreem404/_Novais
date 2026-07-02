@@ -127,6 +127,32 @@ const CodeBlock = ({ inline, className, children, ...props }) => {
         setTimeout(() => setIsCopied(false), 2000);
     };
 
+    // Handle Mermaid UML rendering dynamically via CDN (AFTER all React hooks run)
+    if (lang === 'mermaid') {
+        try {
+            const base64 = btoa(unescape(encodeURIComponent(textContent)));
+            return (
+                <div className="my-8 flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-900/10 border border-slate-200 dark:border-slate-800 rounded-3xl transition-all hover:shadow-lg">
+                    <img
+                        src={`https://mermaid.ink/img/${base64}`}
+                        alt="UML/Mermaid Diagram"
+                        className="max-w-full h-auto object-contain select-none"
+                        onError={(e) => {
+                            e.target.style.display = 'none';
+                            const fallback = e.target.nextElementSibling;
+                            if (fallback) fallback.textContent = 'Diagram syntax error / network offline';
+                        }}
+                    />
+                    <span className="mt-3 text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                        مخطط هيكلي / UML Architecture Diagram
+                    </span>
+                </div>
+            );
+        } catch (err) {
+            console.error("Failed to encode mermaid diagram", err);
+        }
+    }
+
     if (inline) {
         return (
             <code className="bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-lg text-sm font-mono text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30 font-bold mx-0.5" {...props}>
@@ -233,7 +259,7 @@ const CodeBlock = ({ inline, className, children, ...props }) => {
     );
 };
 
-const StyledText = ({ text, isRtl, variant = 'default' }) => {
+const StyledText = ({ text, isRtl, variant = 'default', isAcademic = false }) => {
     const isQuiz = variant === 'quiz';
     // Robust auto-detection for Arabic content
     const isArabicContent = React.useMemo(() => {
@@ -300,8 +326,8 @@ const StyledText = ({ text, isRtl, variant = 'default' }) => {
 
                     // H2: Section Headers
                     h2: ({ node, children, ...props }) => (
-                        <h2 className="group text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mt-16 mb-6 flex flex-wrap items-baseline gap-3 leading-snug" dir={isArabicContent ? 'rtl' : 'ltr'} {...props}>
-                            <span className="inline-block w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 opacity-80 transform translate-y-[-4px] shrink-0" />
+                        <h2 className="group text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mt-12 mb-6 flex flex-wrap items-baseline gap-3 leading-snug" dir={isArabicContent ? 'rtl' : 'ltr'} {...props}>
+                            {!isAcademic && <span className="inline-block w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 opacity-80 transform translate-y-[-4px] shrink-0" />}
                             <BiDi>{children}</BiDi>
                         </h2>
                     ),
@@ -315,7 +341,10 @@ const StyledText = ({ text, isRtl, variant = 'default' }) => {
 
                     // Body Text: Optimized for Long-form Reading
                     p: ({ node, children, ...props }) => (
-                        <div className={`${isQuiz ? 'text-[20px] md:text-[24px] mb-6' : 'text-[18px] md:text-[20px] mb-8'} leading-[1.6] text-slate-700 dark:text-slate-300 font-bold tracking-normal`} dir={isArabicContent ? 'rtl' : 'ltr'} {...props}>
+                        <div className={isAcademic
+                            ? "text-[16px] md:text-[17px] leading-relaxed text-slate-800 dark:text-slate-200 mb-6 font-normal tracking-wide text-justify font-serif"
+                            : `${isQuiz ? 'text-[20px] md:text-[24px] mb-6' : 'text-[18px] md:text-[20px] mb-8'} leading-[1.6] text-slate-700 dark:text-slate-300 font-bold tracking-normal`
+                        } dir={isArabicContent ? 'rtl' : 'ltr'} {...props}>
                             <BiDi>{children}</BiDi>
                         </div>
                     ),
@@ -328,9 +357,12 @@ const StyledText = ({ text, isRtl, variant = 'default' }) => {
                         <ol dir={isArabicContent ? 'rtl' : 'ltr'} className={`my-8 space-y-4 ${isArabicContent ? 'pr-8 md:pr-12 text-right' : 'pl-8 md:pl-12 text-left'} list-decimal marker:text-slate-500 dark:marker:text-slate-500 marker:font-medium`} {...props}>{children}</ol>
                     ),
                     li: ({ node, children, ...props }) => (
-                        <li className={`text-[18px] md:text-[20px] leading-[1.8] text-slate-700 dark:text-slate-300 relative ${isArabicContent ? 'pr-2 text-right' : 'pl-2 text-left'}`} dir={isArabicContent ? 'rtl' : 'ltr'} {...props}>
+                        <li className={isAcademic
+                            ? `text-[16px] md:text-[17px] leading-relaxed text-slate-700 dark:text-slate-300 relative ${isArabicContent ? 'pr-6 text-right list-disc' : 'pl-6 text-left list-disc'} font-normal mb-2`
+                            : `text-[18px] md:text-[20px] leading-[1.8] text-slate-700 dark:text-slate-300 relative ${isArabicContent ? 'pr-2 text-right' : 'pl-2 text-left'}`
+                        } dir={isArabicContent ? 'rtl' : 'ltr'} {...props}>
                             {/* Custom Bullet for Unordered Lists - Hidden via CSS for Ordered Lists */}
-                            <span className={`custom-bullet absolute top-[0.65em] w-1.5 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full ${isArabicContent ? '-right-5' : '-left-5'}`} />
+                            {!isAcademic && <span className={`custom-bullet absolute top-[0.65em] w-1.5 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full ${isArabicContent ? '-right-5' : '-left-5'}`} />}
                             <BiDi>{children}</BiDi>
                         </li>
                     ),
