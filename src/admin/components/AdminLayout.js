@@ -74,6 +74,7 @@ const AdminLayout = () => {
         { name: t('admin.create_blog'), icon: LuFileText, path: '/admin/create-blog' },
         { name: t('admin.plans'), icon: LuLayers, path: '/admin/plans' },
         { name: t('admin.platform_settings') || 'Platform Settings', icon: LuSettings, path: '/admin/platform-settings' },
+        { name: t('admin.content_blueprints') || 'AI Blueprints', icon: LuLayers, path: '/admin/content-blueprints' },
         {
             name: t('admin.legal'), icon: LuFileText, subItems: [
                 { name: t('admin.terms'), path: '/admin/editterms' },

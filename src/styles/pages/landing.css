@@ -158,11 +158,15 @@
 
 .landing-preview__image {
     width: 100%;
+    max-height: 520px;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
     border-radius: 20px;
     display: block;
     position: relative;
     z-index: 1;
     border: 1px solid rgba(0, 0, 0, 0.05);
+    background-color: #0b0f19;
 }
 
 

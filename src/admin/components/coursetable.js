@@ -32,7 +32,7 @@ const CourseTable = ({ datas = [], onDelete, onView, onEdit }) => {
                                 <tr key={course.id} className="hover:bg-gray-50/80 dark:hover:bg-white/[0.02] transition-colors group">
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col">
-                                            <div className="font-bold text-gray-900 dark:text-white line-clamp-1">{course.title || 'Untitled Course'}</div>
+                                            <div className="font-bold text-gray-900 dark:text-white line-clamp-1">{course.title || 'Untitled Document'}</div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">

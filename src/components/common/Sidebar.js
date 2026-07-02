@@ -171,7 +171,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                             <span className="text-[11px] font-black uppercase tracking-wider">{t('common.courses_limit')}</span>
                         </div>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-lg font-black text-gray-900 dark:text-white leading-none">
+                            <span className="text-lg font-black text-gray-900 dark:text-white leading-none" dir="ltr">
                                 {usage.used}
                                 <span className="text-gray-400 font-normal mx-0.5">/</span>
                                 {usage.limit === -1 ? '∞' : usage.limit}

@@ -15,9 +15,102 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
 
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState(chatHistory.length > 0 ? chatHistory : [
-        { role: 'assistant', content: t('chatbot.welcome', { topic: mainTopic }) || `Hi! I'm your AI tutor for "${mainTopic}". Ask me anything about this lesson or the platform! 🎓` }
+        { role: 'assistant', content: t('chatbot.welcome', { topic: mainTopic }) || `Hi! I'm your AI tutor for "${mainTopic}". Ask me anything about this lesson or the platform!` }
     ]);
     const [input, setInput] = useState('');
+    const containerRef = useRef(null);
+    const panelRef = useRef(null);
+    const constraintsRef = useRef(null);
+    const [panelPosition, setPanelPosition] = useState(null);
+    const clampButtonPosition = (position) => {
+        const EDGE = 16;
+        const SIZE = 56;
+        return {
+            left: Math.max(EDGE, Math.min(position.left, window.innerWidth - SIZE - EDGE)),
+            top: Math.max(EDGE, Math.min(position.top, window.innerHeight - SIZE - EDGE)),
+        };
+    };
+
+    const [buttonPosition, setButtonPosition] = useState(() => {
+        try {
+            const saved = JSON.parse(localStorage.getItem('novais_chatbot_button_position') || 'null');
+            if (saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) return clampButtonPosition(saved);
+        } catch (_) {}
+        return null;
+    });
+
+    useEffect(() => {
+        if (buttonPosition) return;
+        setButtonPosition({
+            left: Math.max(16, window.innerWidth - 56 - 24),
+            top: Math.max(16, window.innerHeight - 56 - 112)
+        });
+    }, [buttonPosition]);
+
+    /**
+     * Calculate a safe viewport-clamped position for the chat panel so it
+     * never overflows any page edge. Called when the button is dragged or
+     * when the panel opens.
+     */
+    const updatePanelPosition = () => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        const PANEL_W = Math.min(380, vw - 32);
+        const PANEL_H = Math.min(460, vh - 120);
+        const GAP = 10;
+        const EDGE = 12;
+
+        // Vertical: prefer above the button, fallback to below
+        const spaceAbove = rect.top - GAP - EDGE;
+        const spaceBelow = vh - rect.bottom - GAP - EDGE;
+        let top;
+        if (spaceAbove >= PANEL_H || spaceAbove >= spaceBelow) {
+            top = rect.top - GAP - PANEL_H;
+        } else {
+            top = rect.bottom + GAP;
+        }
+        top = Math.max(EDGE, Math.min(top, vh - PANEL_H - EDGE));
+
+        // Horizontal: align to whichever side has more room
+        const buttonCenterX = rect.left + rect.width / 2;
+        let left = buttonCenterX > vw / 2
+            ? rect.right - PANEL_W        // right-side: align right edges
+            : rect.left;                   // left-side: align left edges
+        left = Math.max(EDGE, Math.min(left, vw - PANEL_W - EDGE));
+
+        setPanelPosition({ top, left, width: PANEL_W, height: PANEL_H });
+    };
+
+    const persistButtonPosition = () => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const next = clampButtonPosition({ left: rect.left, top: rect.top });
+        setButtonPosition(next);
+        localStorage.setItem('novais_chatbot_button_position', JSON.stringify(next));
+        requestAnimationFrame(updatePanelPosition);
+    };
+
+    useEffect(() => {
+        if (isOpen) {
+            setTimeout(updatePanelPosition, 20);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return undefined;
+        const closeOnOutsidePointer = (event) => {
+            if (panelRef.current?.contains(event.target)) return;
+            if (containerRef.current?.contains(event.target)) return;
+            setIsOpen(false);
+        };
+        document.addEventListener('pointerdown', closeOnOutsidePointer, true);
+        return () => document.removeEventListener('pointerdown', closeOnOutsidePointer, true);
+    }, [isOpen]);
+
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef(null);
 
@@ -126,31 +219,51 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
     };
 
     return (
-        <div className="flex flex-col items-end pointer-events-none">
+        <>
+            {/* Drag constraint box: inset 16px so button edge stays within viewport */}
+            <div ref={constraintsRef} className="fixed inset-4 pointer-events-none z-[120]" />
+
+            {/* Backdrop — click outside to close */}
             <AnimatePresence>
                 {isOpen && (
-                    <>
                     <motion.div
+                        key="chatbot-backdrop"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => setIsOpen(false)}
-                        className="fixed inset-0 z-[120] pointer-events-auto bg-black/20 md:bg-transparent"
+                        className="fixed inset-0 z-[128] pointer-events-auto"
                     />
+                )}
+            </AnimatePresence>
+
+            {/* Chat Panel — independently positioned, viewport-clamped */}
+            <AnimatePresence>
+                {isOpen && panelPosition && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        onClick={(event) => event.stopPropagation()}
-                        className="fixed md:static left-3 right-3 bottom-20 md:left-auto md:right-auto md:bottom-auto z-[130] pointer-events-auto bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl shadow-2xl w-auto md:w-[400px] max-w-[calc(100vw-24px)] mb-0 md:mb-4 flex flex-col overflow-hidden"
-                        style={{ height: 'min(560px, calc(100vh - 110px))' }}
+                        ref={panelRef}
+                        key="chatbot-panel"
+                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            position: 'fixed',
+                            top: panelPosition.top,
+                            left: panelPosition.left,
+                            width: panelPosition.width,
+                            height: panelPosition.height,
+                            zIndex: 130,
+                        }}
+                        className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-[24px] shadow-2xl flex flex-col overflow-hidden pointer-events-auto"
                         dir={i18n.dir()}
                     >
                         {/* Header */}
-                        <div className="bg-slate-900 dark:bg-slate-950 p-5 flex justify-between items-center border-b border-white/5">
+                        <div className="bg-slate-900 dark:bg-slate-950 p-4 flex justify-between items-center border-b border-white/5 shrink-0">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white">
-                                    <LuBot size={22} />
+                                <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white">
+                                    <LuBot size={20} />
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-white text-[13px]">{t('chatbot.title') || 'AI Professor'}</h3>
@@ -160,19 +273,19 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
                                     </div>
                                 </div>
                             </div>
-                            <button onClick={() => setIsOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 text-gray-400 hover:text-white transition-colors">
+                            <button
+                                onClick={() => setIsOpen(false)}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 text-gray-400 hover:text-white transition-colors"
+                            >
                                 <LuMinimize2 size={16} />
                             </button>
                         </div>
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-gray-50/50 dark:bg-slate-900/50 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 dark:bg-slate-900/50 custom-scrollbar">
                             {messages.map((msg, idx) => {
                                 const msgIsArabic = isArabic(msg.content);
                                 const isUser = msg.role === 'user';
-                                // Physical alignment: User always on Right, Bot always on Left
-                                // In RTL container: Right = justify-start, Left = justify-end
-                                // In LTR container: Right = justify-end, Left = justify-start
                                 const alignment = isRTL
                                     ? (isUser ? 'justify-start' : 'justify-end')
                                     : (isUser ? 'justify-end' : 'justify-start');
@@ -181,9 +294,9 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
                                     <div key={idx} className={`flex ${alignment}`}>
                                         <div
                                             dir={msgIsArabic ? 'rtl' : 'ltr'}
-                                            className={`max-w-[88%] min-w-0 rounded-2xl p-4 text-[13px] font-medium leading-relaxed shadow-sm break-words overflow-hidden ${isUser
+                                            className={`max-w-[85%] min-w-0 rounded-2xl p-3.5 text-[13px] font-medium leading-relaxed shadow-sm break-words overflow-hidden ${isUser
                                                 ? 'bg-blue-600 text-white rounded-tr-none'
-                                                : 'bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-700 dark:text-gray-200 rounded-tl-none'
+                                                : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-gray-700 dark:text-gray-200 rounded-tl-none'
                                                 }`}
                                         >
                                             <ReactMarkdown
@@ -196,6 +309,9 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
                                                     strong: ({ node, ...props }) => <strong className="font-bold text-blue-600 dark:text-blue-400" {...props} />,
                                                     code: ({ node, ...props }) => <code className="break-words whitespace-pre-wrap bg-black/5 dark:bg-white/10 rounded px-1" {...props} />,
                                                     pre: ({ node, ...props }) => <pre className="max-w-full overflow-x-auto whitespace-pre-wrap break-words" {...props} />,
+                                                    table: ({ node, ...props }) => <div className="max-w-full overflow-x-auto"><table className="min-w-full text-xs border-collapse" {...props} /></div>,
+                                                    th: ({ node, ...props }) => <th className="border border-slate-200 dark:border-slate-700 px-2 py-1 text-start" {...props} />,
+                                                    td: ({ node, ...props }) => <td className="border border-slate-200 dark:border-slate-700 px-2 py-1 align-top" {...props} />,
                                                 }}
                                             >
                                                 {msg.content}
@@ -206,7 +322,7 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
                             })}
                             {loading && (
                                 <div className={`flex ${isRTL ? 'justify-end' : 'justify-start'}`}>
-                                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-gray-100 dark:border-slate-700 flex gap-1">
+                                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 flex gap-1">
                                         <span className="w-1.5 h-1.5 bg-gray-300 dark:bg-slate-500 rounded-full animate-bounce" />
                                         <span className="w-1.5 h-1.5 bg-gray-300 dark:bg-slate-500 rounded-full animate-bounce delay-75" />
                                         <span className="w-1.5 h-1.5 bg-gray-300 dark:bg-slate-500 rounded-full animate-bounce delay-150" />
@@ -217,12 +333,12 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
                         </div>
 
                         {/* Input */}
-                        <form onSubmit={handleSend} className="p-3 sm:p-4 bg-white dark:bg-slate-950 border-t border-gray-100 dark:border-slate-800 flex gap-2">
+                        <form onSubmit={handleSend} className="p-3 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex gap-2 shrink-0">
                             <input
                                 type="text"
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
-                                placeholder={t('chatbot.placeholder') || "Ask about this lesson..."}
+                                placeholder={t('chatbot.placeholder') || (isRTL ? 'اسأل عن هذا الدرس...' : 'Ask about this lesson...')}
                                 className="flex-1 bg-gray-50 dark:bg-slate-900 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-600/20 dark:text-white outline-none transition-all"
                             />
                             <button
@@ -234,17 +350,36 @@ const ChatBot = ({ courseId, courseContext, mainTopic, chatHistory = [], onUpdat
                             </button>
                         </form>
                     </motion.div>
-                    </>
                 )}
             </AnimatePresence>
 
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="pointer-events-auto w-14 h-14 bg-blue-600 rounded-2xl text-white shadow-2xl shadow-blue-500/40 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+            {/* Draggable toggle button — ONLY element that can be dragged */}
+            <motion.div
+                ref={containerRef}
+                drag
+                dragConstraints={constraintsRef}
+                dragElastic={0}
+                dragMomentum={false}
+                onDrag={updatePanelPosition}
+                onDragEnd={persistButtonPosition}
+                className="fixed z-[135] pointer-events-auto"
+                style={{
+                    touchAction: 'none',
+                    left: buttonPosition?.left ?? 24,
+                    top: buttonPosition?.top ?? 24,
+                }}
             >
-                {isOpen ? <LuX size={24} /> : <LuMessageSquare size={24} />}
-            </button>
-        </div>
+                <button
+                    onClick={() => {
+                        setIsOpen((prev) => !prev);
+                        if (!isOpen) updatePanelPosition();
+                    }}
+                    className="w-14 h-14 bg-blue-600 rounded-full text-white shadow-2xl shadow-blue-500/40 flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                >
+                    {isOpen ? <LuX size={24} /> : <LuMessageSquare size={24} />}
+                </button>
+            </motion.div>
+        </>
     );
 };
 
